@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>模型路由控制台</title>
+    <link rel="stylesheet" href="/static/styles.css?v=27" />
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <nav class="appNav">
+        <button type="button" class="appNavBtn active" data-app-view="test">单问题测试</button>
+        <button type="button" class="appNavBtn" data-app-view="manage">管理</button>
+        <button type="button" class="appNavBtn" data-app-view="batch">批量测试</button>
+      </nav>
+      <div class="status">
+        <span class="dot" id="healthDot"></span>
+        <span class="txt" id="healthText">连接中…</span>
+      </div>
+    </header>
+
+    <main id="viewTest" class="viewPane active">
+      <div class="testGrid">
+        <section class="panel testInputPanel">
+          <div class="stripHead">输入问题</div>
+          <div class="stripBody qBody">
+            <textarea id="question" rows="3" placeholder="输入问题… Ctrl+Enter 提问"></textarea>
+            <div class="qActions">
+              <button id="askBtn" class="btn primary btnXs" type="button">提问</button>
+              <button id="clearBtn" class="btn ghost btnXs" type="button">清空</button>
+              <button id="randomQuestionBtn" class="btn ghost btnXs" type="button">随机问题</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel rightPanel testSidePanel">
+          <div class="stripHead rightTabHead">
+            <div class="rightTabs">
+              <button type="button" class="tabBtn active" data-right-tab="log">日志</button>
+              <button type="button" class="tabBtn" data-right-tab="files">文件</button>
+            </div>
+            <span class="headActions" id="rightTabActions">
+              <button id="clearLogBtn" class="btn ghost btnXs" type="button">清空</button>
+            </span>
+          </div>
+          <div class="rightTabBody">
+            <div id="rightTabLog" class="rightTabPane active">
+              <div class="logScroll">
+                <div id="logBox" class="logBody"></div>
+              </div>
+            </div>
+            <div id="rightTabFiles" class="rightTabPane">
+              <div class="fileTabToolbar">
+                <select id="fileSelect" class="fileSelect">
+                  <option value="">加载文件列表…</option>
+                </select>
+                <div class="fileViewToggle">
+                  <button type="button" id="filePreviewBtn" class="btn btnXs primary">预览</button>
+                  <button type="button" id="fileSourceBtn" class="btn btnXs ghost">源码</button>
+                </div>
+              </div>
+              <div id="filePreviewBox" class="filePreviewScroll mdPreview"></div>
+              <pre id="fileSourceBox" class="filePreviewScroll fileSource hidden"></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel leftTabPanel testMainPanel">
+          <div class="stripHead leftTabHead">
+            <div class="leftTabs">
+              <button type="button" class="tabBtn active" data-left-tab="answer">回答</button>
+              <button type="button" class="tabBtn" data-left-tab="route">路由</button>
+            </div>
+          </div>
+          <div class="leftTabBody">
+            <div class="leftContentRow">
+              <div class="leftTabPanesWrap">
+                <div id="leftTabAnswer" class="leftTabPane active">
+                  <div class="answerLayout">
+                    <div class="answerMain">
+                      <div class="answersScroll">
+                        <div id="answersBox" class="answersBody">
+                          <div class="empty">尚无回答。</div>
+                        </div>
+                      </div>
+                    </div>
+                    <aside id="resourcesBox" class="resourcesBox">
+                      <div class="resourcesHead">resources</div>
+                      <div id="resourcesContent" class="resourcesContent">
+                        <div class="empty">等待回答…</div>
+                      </div>
+                    </aside>
+                  </div>
+                </div>
+                <div id="leftTabRoute" class="leftTabPane">
+                  <div class="routeScroll">
+                    <div id="routeBox" class="routeBody">
+                      <div class="empty">等待提问…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <aside id="timingAside" class="timingAside">
+                <div class="timingAsideHead">消耗时间</div>
+                <div id="timingPanel" class="timingPanel">
+                  <div class="empty">提问后显示</div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <main id="viewBatch" class="viewPane hidden">
+      <div class="batchLayout">
+        <section class="panel batchListPanel">
+          <div class="stripHead">
+            <span>测试用例</span>
+            <span class="headActions">
+              <button id="batchRunSelectedBtn" class="btn ghost btnXs" type="button">批量测试</button>
+              <button id="batchRunAllBtn" class="btn ghost btnXs" type="button">测试全部</button>
+              <button id="batchAddBtn" class="btn primary btnXs" type="button">新增问题</button>
+            </span>
+          </div>
+          <div id="batchQuestionList" class="batchQuestionList scrollInner">
+            <div class="empty">加载中…</div>
+          </div>
+        </section>
+
+        <section class="panel batchDetailPanel">
+          <div class="stripHead batchDetailHead">
+            <span id="batchDetailTitle" class="batchDetailTitle">请选择左侧问题</span>
+            <span class="headActions">
+              <span id="batchDetailAccuracy" class="batchAccuracy">—</span>
+              <button id="batchRerunBtn" class="btn ghost btnXs hidden" type="button">重新运行</button>
+            </span>
+          </div>
+          <div class="batchCompare">
+            <div class="batchCompareCol">
+              <div class="batchCompareLabel">模型回答</div>
+              <div id="batchModelAnswer" class="batchCompareBody mdPreview scrollInner">
+                <div class="empty">未运行</div>
+              </div>
+            </div>
+            <div class="batchCompareCol">
+              <div class="batchCompareLabel batchCompareLabelRow">
+                <span>参考回答</span>
+                <button id="batchReferenceSaveBtn" class="btn ghost btnXs hidden" type="button">保存</button>
+              </div>
+              <textarea
+                id="batchReferenceEditor"
+                class="batchReferenceEditor hidden"
+                spellcheck="false"
+                placeholder="编辑参考回答…"
+              ></textarea>
+              <div id="batchReferenceAnswer" class="batchCompareBody mdPreview scrollInner">
+                <div class="empty">—</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel batchFilePanel">
+          <div class="stripHead">文件</div>
+          <div class="batchFileBody">
+            <div class="fileTabToolbar">
+              <select id="batchFileSelect" class="fileSelect">
+                <option value="">加载文件列表…</option>
+              </select>
+              <div class="fileViewToggle">
+                <button type="button" id="batchFilePreviewBtn" class="btn btnXs primary">预览</button>
+                <button type="button" id="batchFileSourceBtn" class="btn btnXs ghost">源码</button>
+              </div>
+            </div>
+            <div id="batchFilePreviewBox" class="filePreviewScroll mdPreview"></div>
+            <pre id="batchFileSourceBox" class="filePreviewScroll fileSource hidden"></pre>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div id="batchAddModal" class="batchModal hidden">
+      <div class="batchModalBackdrop" data-batch-modal-close></div>
+      <div class="batchModalCard">
+        <div class="batchModalHead">
+          <button id="batchModalBackBtn" class="btn ghost btnXs" type="button">← 返回</button>
+          <span class="batchModalTitle">批量新增</span>
+        </div>
+        <div class="batchModalBody">
+          <div class="batchModalCol">
+            <div class="batchModalColTitle">新增问题</div>
+            <label class="batchFormLabel">问题</label>
+            <textarea id="batchFormQuestion" class="batchFormInput" rows="3" placeholder="输入测试问题…"></textarea>
+            <label class="batchFormLabel">参考回答</label>
+            <textarea id="batchFormReference" class="batchFormInput" rows="8" placeholder="输入参考回答…"></textarea>
+            <button id="batchFormSaveBtn" class="btn primary btnXs" type="button">保存</button>
+          </div>
+          <div class="batchModalCol">
+            <div class="batchModalColTitle">* 支持 JSON 格式和 MD 格式</div>
+            <textarea
+              id="batchBulkImport"
+              class="batchBulkInput"
+              rows="16"
+              placeholder='JSON: [{"question":"...","reference_answer":"..."}]&#10;MD: ## Q: 问题&#10;A: 回答'
+            ></textarea>
+            <button id="batchBulkImportBtn" class="btn primary btnXs" type="button">导入</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main id="viewManage" class="viewPane hidden">
+      <div class="manageLayout">
+        <section class="panel manageRoutePanel">
+          <div class="stripHead">
+            <span>路由管理</span>
+            <span class="headActions">
+              <button id="selectAllAgentsBtn" class="btn ghost btnXs" type="button">全选</button>
+              <button id="addAgentBtn" class="btn primary btnXs" type="button">新增模型</button>
+              <div class="dropdownWrap">
+                <button id="manageSelectedBtn" class="btn btnXs" type="button">管理所选</button>
+                <div id="manageAgentMenu" class="dropdownMenu hidden">
+                  <button type="button" data-manage-action="init">初始化</button>
+                  <button type="button" data-manage-action="rename">重命名</button>
+                  <button type="button" data-manage-action="delete">删除</button>
+                </div>
+              </div>
+              <button id="reloadAgentsBtn" class="btn ghost btnXs" type="button">刷新</button>
+            </span>
+          </div>
+          <div class="stripBody scrollInner">
+            <div id="routeAgentGrid" class="routeAgentGrid"></div>
+          </div>
+        </section>
+
+        <section class="panel manageFilePanel">
+          <div class="stripHead manageFileHead">
+            <span>文件管理</span>
+            <span class="headActions">
+              <span id="manageFileRootLabel" class="fileRootLabel">files/</span>
+            </span>
+          </div>
+          <div class="manageFileLayout">
+            <aside class="fileTreePanel">
+              <div class="stripHead">文件夹</div>
+              <div id="fileTree" class="fileTree scrollInner"></div>
+            </aside>
+            <div class="editorPanel">
+              <div class="editorToolbar">
+                <div id="editorTabs" class="editorTabs"></div>
+                <span class="headActions">
+                  <button type="button" id="editorPreviewBtn" class="btn btnXs ghost">预览</button>
+                  <button type="button" id="editorSaveBtn" class="btn primary btnXs" type="button">保存</button>
+                </span>
+              </div>
+              <textarea id="editorTextarea" class="editorTextarea" spellcheck="false"></textarea>
+              <div id="editorPreviewBox" class="editorPreview mdPreview scrollInner hidden"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div id="contextMenu" class="contextMenu hidden">
+      <button type="button" data-ctx="new">新建文件</button>
+      <button type="button" data-ctx="rename">重命名</button>
+      <button type="button" data-ctx="delete">删除</button>
+    </div>
+
+    <script src="/static/common.js?v=29"></script>
+    <script src="/static/filePreview.js?v=29"></script>
+    <script src="/static/answerRender.js?v=29"></script>
+    <script src="/static/test.js?v=29"></script>
+    <script src="/static/manage.js?v=29"></script>
+    <script src="/static/batch.js?v=29"></script>
+  </body>
+</html>
