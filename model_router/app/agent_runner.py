@@ -413,7 +413,7 @@ def summarize_agent_prepare(
 def _empty_knowledge_answer(agent_id: str) -> str:
     return (
         "当前 agent 未配置知识内容。\n\n"
-        f"请在 files/agent_{agent_id}/ 下放置 knowledge.md（或任意 .md），"
+        f"请在 files/agent_{agent_id}/ 下放置任意 .md，"
         "或在 agents.json 配置 knowledge 字段后重新初始化。"
     )
 

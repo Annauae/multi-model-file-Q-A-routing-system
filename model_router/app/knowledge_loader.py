@@ -625,10 +625,11 @@ def resolve_agent_knowledge(
     Always reads from files/agent_{id}/ (files_dir is ignored).
 
     Priority:
-    1. files/agent_{id}/knowledge.md
-    2. other single .md in that folder (non-recursive; knowledge.md excluded from scan loop)
-    3. .pdf in that folder (PyMuPDF plain-text extraction on read; no .md conversion)
-    4. configured_knowledge from agents.json (skipped when require_file_knowledge=True)
+    1. first .md in that folder (non-recursive, sorted by filename)
+    2. .pdf in that folder (PyMuPDF plain-text extraction on read)
+    3. configured_knowledge from agents.json (skipped when require_file_knowledge=True)
+
+    Skipped .md: prompt.md, *.extracted.md, hidden files.
     """
     configured = (configured_knowledge or "").strip()
     dir_path = _resolve_dir(project_root, agent_files_dir(agent_id))
@@ -636,9 +637,6 @@ def resolve_agent_knowledge(
     candidates: list[tuple[str, Path]] = []
     pdf_paths: list[Path] = []
     if dir_path.is_dir():
-        knowledge_md = dir_path / "knowledge.md"
-        if knowledge_md.is_file():
-            candidates.append((f"files/agent_{agent_id}/knowledge.md", knowledge_md))
         for p in sorted(dir_path.iterdir(), key=lambda x: x.name.lower()):
             if not p.is_file():
                 continue
@@ -646,7 +644,7 @@ def resolve_agent_knowledge(
                 continue
             if p.suffix.lower() != ".md":
                 continue
-            if p.name.lower() in {"knowledge.md", "prompt.md"}:
+            if p.name.lower() == "prompt.md":
                 continue
             if p.name.lower().endswith(".extracted.md"):
                 continue

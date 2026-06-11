@@ -828,7 +828,7 @@ def create_app() -> FastAPI:
             store.reset_agent_to_created(agent_id=agent_id)
             raise HTTPException(
                 status_code=400,
-                detail="知识内容为空，已同步清空 agents.json 中该 agent 的缓存。请在 files/agent_{id}/ 下放置 knowledge.md（或任意 .md / .pdf）后重新初始化。".format(
+                detail="知识内容为空，已同步清空 agents.json 中该 agent 的缓存。请在 files/agent_{id}/ 下放置任意 .md 或 .pdf 后重新初始化。".format(
                     id=agent_id
                 ),
             )

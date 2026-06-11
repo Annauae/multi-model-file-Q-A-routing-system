@@ -59,7 +59,7 @@ def generate_route_questions_and_summaries(
     body = (knowledge or "").strip()
     if not body:
         raise LLMError(
-            "初始化失败：知识内容为空。请在 files/agent_{id}/ 下放置 knowledge.md（或任意 .md / .pdf）。"
+            "初始化失败：知识内容为空。请在 files/agent_{id}/ 下放置任意 .md 或 .pdf。"
         )
 
     payload = {

@@ -81,6 +81,23 @@ def test_md_still_takes_priority_over_pdf(tmp_path: Path) -> None:
     assert source == "files/agent_4/knowledge.md"
 
 
+def test_any_md_filename_is_used(tmp_path: Path) -> None:
+    data_root = tmp_path / "data_root"
+    agent_dir = data_root / "files" / "agent_4"
+    agent_dir.mkdir(parents=True)
+    (agent_dir / "knowledge_p1-6.md").write_text("from custom md", encoding="utf-8")
+    _make_pdf(agent_dir / "guide.pdf", text="from pdf")
+
+    text, source, _ = resolve_agent_knowledge(
+        project_root=data_root,
+        agent_id="4",
+        configured_knowledge="",
+        max_chars=100000,
+    )
+    assert text == "from custom md"
+    assert source == "files/agent_4/knowledge_p1-6.md"
+
+
 def test_hidden_extracted_md_is_ignored_when_knowledge_md_missing(tmp_path: Path) -> None:
     data_root = tmp_path / "data_root"
     agent_dir = data_root / "files" / "agent_4"
