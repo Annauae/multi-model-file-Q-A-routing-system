@@ -37,7 +37,11 @@ def _make_settings(tmp_path: Path) -> Settings:
         max_agent_workers=8,
         data_root=data_root,
         agents_config_path=data_root / "config" / "agents.json",
+        routers_config_path=data_root / "config" / "routers.json",
+        batch_tests_config_path=data_root / "config" / "batch_tests.json",
         files_root=data_root / "files",
+        answer_with_images=False,
+        max_answer_images=0,
     )
 
 

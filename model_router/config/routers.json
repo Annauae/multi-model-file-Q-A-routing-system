@@ -1,0 +1,68 @@
+{
+  "1": {
+    "name": "相机",
+    "router_prompt": "",
+    "status": "initialized",
+    "agent_ids": [
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "22",
+      "23",
+      "24",
+      "模型1"
+    ],
+    "source_files": [
+      "files/root/ZfcRGPRC_(Sc)12.pdf"
+    ],
+    "split_ranges": [],
+    "created_at": "2026-06-12T00:00:00Z",
+    "updated_at": "2026-06-15T08:31:46Z"
+  },
+  "3": {
+    "name": "相机_2",
+    "router_prompt": "",
+    "status": "initialized",
+    "agent_ids": [
+      "1",
+      "2",
+      "3"
+    ],
+    "source_files": [
+      "files/root/ZfcRGPRC_(Sc)12-33-706.pdf"
+    ],
+    "split_ranges": [
+      [
+        1,
+        4
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        7,
+        10
+      ]
+    ],
+    "created_at": "2026-06-15T07:52:43Z",
+    "updated_at": "2026-06-15T09:15:14Z"
+  }
+}

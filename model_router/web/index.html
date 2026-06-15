@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>模型路由控制台</title>
-    <link rel="stylesheet" href="/static/styles.css?v=27" />
+    <link rel="stylesheet" href="/static/styles.css?v=40" />
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
   </head>
@@ -28,6 +28,9 @@
           <div class="stripBody qBody">
             <textarea id="question" rows="3" placeholder="输入问题… Ctrl+Enter 提问"></textarea>
             <div class="qActions">
+              <label class="routerSelectLabel">选择路由
+                <select id="routerSelect" class="routerSelect"></select>
+              </label>
               <button id="askBtn" class="btn primary btnXs" type="button">提问</button>
               <button id="clearBtn" class="btn ghost btnXs" type="button">清空</button>
               <button id="randomQuestionBtn" class="btn ghost btnXs" type="button">随机问题</button>
@@ -166,6 +169,11 @@
         <section class="panel batchFilePanel">
           <div class="stripHead">文件</div>
           <div class="batchFileBody">
+            <div class="batchFileRouterRow">
+              <label class="routerSelectLabel">选择路由
+                <select id="batchFileRouterSelect" class="routerSelect"></select>
+              </label>
+            </div>
             <div class="fileTabToolbar">
               <select id="batchFileSelect" class="fileSelect">
                 <option value="">加载文件列表…</option>
@@ -192,6 +200,8 @@
         <div class="batchModalBody">
           <div class="batchModalCol">
             <div class="batchModalColTitle">新增问题</div>
+            <label class="batchFormLabel">总 Agent</label>
+            <select id="batchRouterSelect" class="batchFormInput"></select>
             <label class="batchFormLabel">问题</label>
             <textarea id="batchFormQuestion" class="batchFormInput" rows="3" placeholder="输入测试问题…"></textarea>
             <label class="batchFormLabel">参考回答</label>
@@ -213,53 +223,100 @@
     </div>
 
     <main id="viewManage" class="viewPane hidden">
-      <div class="manageLayout">
-        <section class="panel manageRoutePanel">
+      <div class="manageFourCol">
+        <section class="panel manageCol manageRouterCol">
           <div class="stripHead">
-            <span>路由管理</span>
-            <span class="headActions">
-              <button id="selectAllAgentsBtn" class="btn ghost btnXs" type="button">全选</button>
-              <button id="addAgentBtn" class="btn primary btnXs" type="button">新增模型</button>
-              <div class="dropdownWrap">
-                <button id="manageSelectedBtn" class="btn btnXs" type="button">管理所选</button>
-                <div id="manageAgentMenu" class="dropdownMenu hidden">
-                  <button type="button" data-manage-action="init">初始化</button>
-                  <button type="button" data-manage-action="rename">重命名</button>
-                  <button type="button" data-manage-action="delete">删除</button>
+            <span>总 Agent</span>
+            <span class="headActions headDropdowns">
+              <div class="headDropdown">
+                <button type="button" class="btn ghost btnXs dropdownToggle" aria-haspopup="true">操作 ▾</button>
+                <div class="dropdownMenu hidden" role="menu">
+                  <button type="button" class="dropdownItem" data-router-action="add">新增</button>
+                  <button type="button" class="dropdownItem" data-router-action="rename">重命名</button>
+                  <button type="button" class="dropdownItem" data-router-action="delete">删除</button>
+                  <button type="button" class="dropdownItem" data-router-action="refresh">刷新</button>
                 </div>
               </div>
-              <button id="reloadAgentsBtn" class="btn ghost btnXs" type="button">刷新</button>
             </span>
           </div>
-          <div class="stripBody scrollInner">
-            <div id="routeAgentGrid" class="routeAgentGrid"></div>
+          <div id="routerList" class="manageList scrollInner"></div>
+        </section>
+
+        <section class="panel manageCol manageSubCol">
+          <div class="stripHead">
+            <span>子 Agent</span>
+            <span class="headActions headDropdowns">
+              <div class="headDropdown">
+                <button type="button" class="btn ghost btnXs dropdownToggle" aria-haspopup="true">操作 ▾</button>
+                <div class="dropdownMenu hidden" role="menu">
+                  <button type="button" class="dropdownItem" data-sub-action="add">新增</button>
+                  <button type="button" class="dropdownItem" data-sub-action="rename">重命名</button>
+                  <button type="button" class="dropdownItem" data-sub-action="delete">删除</button>
+                  <button type="button" class="dropdownItem" data-sub-action="refresh">刷新</button>
+                </div>
+              </div>
+              <div class="headDropdown">
+                <button type="button" class="btn ghost btnXs dropdownToggle" aria-haspopup="true">选择 ▾</button>
+                <div class="dropdownMenu hidden" role="menu">
+                  <button type="button" class="dropdownItem" data-sub-action="toggleSelect">多选模式</button>
+                  <button type="button" class="dropdownItem" data-sub-action="selectAll">全选</button>
+                  <button type="button" class="dropdownItem" data-sub-action="selectNone">取消全选</button>
+                </div>
+              </div>
+              <div class="headDropdown">
+                <button type="button" class="btn primary btnXs dropdownToggle" aria-haspopup="true">初始化 ▾</button>
+                <div class="dropdownMenu hidden" role="menu">
+                  <button type="button" class="dropdownItem" data-sub-action="initCurrent">初始化当前</button>
+                  <button type="button" class="dropdownItem" data-sub-action="initSelected">初始化选中</button>
+                  <button type="button" class="dropdownItem" data-sub-action="initAll">全部初始化</button>
+                </div>
+              </div>
+            </span>
+          </div>
+          <div id="subAgentList" class="manageList scrollInner"></div>
+        </section>
+
+        <section class="panel manageCol manageMainCol">
+          <div id="routerOpsPane" class="manageMainPane">
+            <div class="stripHead">总 Agent 操作</div>
+            <div class="routerOpsBody scrollInner">
+              <div class="splitRangesHead">切分页码（始页 - 尾页）</div>
+              <div id="splitRangesList" class="splitRangesList"></div>
+              <button id="addSplitRangeBtn" class="btn ghost btnXs" type="button">+ 添加切分页</button>
+              <div class="splitActions">
+                <label class="checkLabel"><input type="checkbox" id="autoInitAfterSplit" /> 完成后自动初始化</label>
+                <button id="runSplitBtn" class="btn primary btnXs" type="button">开始切分</button>
+              </div>
+              <div id="splitProgressBox" class="splitProgressBox hidden">
+                <div id="splitProgressText" class="splitProgressText">—</div>
+              </div>
+              <div class="uploadRow">
+                <label class="btn btnXs">上传文件 (markdown, pdf)
+                  <input id="routerUploadInput" type="file" accept=".md,.pdf" hidden />
+                </label>
+                <span id="routerSourceLabel" class="muted"></span>
+              </div>
+            </div>
+          </div>
+          <div id="subMdPane" class="manageMainPane hidden">
+            <div class="editorToolbar">
+              <div id="editorTabs" class="editorTabs"></div>
+              <span class="headActions">
+                <button type="button" id="editorPreviewBtn" class="btn btnXs ghost">预览</button>
+                <button type="button" id="editorSaveBtn" class="btn primary btnXs">保存</button>
+              </span>
+            </div>
+            <textarea id="editorTextarea" class="editorTextarea" spellcheck="false"></textarea>
+            <div id="editorPreviewBox" class="editorPreview mdPreview scrollInner hidden"></div>
           </div>
         </section>
 
-        <section class="panel manageFilePanel">
-          <div class="stripHead manageFileHead">
-            <span>文件管理</span>
-            <span class="headActions">
-              <span id="manageFileRootLabel" class="fileRootLabel">files/</span>
-            </span>
+        <section class="panel manageCol managePromptCol">
+          <div class="stripHead">
+            <span id="promptPaneTitle">提示词</span>
+            <button id="savePromptBtn" class="btn primary btnXs" type="button">保存</button>
           </div>
-          <div class="manageFileLayout">
-            <aside class="fileTreePanel">
-              <div class="stripHead">文件夹</div>
-              <div id="fileTree" class="fileTree scrollInner"></div>
-            </aside>
-            <div class="editorPanel">
-              <div class="editorToolbar">
-                <div id="editorTabs" class="editorTabs"></div>
-                <span class="headActions">
-                  <button type="button" id="editorPreviewBtn" class="btn btnXs ghost">预览</button>
-                  <button type="button" id="editorSaveBtn" class="btn primary btnXs" type="button">保存</button>
-                </span>
-              </div>
-              <textarea id="editorTextarea" class="editorTextarea" spellcheck="false"></textarea>
-              <div id="editorPreviewBox" class="editorPreview mdPreview scrollInner hidden"></div>
-            </div>
-          </div>
+          <textarea id="promptEditor" class="promptEditor scrollInner" spellcheck="false" placeholder="路由或回答提示词…"></textarea>
         </section>
       </div>
     </main>
@@ -270,11 +327,11 @@
       <button type="button" data-ctx="delete">删除</button>
     </div>
 
-    <script src="/static/common.js?v=29"></script>
-    <script src="/static/filePreview.js?v=29"></script>
-    <script src="/static/answerRender.js?v=29"></script>
-    <script src="/static/test.js?v=29"></script>
-    <script src="/static/manage.js?v=29"></script>
-    <script src="/static/batch.js?v=29"></script>
+    <script src="/static/common.js?v=40"></script>
+    <script src="/static/filePreview.js?v=40"></script>
+    <script src="/static/answerRender.js?v=40"></script>
+    <script src="/static/test.js?v=40"></script>
+    <script src="/static/manage.js?v=40"></script>
+    <script src="/static/batch.js?v=40"></script>
   </body>
 </html>

@@ -598,8 +598,15 @@ def extract_knowledge_snippet(*, knowledge: str, line_start: int, line_end: int,
     return chunk
 
 
-def agent_files_dir(agent_id: str) -> str:
-    """Each agent is hard-bound to files/agent_{id}/ on disk."""
+def agent_files_dir(router_id: str, agent_id: str) -> str:
+    """Deprecated alias — import from app.paths instead."""
+    from .paths import agent_files_dir as _afd
+
+    return _afd(router_id, agent_id)
+
+
+def legacy_agent_files_dir(agent_id: str) -> str:
+    """Pre-migration layout: files/agent_{id}/."""
     return f"files/agent_{agent_id}"
 
 
@@ -630,29 +637,42 @@ def resolve_agent_knowledge(
     3. configured_knowledge from agents.json (skipped when require_file_knowledge=True)
 
     Skipped .md: prompt.md, *.extracted.md, hidden files.
+
+    Search order:
+    1. files/agent_{id}/md/*.md (preferred)
+    2. files/agent_{id}/*.md (legacy root)
+    3. .pdf in agent folder
+    4. configured_knowledge from agents.json
     """
     configured = (configured_knowledge or "").strip()
-    dir_path = _resolve_dir(project_root, agent_files_dir(agent_id))
+    rel_dir = (files_dir or "").strip() or legacy_agent_files_dir(agent_id)
+    dir_path = _resolve_dir(project_root, rel_dir)
 
     candidates: list[tuple[str, Path]] = []
     pdf_paths: list[Path] = []
     if dir_path.is_dir():
-        for p in sorted(dir_path.iterdir(), key=lambda x: x.name.lower()):
-            if not p.is_file():
+        search_dirs = [dir_path / "md", dir_path]
+        seen_paths: set[Path] = set()
+        for search in search_dirs:
+            if not search.is_dir():
                 continue
-            if p.name.startswith("."):
-                continue
-            if p.suffix.lower() != ".md":
-                continue
-            if p.name.lower() == "prompt.md":
-                continue
-            if p.name.lower().endswith(".extracted.md"):
-                continue
-            try:
-                rel = p.relative_to(project_root).as_posix()
-            except Exception:
-                rel = str(p)
-            candidates.append((rel, p))
+            for p in sorted(search.iterdir(), key=lambda x: x.name.lower()):
+                if not p.is_file() or p in seen_paths:
+                    continue
+                if p.name.startswith("."):
+                    continue
+                if p.suffix.lower() != ".md":
+                    continue
+                if p.name.lower() == "prompt.md":
+                    continue
+                if p.name.lower().endswith(".extracted.md"):
+                    continue
+                seen_paths.add(p)
+                try:
+                    rel = p.relative_to(project_root).as_posix()
+                except Exception:
+                    rel = str(p)
+                candidates.append((rel, p))
         pdf_paths = list_agent_pdf_files(agent_dir=dir_path)
 
     text = ""
@@ -1304,16 +1324,29 @@ def resolve_knowledge_asset_path(*, project_root: Path, files_dir: str, asset_re
     base = _resolve_dir(project_root, files_dir) if files_dir else project_root
 
     candidate_paths: list[Path] = []
+    ref_name = Path(ref.replace("\\", "/")).name
     for raw in (ref, ref.lstrip("/")):
         try:
             candidate_paths.append((base / raw).resolve())
         except Exception:
             pass
-        if raw.startswith("assets/"):
+        if raw.startswith("assets/") or raw.startswith("../assets/"):
             try:
-                candidate_paths.append((files_root / raw).resolve())
+                candidate_paths.append((base / "assets" / ref_name).resolve())
             except Exception:
                 pass
+        if raw.startswith("assets/"):
+            try:
+                candidate_paths.append((base / raw).resolve())
+            except Exception:
+                pass
+        # bare filename → assets/ under agent folder
+        if "/" not in raw.replace("\\", "/"):
+            for sub in ("assets", "assets/png"):
+                try:
+                    candidate_paths.append((base / sub / raw).resolve())
+                except Exception:
+                    pass
 
     seen: set[Path] = set()
     for resolved in candidate_paths:

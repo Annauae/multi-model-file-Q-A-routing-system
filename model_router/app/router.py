@@ -75,10 +75,13 @@ def _pick_single_target(targets: List[RouterTargetAgent]) -> List[RouterTargetAg
     return [chosen]
 
 
-def _eligible_agents(agents: Dict[str, Dict]) -> Dict[str, Dict]:
+def _eligible_agents(agents: Dict[str, Dict], router_id: str | None = None) -> Dict[str, Dict]:
     eligible: Dict[str, Dict] = {}
+    rid = (router_id or "").strip()
     for agent_id, cfg in agents.items():
         if not isinstance(cfg, dict):
+            continue
+        if rid and str(cfg.get("router_id", "")).strip() != rid:
             continue
         if cfg.get("status") != "initialized":
             continue
@@ -89,7 +92,17 @@ def _eligible_agents(agents: Dict[str, Dict]) -> Dict[str, Dict]:
     return eligible
 
 
-def _build_route_messages(*, question: str, eligible_agents: Dict[str, Dict]) -> List[ChatMessage]:
+def _router_system_prompt(router_prompt: str = "") -> str:
+    custom = (router_prompt or "").strip()
+    return custom if custom else ROUTER_SYSTEM_PROMPT_ZH
+
+
+def _build_route_messages(
+    *,
+    question: str,
+    eligible_agents: Dict[str, Dict],
+    router_prompt: str = "",
+) -> List[ChatMessage]:
     candidates: List[Dict] = []
     for agent_id, cfg in eligible_agents.items():
         candidates.append(
@@ -101,16 +114,21 @@ def _build_route_messages(*, question: str, eligible_agents: Dict[str, Dict]) ->
         )
     user_payload = {"question": question, "candidates": candidates}
     return [
-        ChatMessage(role="system", content=ROUTER_SYSTEM_PROMPT_ZH),
+        ChatMessage(role="system", content=_router_system_prompt(router_prompt)),
         ChatMessage(role="user", content=json.dumps(user_payload, ensure_ascii=False)),
     ]
 
 
-def _no_agents_result() -> RouterResult:
+def _no_agents_result(router_id: str = "") -> RouterResult:
+    rid = (router_id or "").strip()
+    if rid:
+        msg = f"总 Agent「{rid}」下没有已初始化的子 Agent。请先切分/上传知识并初始化。"
+    else:
+        msg = "当前没有已初始化的 agent。请先创建 agent、注册/上传文件，并调用 /agents/{agent_id}/initialize 生成 route_questions。"
     return RouterResult(
         target_agents=[],
         need_clarification=True,
-        clarification_question="当前没有已初始化的 agent。请先创建 agent、注册/上传文件，并调用 /agents/{agent_id}/initialize 生成 route_questions。",
+        clarification_question=msg,
     )
 
 
@@ -165,23 +183,38 @@ def route_question(
     agents: Dict[str, Dict],
     llm: LLMClient,
     router_model: str,
+    router_id: str = "",
+    router_prompt: str = "",
 ) -> RouterResult:
-    eligible_agents = get_eligible_agents(agents)
+    eligible_agents = get_eligible_agents(agents, router_id=router_id)
     if not eligible_agents:
-        return no_agents_router_result()
+        return no_agents_router_result(router_id=router_id)
 
-    messages = build_route_messages(question=question, eligible_agents=eligible_agents)
+    messages = build_route_messages(
+        question=question,
+        eligible_agents=eligible_agents,
+        router_prompt=router_prompt,
+    )
     raw = llm.chat(model=router_model, messages=messages)
     return parse_route_raw(raw=raw, eligible_agents=eligible_agents)
 
 
-def get_eligible_agents(agents: Dict[str, Dict]) -> Dict[str, Dict]:
-    return _eligible_agents(agents)
+def get_eligible_agents(agents: Dict[str, Dict], router_id: str | None = None) -> Dict[str, Dict]:
+    return _eligible_agents(agents, router_id=router_id)
 
 
-def no_agents_router_result() -> RouterResult:
-    return _no_agents_result()
+def no_agents_router_result(router_id: str = "") -> RouterResult:
+    return _no_agents_result(router_id=router_id)
 
 
-def build_route_messages(*, question: str, eligible_agents: Dict[str, Dict]) -> List[ChatMessage]:
-    return _build_route_messages(question=question, eligible_agents=eligible_agents)
+def build_route_messages(
+    *,
+    question: str,
+    eligible_agents: Dict[str, Dict],
+    router_prompt: str = "",
+) -> List[ChatMessage]:
+    return _build_route_messages(
+        question=question,
+        eligible_agents=eligible_agents,
+        router_prompt=router_prompt,
+    )

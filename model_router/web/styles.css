@@ -596,7 +596,167 @@ body {
 .thumb img{width:100%;display:block;max-height:180px;object-fit:contain;background:rgba(0,0,0,.2)}
 .cap{font-size:11px;line-height:1.45;margin:0 0 4px;color:var(--fg1)}
 
-/* —— 管理页 —— */
+/* —— 管理页四栏 —— */
+.manageFourCol {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 165px 175px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+  overflow: hidden;
+}
+.manageCol {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+.manageCol .stripHead {
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 32px;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+.manageCol .headActions {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.headDropdowns {
+  gap: 3px;
+}
+.headDropdown {
+  position: relative;
+  display: inline-block;
+}
+.dropdownToggle {
+  min-width: 52px;
+  white-space: nowrap;
+}
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 108px;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 20, 28, 0.98);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dropdownMenu.hidden {
+  display: none;
+}
+.dropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg0);
+  font-size: 11px;
+  cursor: pointer;
+}
+.dropdownItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dropdownItem.activeToggle {
+  color: var(--acc);
+}
+.manageSubCheck {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 2px;
+  cursor: pointer;
+}
+.manageSubCheck input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  cursor: pointer;
+}
+.manageListItem.withSubCheck {
+  gap: 4px;
+}
+.manageListItem .manageSubLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.manageList {
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: auto;
+}
+.manageListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(0,0,0,.22);
+  color: var(--fg0);
+  font-size: 11px;
+  cursor: pointer;
+}
+.manageListItem:hover { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.03); }
+.manageListItem.active { border-color: var(--accent); background: rgba(99,102,241,.12); }
+.manageMainCol { min-height: 0; }
+.manageMainPane { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.routerOpsBody { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.splitRangesList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.splitRangeRow { display: flex; align-items: center; gap: 6px; }
+.splitRangeRow input { width: 64px; }
+.splitActions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.splitProgressBox {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--fg1);
+  max-height: 120px;
+  overflow-y: auto;
+}
+.splitProgressText { white-space: pre-wrap; word-break: break-word; }
+.uploadRow { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.promptEditor { flex: 1; min-height: 0; width: 100%; resize: none; border: none; background: rgba(0,0,0,.25); color: var(--fg0); padding: 10px; font-family: var(--mono); font-size: 11px; }
+.routerSelectLabel { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--fg1); }
+.routerSelect { min-width: 120px; max-width: 180px; font-size: 11px; }
+.checkLabel { font-size: 11px; color: var(--fg1); display: inline-flex; align-items: center; gap: 4px; }
+.muted { font-size: 10px; color: var(--fg2); }
+
+/* —— 管理页（旧布局保留部分） —— */
 .manageLayout {
   flex: 1;
   min-height: 0;
@@ -894,6 +1054,27 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: auto;
+}
+.batchRouterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.batchRouterGroup:last-child {
+  margin-bottom: 0;
+}
+.batchRouterGroupHead {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg1);
+  padding: 2px 6px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.batchFileRouterRow {
+  padding: 6px 8px 0;
+  flex-shrink: 0;
 }
 .batchQuestionItem {
   width: 100%;

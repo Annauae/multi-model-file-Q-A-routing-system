@@ -19,7 +19,8 @@ function batchKnowledgeSource(item) {
   if (!item) return "";
   if (item.knowledge_source) return item.knowledge_source;
   const aid = (item.last_agent_id || "").trim();
-  return aid ? `files/agent_${aid}/knowledge.md` : "";
+  const rid = String(item.router_id || "").trim();
+  return aid && rid ? `files/router_${rid}/agent_${aid}/md` : "";
 }
 
 function renderBatchAnswerHtml(text, sourceFile) {
@@ -32,6 +33,30 @@ function getBatchCheckedIds() {
   return Array.from(batchCheckedIds);
 }
 
+function batchRouterSortKey(a, b) {
+  const na = Number(a);
+  const nb = Number(b);
+  if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+  return String(a).localeCompare(String(b));
+}
+
+function renderBatchQuestionItem(item) {
+  const selected = item.id === batchSelectedId ? " selected" : "";
+  const running = item.id === batchRunningId ? " running" : "";
+  const checked = batchCheckedIds.has(item.id) ? " checked" : "";
+  const statusClass = item.status === "error" ? "err" : item.status === "running" ? "run" : "ok";
+  return `
+    <div class="batchQuestionItem${selected}${running}" data-batch-id="${escapeHtml(item.id)}">
+      <label class="batchQuestionCheck" title="勾选">
+        <input type="checkbox" class="batchQuestionCheckInput" value="${escapeHtml(item.id)}"${checked} />
+      </label>
+      <button type="button" class="batchQuestionMain">
+        <span class="batchQuestionText">${escapeHtml(batchSummary(item.question))}</span>
+        <span class="batchAccuracy ${statusClass}">${item.id === batchRunningId ? "…" : fmtAccuracy(item.accuracy_percent)}</span>
+      </button>
+    </div>`;
+}
+
 function renderBatchQuestionList() {
   const box = $("#batchQuestionList");
   if (!box) return;
@@ -39,22 +64,21 @@ function renderBatchQuestionList() {
     box.innerHTML = `<div class="empty">暂无测试用例，点击「新增问题」添加。</div>`;
     return;
   }
-  box.innerHTML = batchTests
-    .map((item) => {
-      const selected = item.id === batchSelectedId ? " selected" : "";
-      const running = item.id === batchRunningId ? " running" : "";
-      const checked = batchCheckedIds.has(item.id) ? " checked" : "";
-      const statusClass =
-        item.status === "error" ? "err" : item.status === "running" ? "run" : "ok";
+  const groups = new Map();
+  for (const item of batchTests) {
+    const rid = String(item.router_id || "1").trim() || "1";
+    if (!groups.has(rid)) groups.set(rid, []);
+    groups.get(rid).push(item);
+  }
+  const sortedRids = [...groups.keys()].sort(batchRouterSortKey);
+  box.innerHTML = sortedRids
+    .map((rid) => {
+      const label = routerDisplayName(rid, routersCache[rid]);
+      const items = groups.get(rid) || [];
       return `
-        <div class="batchQuestionItem${selected}${running}" data-batch-id="${escapeHtml(item.id)}">
-          <label class="batchQuestionCheck" title="勾选">
-            <input type="checkbox" class="batchQuestionCheckInput" value="${escapeHtml(item.id)}"${checked} />
-          </label>
-          <button type="button" class="batchQuestionMain">
-            <span class="batchQuestionText">${escapeHtml(batchSummary(item.question))}</span>
-            <span class="batchAccuracy ${statusClass}">${item.id === batchRunningId ? "…" : fmtAccuracy(item.accuracy_percent)}</span>
-          </button>
+        <div class="batchRouterGroup">
+          <div class="batchRouterGroupHead">${escapeHtml(label)}</div>
+          ${items.map(renderBatchQuestionItem).join("")}
         </div>`;
     })
     .join("");
@@ -139,6 +163,7 @@ function getBatchItem(id) {
 }
 
 async function loadBatchTests() {
+  await loadAllCaches();
   const data = await apiJson("/batch/tests");
   batchTests = data.items || [];
   const valid = new Set(batchTests.map((x) => x.id));
@@ -220,6 +245,11 @@ async function runBatchTests(ids, { force = true } = {}) {
 async function selectBatchTest(id, { autoRun = false } = {}) {
   batchSelectedId = id;
   const item = getBatchItem(id);
+  const fileRouterSel = $("#batchFileRouterSelect");
+  if (item?.router_id && fileRouterSel) {
+    fileRouterSel.value = item.router_id;
+    loadAgentFilesList("batch").catch(() => {});
+  }
   renderBatchQuestionList();
   renderBatchDetail(item);
   if (!item || !autoRun) return;
@@ -247,6 +277,9 @@ async function saveBatchReference() {
 }
 
 function openBatchAddModal() {
+  loadRoutersCache()
+    .then(() => populateRouterSelect($("#batchRouterSelect")))
+    .catch(() => {});
   $("#batchAddModal")?.classList.remove("hidden");
   $("#batchFormQuestion")?.focus();
 }
@@ -266,10 +299,15 @@ async function saveBatchFormItem() {
     batchLog("问题和参考回答不能为空", "warn");
     return;
   }
+  const router_id = getSelectedRouterIdFrom($("#batchRouterSelect"));
+  if (!router_id) {
+    batchLog("请选择总 Agent", "warn");
+    return;
+  }
   const data = await apiJson("/batch/tests", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, reference_answer: reference }),
+    body: JSON.stringify({ question, reference_answer: reference, router_id }),
   });
   batchTests.unshift(data.item);
   batchSelectedId = data.item.id;
@@ -288,10 +326,11 @@ async function importBatchBulk() {
     batchLog("导入内容为空", "warn");
     return;
   }
+  const router_id = getSelectedRouterIdFrom($("#batchRouterSelect"));
   const data = await apiJson("/batch/tests/import", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, format: "auto" }),
+    body: JSON.stringify({ text, format: "auto", router_id: router_id || "" }),
   });
   await loadBatchTests();
   if (data.items?.length) {
@@ -315,6 +354,10 @@ function bindBatch() {
     onError: (msg) => batchLog(msg, "err"),
   });
   bindFilePanel("batch");
+
+  $("#batchFileRouterSelect")?.addEventListener("change", () => {
+    refreshBatchFileList();
+  });
 
   $("#batchRunSelectedBtn")?.addEventListener("click", () => {
     const ids = getBatchCheckedIds();
@@ -356,9 +399,19 @@ function bindBatch() {
   });
 }
 
-function batchViewEnter() {
-  loadBatchTests().catch((e) => batchLog(e?.message || e, "err"));
-  loadAgentFilesList("batch").catch(() => {});
+async function batchViewEnter() {
+  try {
+    await loadAllCaches();
+    populateRouterSelect($("#batchFileRouterSelect"));
+    const item = getBatchItem(batchSelectedId);
+    if (item?.router_id && routersCache[item.router_id]) {
+      $("#batchFileRouterSelect").value = item.router_id;
+    }
+    await loadBatchTests();
+    await loadAgentFilesList("batch");
+  } catch (e) {
+    batchLog(e?.message || e, "err");
+  }
 }
 
 bindBatch();

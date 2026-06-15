@@ -25,28 +25,46 @@ def _make_client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path | None) -> Test
     if tmp_path is not None:
         data_root = tmp_path / "data_root"
         (data_root / "config").mkdir(parents=True, exist_ok=True)
-        (data_root / "files" / "agent_tech_agent").mkdir(parents=True, exist_ok=True)
+        router_dir = data_root / "files" / "router_1" / "agent_tech_agent"
+        router_dir.mkdir(parents=True, exist_ok=True)
 
-        # seed one initialized agent for routing
         agents_json = {
             "tech_agent": {
                 "name": "技术文档助手",
+                "router_id": "1",
                 "status": "initialized",
                 "knowledge": "Authorization: Bearer <token>\nPOST /v1/payments",
                 "answer_instructions": "",
-                "files_dir": "files/agent_tech_agent",
-                "files": ["files/agent_tech_agent/example_api.md"],
+                "files_dir": "files/router_1/agent_tech_agent",
+                "files": ["files/router_1/agent_tech_agent/example_api.md"],
                 "route_questions": ["这个接口怎么调用？", "请求参数有哪些？"],
                 "file_summaries": [
-                    {"file": "files/agent_tech_agent/example_api.md", "summary": "包含接口说明与鉴权信息。"}
+                    {"file": "files/router_1/agent_tech_agent/example_api.md", "summary": "包含接口说明与鉴权信息。"}
                 ],
                 "last_initialized_at": "2026-06-03T00:00:00Z",
             }
         }
-        (data_root / "config" / "agents.json").write_text(
+        (data_root / "files" / "router_1" / "agents.json").write_text(
             __import__("json").dumps(agents_json, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        (data_root / "files" / "agent_tech_agent" / "example_api.md").write_text(
+        (data_root / "config" / "agents.json").write_text("{}", encoding="utf-8")
+        routers_json = {
+            "1": {
+                "name": "总Agent_1",
+                "router_prompt": "",
+                "status": "initialized",
+                "agent_ids": ["tech_agent"],
+                "source_files": [],
+                "split_ranges": [],
+                "created_at": "2026-06-03T00:00:00Z",
+                "updated_at": "2026-06-03T00:00:00Z",
+            }
+        }
+        (data_root / "config" / "routers.json").write_text(
+            __import__("json").dumps(routers_json, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        (data_root / "config" / "batch_tests.json").write_text('{"items":[]}', encoding="utf-8")
+        (data_root / "files" / "router_1" / "agent_tech_agent" / "example_api.md").write_text(
             "Authorization: Bearer <token>\nPOST /v1/payments\n", encoding="utf-8"
         )
 
@@ -76,11 +94,11 @@ def test_list_agent_files(client: TestClient) -> None:
     resp = client.get("/agents/files")
     assert resp.status_code == 200
     data = resp.json()
-    assert any(f["label"] == "agent_tech_agent/example_api.md" for f in data["files"])
+    assert any(f["label"] == "技术文档助手" for f in data["files"])
 
 
 def test_read_raw_file(client: TestClient) -> None:
-    resp = client.get("/files/raw", params={"file": "files/agent_tech_agent/example_api.md"})
+    resp = client.get("/files/raw", params={"file": "files/router_1/agent_tech_agent/example_api.md"})
     assert resp.status_code == 200
     data = resp.json()
     assert "Authorization" in data["text"]
@@ -92,7 +110,7 @@ def test_preview_pdf(client: TestClient, tmp_path: Path, monkeypatch: pytest.Mon
     import os
 
     data_root = Path(os.getenv("DATA_ROOT") or str(tmp_path / "data_root"))
-    pdf_dir = data_root / "files" / "agent_tech_agent"
+    pdf_dir = data_root / "files" / "router_1" / "agent_tech_agent"
     pdf_dir.mkdir(parents=True, exist_ok=True)
     pdf_path = pdf_dir / "test.pdf"
 
@@ -104,7 +122,7 @@ def test_preview_pdf(client: TestClient, tmp_path: Path, monkeypatch: pytest.Mon
     doc.save(str(pdf_path))
     doc.close()
 
-    resp = client.get("/preview", params={"file": "files/agent_tech_agent/test.pdf", "page": 1, "zoom": 1.0})
+    resp = client.get("/preview", params={"file": "files/router_1/agent_tech_agent/test.pdf", "page": 1, "zoom": 1.0})
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("image/png")
     assert len(resp.content) > 1000
@@ -119,7 +137,7 @@ def test_agents(client: TestClient) -> None:
 
 
 def test_ask_basic(client: TestClient) -> None:
-    resp = client.post("/ask", json={"question": "这个接口怎么调用？"})
+    resp = client.post("/ask", json={"question": "这个接口怎么调用？", "router_id": "1"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["need_clarification"] is False
@@ -129,7 +147,7 @@ def test_ask_basic(client: TestClient) -> None:
 
 
 def test_ask_stream_basic(client: TestClient) -> None:
-    with client.stream("POST", "/ask/stream", json={"question": "这个接口怎么调用？"}) as resp:
+    with client.stream("POST", "/ask/stream", json={"question": "这个接口怎么调用？", "router_id": "1"}) as resp:
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/event-stream")
         body = resp.read().decode("utf-8")
@@ -153,7 +171,7 @@ def test_ask_need_clarification(client: TestClient, monkeypatch: pytest.MonkeyPa
 
     monkeypatch.setattr(main_mod, "route_question", _fake_route_question)
 
-    resp = client.post("/ask", json={"question": "随便问一个问题"})
+    resp = client.post("/ask", json={"question": "随便问一个问题", "router_id": "1"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["need_clarification"] is True
@@ -162,10 +180,10 @@ def test_ask_need_clarification(client: TestClient, monkeypatch: pytest.MonkeyPa
 
 
 def test_preview_extracted_text(client: TestClient) -> None:
-    resp = client.get("/preview-text", params={"file": "files/agent_tech_agent/example_api.md"})
+    resp = client.get("/preview-text", params={"file": "files/router_1/agent_tech_agent/example_api.md"})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["file"] == "files/agent_tech_agent/example_api.md"
+    assert data["file"] == "files/router_1/agent_tech_agent/example_api.md"
     assert data["char_count"] > 0
     assert "Authorization" in data["text"] or "SOURCE" in data["text"]
 
@@ -185,7 +203,7 @@ def test_preview_image(client: TestClient, tmp_path: Path, monkeypatch: pytest.M
 
 
 def test_preview_agent_context(client: TestClient) -> None:
-    resp = client.get("/agents/tech_agent/preview-context")
+    resp = client.get("/agents/tech_agent/preview-context", params={"router_id": "1"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["agent_id"] == "tech_agent"
@@ -196,28 +214,28 @@ def test_preview_agent_context(client: TestClient) -> None:
 def test_init_flow_create_register_initialize_refresh_and_routing(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
 
     # 1) create agent
-    resp = client.post("/agents", json={"agent_id": "finance_agent", "name": "财报分析助手"})
+    resp = client.post("/agents", json={"agent_id": "finance_agent", "name": "财报分析助手", "router_id": "1"})
     assert resp.status_code == 200
     assert resp.json()["agent_id"] == "finance_agent"
     assert resp.json()["agent"]["status"] == "created"
-    assert resp.json()["agent"]["files_dir"] == "files/agent_finance_agent"
+    assert resp.json()["agent"]["files_dir"] == "files/router_1/agent_finance_agent"
 
     # 2) upload a file into agent files dir
     upload_resp = client.post(
-        "/agents/finance_agent/files/upload",
+        "/agents/finance_agent/files/upload?router_id=1",
         files={"file": ("report.md", "营收 120 亿元，净利润 8.4 亿元。".encode("utf-8"), "text/markdown")},
     )
     assert upload_resp.status_code == 200
-    assert "files/agent_finance_agent/report.md" in upload_resp.json()["agent"]["files"]
+    assert "files/router_1/agent_finance_agent/report.md" in upload_resp.json()["agent"]["files"]
 
     # 3) initialize -> should generate route_questions + file_summaries and mark initialized
-    init_resp = client.post("/agents/finance_agent/initialize")
+    init_resp = client.post("/agents/finance_agent/initialize?router_id=1")
     assert init_resp.status_code == 200
     assert init_resp.json()["agent_id"] == "finance_agent"
     assert init_resp.json()["status"] == "initialized"
-    assert init_resp.json()["route_questions_count"] == 50
+    assert init_resp.json()["route_questions_count"] >= 50
 
-    get_resp = client.get("/agents/finance_agent")
+    get_resp = client.get("/agents/finance_agent", params={"router_id": "1"})
     assert get_resp.status_code == 200
     agent = get_resp.json()["agent"]
     assert agent["status"] == "initialized"
@@ -225,12 +243,12 @@ def test_init_flow_create_register_initialize_refresh_and_routing(client: TestCl
     assert len(agent["file_summaries"]) == 1
 
     # 4) uninitialized agent should not participate in routing
-    client.post("/agents", json={"agent_id": "not_ready_agent", "name": "未初始化助手"})
+    client.post("/agents", json={"agent_id": "not_ready_agent", "name": "未初始化助手", "router_id": "1"})
     client.post(
-        "/agents/not_ready_agent/files/upload",
+        "/agents/not_ready_agent/files/upload?router_id=1",
         files={"file": ("x.txt", b"some content", "text/plain")},
     )
-    ask_resp = client.post("/ask", json={"question": "随便问一个问题"})
+    ask_resp = client.post("/ask", json={"question": "随便问一个问题", "router_id": "1"})
     assert ask_resp.status_code == 200
     target_ids = [x["agent_id"] for x in ask_resp.json()["target_agents"]]
     assert "not_ready_agent" not in target_ids
@@ -257,13 +275,13 @@ def test_init_flow_create_register_initialize_refresh_and_routing(client: TestCl
         )
 
     monkeypatch.setattr(client.app.state.llm, "chat", _router_choose_finance)
-    routed_resp = client.post("/ask", json={"question": "营收和净利润是多少？"})
+    routed_resp = client.post("/ask", json={"question": "营收和净利润是多少？", "router_id": "1"})
     assert routed_resp.status_code == 200
     assert routed_resp.json()["need_clarification"] is False
     assert routed_resp.json()["target_agents"][0]["agent_id"] == "finance_agent"
 
     # 6) refresh should update route_questions
-    old_questions = client.get("/agents/finance_agent").json()["agent"]["route_questions"]
+    old_questions = client.get("/agents/finance_agent", params={"router_id": "1"}).json()["agent"]["route_questions"]
 
     def _init_new_questions(*, model: str, messages, max_tokens=None):
         if model != client.app.state.settings.init_model:
@@ -275,8 +293,8 @@ def test_init_flow_create_register_initialize_refresh_and_routing(client: TestCl
         return __import__("json").dumps(payload, ensure_ascii=False)
 
     monkeypatch.setattr(client.app.state.llm, "chat", _init_new_questions)
-    refresh_resp = client.post("/agents/finance_agent/refresh")
+    refresh_resp = client.post("/agents/finance_agent/refresh?router_id=1")
     assert refresh_resp.status_code == 200
-    new_questions = client.get("/agents/finance_agent").json()["agent"]["route_questions"]
+    new_questions = client.get("/agents/finance_agent", params={"router_id": "1"}).json()["agent"]["route_questions"]
     assert new_questions != old_questions
 

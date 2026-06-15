@@ -163,10 +163,15 @@ function logDoneDetails(data) {
       );
     }
     if (a.citations?.length) {
+      const citeCtx = {
+        routerName: routerDisplayName(getSelectedRouterIdFrom($("#routerSelect")), routersCache[getSelectedRouterIdFrom($("#routerSelect"))]),
+        agentName: (a.agent_name || "").trim() || subAgentDisplayName(a.agent_id, null),
+        knowledgeSource: a.knowledge_source || "",
+      };
       appendLogBlock(
         `${a.agent_id} citations`,
         a.citations
-          .map((c) => `${formatCitationWhere(c)}: ${(c.snippet || "").slice(0, 100)}`)
+          .map((c) => `${formatCitationWhere(c, citeCtx)}: ${(c.snippet || "").slice(0, 100)}`)
           .join("\n"),
         "info"
       );
@@ -177,18 +182,31 @@ function logDoneDetails(data) {
   }
 }
 
-function formatCitationWhere(c) {
+function formatCitationWhere(c, ctx) {
   const file = (c.file || "").trim();
   const asset = (c.asset_file || "").trim();
   const hasPage = Number.isFinite(c.page) && c.page > 0;
   const ls = Number.isFinite(c.line_start) && c.line_start > 0 ? c.line_start : null;
   const le = Number.isFinite(c.line_end) && c.line_end > 0 ? c.line_end : null;
-  if (ls != null && file) {
+  if (ls != null) {
     const range = le != null && le !== ls ? `L${ls}-L${le}` : `L${ls}`;
-    return `${file} · ${range}`;
+    const routerName = (ctx?.routerName || "").trim();
+    const agentName = (ctx?.agentName || "").trim();
+    if (routerName && agentName) return `${routerName} · ${agentName} · ${range}`;
+    const fileLabel = (ctx?.knowledgeSource || file || "").trim();
+    if (fileLabel) return `${fileLabel} · ${range}`;
   }
   if (hasPage) return `${file} · p.${c.page}`;
   return asset || file;
+}
+
+function citationDisplayContext(data) {
+  const answer0 = data?.answers?.[0];
+  const routerId = getSelectedRouterIdFrom($("#routerSelect"));
+  const routerName = routerDisplayName(routerId, routersCache[routerId]);
+  const agentName = (answer0?.agent_name || "").trim() || subAgentDisplayName(answer0?.agent_id, null);
+  const knowledgeSource = answer0?.knowledge_source || lastKnowledgeSource || "";
+  return { routerName, agentName, knowledgeSource };
 }
 
 function renderEvidenceThumb(c) {
@@ -393,14 +411,23 @@ function renderRoute(data) {
   box.innerHTML = `${routeRawHtml}<div class="routeList">${cards}</div>`;
 }
 
-function formatCitationLineRef(c, knowledgeSource) {
+function formatCitationLineRef(c, ctx) {
   const ls = Number.isFinite(c.line_start) && c.line_start > 0 ? c.line_start : null;
   const le = Number.isFinite(c.line_end) && c.line_end > 0 ? c.line_end : null;
   if (ls == null) return null;
 
-  const src = (knowledgeSource || "").trim();
   const file = (c.file || "").trim();
+  const src = (ctx?.knowledgeSource || "").trim();
   const isImagePath = /\.(png|jpe?g|webp|gif)$/i.test(file);
+  const isMdRef =
+    (src && (file.endsWith(".md") || file === src || isImagePath)) || file.endsWith(".md");
+  if (!isMdRef) return null;
+
+  const range = le != null && le !== ls ? `L${ls}-L${le}` : `L${ls}`;
+  const routerName = (ctx?.routerName || "").trim();
+  const agentName = (ctx?.agentName || "").trim();
+  if (routerName && agentName) return `${routerName} · ${agentName} · ${range}`;
+
   let displayFile = "";
   if (src && (file.endsWith(".md") || file === src || isImagePath)) {
     displayFile = src;
@@ -409,8 +436,6 @@ function formatCitationLineRef(c, knowledgeSource) {
   } else {
     return null;
   }
-
-  const range = le != null && le !== ls ? `L${ls}-L${le}` : `L${ls}`;
   return `${displayFile} · ${range}`;
 }
 
@@ -443,8 +468,9 @@ function renderResources(data) {
 
   const answers = data.answers ?? [];
   const answer0 = answers[0];
-  const knowledgeSource = answer0?.knowledge_source || lastKnowledgeSource || "";
+  const citeCtx = citationDisplayContext(data);
   if (answer0?.knowledge_source) lastKnowledgeSource = answer0.knowledge_source;
+  citeCtx.knowledgeSource = answer0?.knowledge_source || lastKnowledgeSource || citeCtx.knowledgeSource;
 
   const cites = answer0?.citations ?? [];
   const parts = [];
@@ -452,7 +478,7 @@ function renderResources(data) {
   const textRefs = [];
   const seenRefs = new Set();
   for (const c of cites) {
-    const label = formatCitationLineRef(c, knowledgeSource);
+    const label = formatCitationLineRef(c, citeCtx);
     if (label && !seenRefs.has(label)) {
       seenRefs.add(label);
       textRefs.push(label);
@@ -479,8 +505,8 @@ function renderResources(data) {
       `<div class="sources"><div class="t">相关图片</div><ul>${imageCites
         .slice(0, 8)
         .map((c) => {
-          const cap = (c.snippet || "").trim() || formatCitationWhere(c);
-          const img = renderResourceThumb(c, knowledgeSource);
+          const cap = (c.snippet || "").trim() || formatCitationWhere(c, citeCtx);
+          const img = renderResourceThumb(c, citeCtx.knowledgeSource);
           return `<li>${cap ? `<div class="cap">${escapeHtml(cap.slice(0, 80))}</div>` : ""}${img}</li>`;
         })
         .join("")}</ul></div>`
@@ -594,18 +620,6 @@ function updateRouteStreamTimings(timings) {
   updateTimingBar(timings);
 }
 
-function parseSseBlock(block) {
-  const lines = block.split("\n");
-  let event = "message";
-  let data = "";
-  for (const line of lines) {
-    if (line.startsWith("event:")) event = line.slice(6).trim();
-    else if (line.startsWith("data:")) data += line.slice(5).trim();
-  }
-  if (!data) return null;
-  return { event, data: JSON.parse(data) };
-}
-
 async function ask() {
   const q = $("#question").value.trim();
   if (!q) return;
@@ -623,7 +637,7 @@ async function ask() {
     const r = await fetch("/ask/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q }),
+      body: JSON.stringify({ question: q, router_id: getSelectedRouterIdFrom($("#routerSelect")) }),
     });
     if (!r.ok) {
       const txt = await r.text();
@@ -760,9 +774,11 @@ function switchRightTab(name) {
 
 async function loadRouteQuestionsPool() {
   try {
-    const data = await apiJson("/agents");
+    await loadAllCaches();
+    const routerId = getSelectedRouterIdFrom($("#routerSelect"));
+    const agents = routerId ? agentsForRouter(routerId) : agentsCache;
     const pool = [];
-    for (const cfg of Object.values(data.agents || {})) {
+    for (const cfg of Object.values(agents || {})) {
       for (const q of cfg.route_questions || []) {
         if (typeof q === "string" && q.trim()) pool.push(q.trim());
       }
@@ -825,9 +841,14 @@ function bindTest() {
   $$("[data-right-tab]").forEach((btn) => {
     btn.addEventListener("click", () => switchRightTab(btn.dataset.rightTab));
   });
+  $("#routerSelect")?.addEventListener("change", () => {
+    refreshTestPageSideData();
+  });
 }
 
 bindTest();
 appendLog("控制台已加载");
-loadAgentFilesList("test");
-loadRouteQuestionsPool();
+loadAllCaches()
+  .then(() => populateRouterSelect($("#routerSelect")))
+  .then(() => refreshTestPageSideData())
+  .catch(() => refreshTestPageSideData());

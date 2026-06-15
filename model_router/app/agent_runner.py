@@ -321,7 +321,7 @@ def _prepare_agent_run(
     settings: Settings,
 ) -> Tuple[str, str, str, Union[str, List[Dict[str, Any]]], Optional[str], str, float, str, List[Citation]]:
     agent_name = cfg.get("name", target.agent_id)
-    files_dir = agent_files_dir(target.agent_id)
+    files_dir = str(cfg.get("files_dir") or "").strip()
     configured_knowledge = str(cfg.get("knowledge", "") or cfg.get("answer_prompt", "") or "")
     answer_instructions = str(cfg.get("answer_instructions", "") or "")
 
@@ -329,6 +329,7 @@ def _prepare_agent_run(
     knowledge_text, knowledge_source, context_note = resolve_agent_knowledge(
         project_root=settings.data_root,
         agent_id=target.agent_id,
+        files_dir=files_dir,
         configured_knowledge=configured_knowledge,
         max_chars=settings.max_file_chars,
     )

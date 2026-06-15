@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, description="用户问题")
+    router_id: str = Field(..., min_length=1, description="总 Agent（路由组）ID")
 
 
 class RouterTargetAgent(BaseModel):
@@ -140,6 +141,7 @@ class FileSummary(BaseModel):
 
 class AgentConfig(BaseModel):
     name: str
+    router_id: str = Field(default="", description="所属总 Agent ID")
     status: AgentStatus = "created"
     knowledge: str = Field(
         default="",
@@ -180,6 +182,71 @@ class AgentsResponse(BaseModel):
 class CreateAgentRequest(BaseModel):
     agent_id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
+    router_id: str = Field(default="", description="所属总 Agent ID")
+
+
+class CreateSubAgentRequest(BaseModel):
+    name: str = Field(default="", description="子 Agent 名称，默认 agent_{id}")
+
+
+class RouterConfig(BaseModel):
+    name: str
+    router_prompt: str = ""
+    status: str = "initialized"
+    agent_ids: List[str] = Field(default_factory=list)
+    source_files: List[str] = Field(default_factory=list)
+    split_ranges: List[List[int]] = Field(default_factory=list)
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class RoutersResponse(BaseModel):
+    routers: Dict[str, Dict[str, Any]]
+
+
+class RouterResponse(BaseModel):
+    router_id: str
+    router: RouterConfig
+
+
+class CreateRouterRequest(BaseModel):
+    router_id: str = Field(default="", description="留空则自动分配")
+    name: str = Field(default="", description="展示名，默认 总Agent_{id}")
+
+
+class RenameRouterRequest(BaseModel):
+    name: str = Field(..., min_length=1)
+
+
+class UpdateRouterPromptRequest(BaseModel):
+    router_prompt: str = Field(default="")
+
+
+class UpdateSplitRangesRequest(BaseModel):
+    split_ranges: List[List[int]] = Field(default_factory=list)
+
+
+class SplitRouterRequest(BaseModel):
+    ranges: List[List[int]] = Field(default_factory=list, description="页码范围 [[start,end], ...]")
+    source_file: str = Field(default="", description="相对 data_root 的源文件路径")
+    auto_initialize: bool = Field(default=False, description="切分完成后自动初始化子 Agent")
+
+
+class SplitRouterResponse(BaseModel):
+    router_id: str
+    created_agents: List[str] = Field(default_factory=list)
+    results: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class DefaultRouterPromptResponse(BaseModel):
+    prompt: str
+
+
+class AgentPromptTemplateResponse(BaseModel):
+    answer_instructions: str = ""
+    default_template: str = ""
+    display_text: str = ""
+    is_default: bool = True
 
 
 class RegisterFilesRequest(BaseModel):
@@ -207,6 +274,10 @@ class SyncAgentsResponse(BaseModel):
 
 class RenameAgentRequest(BaseModel):
     new_agent_id: str = Field(..., min_length=1)
+
+
+class RenameAgentDisplayRequest(BaseModel):
+    name: str = Field(..., min_length=1)
 
 
 class AutoCreateAgentResponse(BaseModel):
@@ -255,6 +326,7 @@ class BatchTestItem(BaseModel):
     id: str
     question: str
     reference_answer: str
+    router_id: str = ""
     model_answer: str = ""
     accuracy_percent: Optional[int] = None
     accuracy_reason: str = ""
@@ -277,6 +349,7 @@ class BatchTestResponse(BaseModel):
 class CreateBatchTestRequest(BaseModel):
     question: str = Field(..., min_length=1)
     reference_answer: str = Field(..., min_length=1)
+    router_id: str = Field(..., min_length=1, description="总 Agent ID")
 
 
 class UpdateBatchTestRequest(BaseModel):
@@ -287,6 +360,7 @@ class UpdateBatchTestRequest(BaseModel):
 class ImportBatchTestsRequest(BaseModel):
     text: str = Field(..., min_length=1)
     format: Literal["json", "md", "auto"] = "auto"
+    router_id: str = Field(default="", description="批量导入缺省总 Agent ID")
 
 
 class ImportBatchTestsResponse(BaseModel):

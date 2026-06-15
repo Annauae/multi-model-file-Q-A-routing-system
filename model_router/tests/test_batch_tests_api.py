@@ -26,6 +26,24 @@ def batch_client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> TestClient:
         json.dumps({"items": []}, ensure_ascii=False),
         encoding="utf-8",
     )
+    (data_root / "config" / "routers.json").write_text(
+        json.dumps(
+            {
+                "1": {
+                    "name": "总Agent_1",
+                    "router_prompt": "",
+                    "status": "initialized",
+                    "agent_ids": [],
+                    "source_files": [],
+                    "split_ranges": [],
+                    "created_at": "2026-06-03T00:00:00Z",
+                    "updated_at": "2026-06-03T00:00:00Z",
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     monkeypatch.setenv("DATA_ROOT", str(data_root))
 
     from app.main import create_app
@@ -36,7 +54,7 @@ def batch_client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> TestClient:
 def test_create_and_list_batch_test(batch_client: TestClient) -> None:
     resp = batch_client.post(
         "/batch/tests",
-        json={"question": "快门在哪？", "reference_answer": "快门在机身顶部中央。"},
+        json={"question": "快门在哪？", "reference_answer": "快门在机身顶部中央。", "router_id": "1"},
     )
     assert resp.status_code == 200
     item = resp.json()["item"]
@@ -57,7 +75,7 @@ def test_import_batch_tests_json(batch_client: TestClient) -> None:
         ],
         ensure_ascii=False,
     )
-    resp = batch_client.post("/batch/tests/import", json={"text": payload, "format": "json"})
+    resp = batch_client.post("/batch/tests/import", json={"text": payload, "format": "json", "router_id": "1"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["imported"] == 2
@@ -66,7 +84,7 @@ def test_import_batch_tests_json(batch_client: TestClient) -> None:
 
 def test_import_batch_tests_md(batch_client: TestClient) -> None:
     md = "## Q: 怎么装挂带？\n\nA: 先套上端环扣。\n\n## Q: 快门在哪？\n\nA: 在顶部。\n"
-    resp = batch_client.post("/batch/tests/import", json={"text": md, "format": "md"})
+    resp = batch_client.post("/batch/tests/import", json={"text": md, "format": "md", "router_id": "1"})
     assert resp.status_code == 200
     assert resp.json()["imported"] == 2
 
@@ -74,7 +92,7 @@ def test_import_batch_tests_md(batch_client: TestClient) -> None:
 def test_update_and_delete_batch_test(batch_client: TestClient) -> None:
     item_id = batch_client.post(
         "/batch/tests",
-        json={"question": "旧问题", "reference_answer": "旧回答"},
+        json={"question": "旧问题", "reference_answer": "旧回答", "router_id": "1"},
     ).json()["item"]["id"]
 
     upd = batch_client.put(f"/batch/tests/{item_id}", json={"question": "新问题"})
@@ -87,18 +105,21 @@ def test_update_and_delete_batch_test(batch_client: TestClient) -> None:
 
 
 def test_run_batch_test(batch_client: TestClient) -> None:
-    batch_client.post("/agents/auto")
-    store = batch_client.app.state.store
+    batch_client.post("/agents/auto?router_id=1")
+    store = batch_client.app.state.agents_registry.for_router("1")
+    routers = batch_client.app.state.routers_store
     with store._lock:
         cfg = store._cache.get("1")
         if isinstance(cfg, dict):
             cfg["status"] = "initialized"
+            cfg["router_id"] = "1"
             cfg["route_questions"] = ["快门在哪？", "快门按钮在哪"]
             store._save()
+    routers.assign_agent(router_id="1", agent_id="1")
 
     item_id = batch_client.post(
         "/batch/tests",
-        json={"question": "快门在哪？", "reference_answer": "快门在机身顶部中央。"},
+        json={"question": "快门在哪？", "reference_answer": "快门在机身顶部中央。", "router_id": "1"},
     ).json()["item"]["id"]
 
     resp = batch_client.post(f"/batch/tests/{item_id}/run")

@@ -49,7 +49,8 @@ def test_strip_citation_lines_from_answer() -> None:
 
 
 def test_replace_invalid_display_images_with_hallucinated_urls(tmp_path: Path) -> None:
-    assets = tmp_path / "files" / "assets"
+    agent_dir = tmp_path / "files" / "agent_12"
+    assets = agent_dir / "assets"
     assets.mkdir(parents=True)
     (assets / "p012_docling_picture001.png").write_bytes(
         b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x0e\x00\x00\x00\x0e"
@@ -95,7 +96,8 @@ def test_replace_invalid_display_images_with_hallucinated_urls(tmp_path: Path) -
 
 
 def test_finalize_model_answer_display(tmp_path: Path) -> None:
-    assets = tmp_path / "files" / "assets"
+    agent_dir = tmp_path / "files" / "agent_1"
+    assets = agent_dir / "assets"
     assets.mkdir(parents=True)
     (assets / "demo.png").write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x0e\x00\x00\x00\x0e")
 
@@ -129,7 +131,8 @@ def test_finalize_model_answer_display(tmp_path: Path) -> None:
 def test_expand_citations_uses_page_block_when_cited_range_has_no_images(tmp_path: Path) -> None:
     from app.schemas import Citation
 
-    assets = tmp_path / "files" / "assets"
+    agent_dir = tmp_path / "files" / "agent_1"
+    assets = agent_dir / "assets"
     assets.mkdir(parents=True)
     (assets / "demo.png").write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x0e\x00\x00\x00\x0e")
 
@@ -180,7 +183,8 @@ def test_build_answer_user_message_is_question_only() -> None:
 def test_knowledge_to_content_parts_includes_image(tmp_path: Path) -> None:
     from app.knowledge_loader import knowledge_to_content_parts
 
-    assets = tmp_path / "files" / "assets"
+    agent_dir = tmp_path / "files" / "agent_1"
+    assets = agent_dir / "assets"
     assets.mkdir(parents=True)
     img = assets / "demo.png"
     img.write_bytes(b"\x89PNG\r\n\x1a\n")

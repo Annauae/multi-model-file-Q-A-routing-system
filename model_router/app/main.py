@@ -19,20 +19,30 @@ from .agent_runner import (
     summarize_agent_prepare,
 )
 from .file_loader import SUPPORTED_EXTS, expand_agent_file_list, list_supported_files_in_dir, load_agent_files
+from .agent_split import create_sub_agent, initialize_agent, split_router
+from .agents_registry import AgentsStoreRegistry
 from .agents_store import AgentsStore
+from .routers_store import RoutersStore
 from .batch_evaluator import evaluate_answer_accuracy
 from .batch_import import parse_batch_import_text
 from .batch_tests_store import BatchTestsStore
 from .config import APP_ROOT, Settings
 from .initializer import generate_route_questions_and_summaries
 from .llm_client import LLMClient, LLMError
+from .paths import (
+    agent_dir_path,
+    agent_files_dir,
+    agent_folder_name,
+    router_folder_name,
+    source_root_path,
+)
 from .knowledge_loader import (
     build_answer_system_content,
-    agent_files_dir,
     resolve_agent_knowledge,
     resolve_knowledge_asset_path,
     format_system_content_for_log,
     count_system_images,
+    _build_answer_rules_text,
 )
 from .router import (
     build_route_messages,
@@ -40,12 +50,24 @@ from .router import (
     no_agents_router_result,
     parse_route_raw,
     route_question,
+    ROUTER_SYSTEM_PROMPT_ZH,
 )
 from .schemas import (
     AgentResponse,
     AgentsResponse,
     AskRequest,
     AskResponse,
+    CreateRouterRequest,
+    CreateSubAgentRequest,
+    RenameRouterRequest,
+    RouterResponse,
+    RoutersResponse,
+    SplitRouterRequest,
+    SplitRouterResponse,
+    DefaultRouterPromptResponse,
+    AgentPromptTemplateResponse,
+    UpdateRouterPromptRequest,
+    UpdateSplitRangesRequest,
     CreateAgentRequest,
     CreateFileRequest,
     FileTreeNode,
@@ -60,6 +82,7 @@ from .schemas import (
     ImportBatchTestsRequest,
     ImportBatchTestsResponse,
     RenameAgentRequest,
+    RenameAgentDisplayRequest,
     RenameFileRequest,
     UpdateBatchTestRequest,
     WriteFileRequest,
@@ -87,17 +110,35 @@ def _sanitize_filename(name: str) -> str:
 
 
 def _agent_folder_name(agent_id: str) -> str:
-    return f"agent_{agent_id}"
+    return agent_folder_name(agent_id)
 
 
-def _ensure_agent_folder(settings: Settings, agent_id: str, *, create_knowledge: bool = False) -> Path:
-    agent_dir = (settings.files_root / _agent_folder_name(agent_id)).resolve()
+def _router_folder_name(router_id: str) -> str:
+    return router_folder_name(router_id)
+
+
+def _ensure_agent_folder(
+    settings: Settings, router_id: str, agent_id: str, *, create_knowledge: bool = False
+) -> Path:
+    agent_dir = agent_dir_path(settings.files_root, router_id, agent_id)
     agent_dir.mkdir(parents=True, exist_ok=True)
     if create_knowledge:
         knowledge = agent_dir / "knowledge.md"
         if not knowledge.is_file():
             knowledge.write_text("", encoding="utf-8")
     return agent_dir
+
+
+def _ensure_router_folder(settings: Settings, router_id: str) -> Path:
+    router_dir = (settings.files_root / _router_folder_name(router_id)).resolve()
+    router_dir.mkdir(parents=True, exist_ok=True)
+    return router_dir
+
+
+def _ensure_source_root(settings: Settings) -> Path:
+    root = source_root_path(settings.files_root)
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def _sse(event: str, data: Dict[str, Any]) -> str:
@@ -117,15 +158,49 @@ def _batch_item_model(raw: Dict[str, Any]) -> BatchTestItem:
 
 def create_app() -> FastAPI:
     settings = Settings.load()
-    store = AgentsStore.open(settings.agents_config_path)
+    agents_registry = AgentsStoreRegistry(settings)
+    routers_store = RoutersStore.open(settings.routers_config_path)
     batch_store = BatchTestsStore.open(settings.batch_tests_config_path)
     llm = LLMClient(settings)
 
     app = FastAPI(title="多模型文件问答调度系统", version="0.1.0")
     app.state.settings = settings
-    app.state.store = store
+    app.state.agents_registry = agents_registry
+    app.state.routers_store = routers_store
     app.state.batch_store = batch_store
     app.state.llm = llm
+
+    def _agent_store(router_id: str) -> AgentsStore:
+        return agents_registry.for_router(_validate_router_id(router_id))
+
+    def _resolve_agent(
+        agent_id: str, router_id: str = ""
+    ) -> tuple[str, AgentsStore, Dict[str, Any]]:
+        rid = (router_id or "").strip()
+        if rid:
+            store = _agent_store(rid)
+            cfg = store.get(agent_id)
+            if not cfg:
+                raise HTTPException(status_code=404, detail="agent_id 不存在")
+            return rid, store, cfg
+        found = agents_registry.find_agent(agent_id)
+        if not found:
+            raise HTTPException(status_code=404, detail="agent_id 不存在")
+        return found[0], found[1], found[2]
+
+    def _get_router_prompt(router_id: str) -> str:
+        cfg = routers_store.get(router_id)
+        if not cfg:
+            return ""
+        return str(cfg.get("router_prompt") or "")
+
+    def _validate_router_id(router_id: str) -> str:
+        rid = (router_id or "").strip()
+        if not rid:
+            raise HTTPException(status_code=400, detail="router_id 不能为空")
+        if not routers_store.get(rid):
+            raise HTTPException(status_code=404, detail="router_id 不存在")
+        return rid
 
     web_root = (APP_ROOT / "web").resolve()
     if web_root.exists():
@@ -309,9 +384,16 @@ def create_app() -> FastAPI:
         files_dir = ""
         parts = source_path.as_posix().split("/")
         for i, part in enumerate(parts):
+            if part.startswith("router_") and i + 1 < len(parts) and parts[i + 1].startswith("agent_"):
+                rid = part.replace("router_", "", 1)
+                aid = parts[i + 1].replace("agent_", "", 1)
+                files_dir = agent_files_dir(rid, aid)
+                break
             if part.startswith("agent_"):
                 agent_id = part.replace("agent_", "", 1)
-                files_dir = agent_files_dir(agent_id)
+                found = agents_registry.find_agent(agent_id)
+                if found:
+                    files_dir = str(found[2].get("files_dir") or agent_files_dir(found[0], agent_id))
                 break
         if not files_dir:
             try:
@@ -397,25 +479,66 @@ def create_app() -> FastAPI:
         return FileTreeResponse(root=rel_root, tree=_build_file_tree(resolved))
 
     @app.get("/agents/files", response_model=AgentFilesListResponse)
-    def list_all_agent_files() -> AgentFilesListResponse:
+    def list_all_agent_files(
+        router_id: str = Query("", description="总 Agent ID；为空则汇总所有路由"),
+    ) -> AgentFilesListResponse:
         entries: List[AgentFileEntry] = []
-        for agent_id in sorted(store.get_all().keys(), key=lambda x: (not x.isdigit(), int(x) if x.isdigit() else 0, x)):
-            files_dir = agent_files_dir(agent_id)
-            file_paths, _errors = list_supported_files_in_dir(
-                project_root=settings.data_root,
-                files_dir=files_dir,
-                recursive=False,
-            )
-            folder = _agent_folder_name(agent_id)
-            for path in file_paths:
-                name = Path(path).name
-                entries.append(
-                    AgentFileEntry(
-                        agent_id=agent_id,
-                        path=path,
-                        label=f"{folder}/{name}",
-                    )
+        seen: set[str] = set()
+        router_ids: List[str] = []
+        if (router_id or "").strip():
+            router_ids = [_validate_router_id(router_id)]
+        else:
+            if settings.files_root.is_dir():
+                for entry in sorted(settings.files_root.iterdir()):
+                    if entry.is_dir() and entry.name.startswith("router_"):
+                        rid = entry.name.replace("router_", "", 1)
+                        if (entry / "agents.json").is_file():
+                            router_ids.append(rid)
+        for rid in router_ids:
+            store = _agent_store(rid)
+            for agent_id in sorted(
+                store.get_all().keys(),
+                key=lambda x: (not x.isdigit(), int(x) if x.isdigit() else 0, x),
+            ):
+                cfg = store.get(agent_id) or {}
+                agent_name = str(cfg.get("name") or agent_id).strip() or agent_id
+                files_dir = str(cfg.get("files_dir") or agent_files_dir(rid, agent_id))
+                file_paths, _errors = list_supported_files_in_dir(
+                    project_root=settings.data_root,
+                    files_dir=files_dir,
+                    recursive=True,
                 )
+                registered = cfg.get("files") if isinstance(cfg.get("files"), list) else []
+                all_paths = list(file_paths) + [p for p in registered if isinstance(p, str)]
+                md_paths: List[str] = []
+                md_seen: set[str] = set()
+                for path in all_paths:
+                    if not path:
+                        continue
+                    if not str(path).lower().endswith(".md"):
+                        continue
+                    path_str = str(path).replace("\\", "/")
+                    if path_str in md_seen:
+                        continue
+                    md_seen.add(path_str)
+                    md_paths.append(path_str)
+                multi_md = len(md_paths) > 1
+                for path_str in md_paths:
+                    if path_str in seen:
+                        continue
+                    seen.add(path_str)
+                    if multi_md:
+                        label = f"{agent_name} · {Path(path_str).name}"
+                    else:
+                        label = agent_name
+                    entries.append(
+                        AgentFileEntry(
+                            agent_id=agent_id,
+                            path=path_str,
+                            label=label,
+                        )
+                    )
+        entries.sort(key=lambda e: (e.agent_id, e.label))
         return AgentFilesListResponse(files=entries)
 
     @app.get("/preview-text", response_model=FileTextPreviewResponse)
@@ -441,18 +564,20 @@ def create_app() -> FastAPI:
         )
 
     @app.get("/agents/{agent_id}/preview-context", response_model=AgentContextPreviewResponse)
-    def preview_agent_context(agent_id: str) -> AgentContextPreviewResponse:
+    def preview_agent_context(
+        agent_id: str,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentContextPreviewResponse:
         """预览某 agent 在 /ask 时使用的完整 system 消息（固定模板 + 知识内容）。"""
-        cfg = store.get(agent_id)
-        if not cfg:
-            raise HTTPException(status_code=404, detail="agent_id 不存在")
+        rid, store, cfg = _resolve_agent(agent_id, router_id)
 
-        files_dir = agent_files_dir(agent_id)
+        files_dir = str(cfg.get("files_dir") or agent_files_dir(rid, agent_id))
         configured_knowledge = str(cfg.get("knowledge", "") or cfg.get("answer_prompt", "") or "")
         answer_instructions = str(cfg.get("answer_instructions", "") or "")
         knowledge_text, knowledge_source, context_note = resolve_agent_knowledge(
             project_root=settings.data_root,
             agent_id=agent_id,
+            files_dir=files_dir,
             configured_knowledge=configured_knowledge,
             max_chars=settings.max_file_chars,
         )
@@ -526,7 +651,12 @@ def create_app() -> FastAPI:
     @app.post("/batch/tests", response_model=BatchTestResponse)
     def create_batch_test(req: CreateBatchTestRequest) -> BatchTestResponse:
         try:
-            item = batch_store.create(question=req.question, reference_answer=req.reference_answer)
+            _validate_router_id(req.router_id)
+            item = batch_store.create(
+                question=req.question,
+                reference_answer=req.reference_answer,
+                router_id=req.router_id,
+            )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         return BatchTestResponse(item=_batch_item_model(item))
@@ -535,6 +665,12 @@ def create_app() -> FastAPI:
     def import_batch_tests(req: ImportBatchTestsRequest) -> ImportBatchTestsResponse:
         try:
             entries = parse_batch_import_text(req.text, fmt=req.format)
+            default_rid = (req.router_id or "").strip()
+            if default_rid:
+                _validate_router_id(default_rid)
+            for entry in entries:
+                if not (entry.get("router_id") or "").strip() and default_rid:
+                    entry["router_id"] = default_rid
             created = batch_store.create_many(entries)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
@@ -588,13 +724,17 @@ def create_app() -> FastAPI:
         last_error = ""
 
         try:
-            agents = store.get_all()
+            router_id = str(item.get("router_id") or "1").strip()
+            agents = agents_registry.get_agents_for_router(router_id)
+            router_prompt = _get_router_prompt(router_id)
             t_route0 = time.perf_counter()
             route_result = route_question(
                 question=question,
                 agents=agents,
                 llm=llm,
                 router_model=settings.router_model,
+                router_id=router_id,
+                router_prompt=router_prompt,
             )
             route_ms = (time.perf_counter() - t_route0) * 1000.0
             need_clarification = route_result.need_clarification
@@ -617,7 +757,9 @@ def create_app() -> FastAPI:
                 if answers:
                     knowledge_source = answers[0].knowledge_source or ""
                 if not knowledge_source and last_agent_id:
-                    knowledge_source = f"files/agent_{last_agent_id}/knowledge.md"
+                    cfg = agents_registry.get_agents_for_router(router_id).get(last_agent_id) or {}
+                    fd = str(cfg.get("files_dir") or agent_files_dir(router_id, last_agent_id))
+                    knowledge_source = f"{fd}/knowledge.md"
                 model_answer = (merged_answer or "").strip()
                 if not model_answer and answers:
                     model_answer = (answers[0].answer or "").strip()
@@ -663,81 +805,336 @@ def create_app() -> FastAPI:
             clarification_question=clarification_question,
         )
 
+    @app.get("/routers/default-prompt", response_model=DefaultRouterPromptResponse)
+    def get_default_router_prompt() -> DefaultRouterPromptResponse:
+        return DefaultRouterPromptResponse(prompt=ROUTER_SYSTEM_PROMPT_ZH)
+
+    @app.get("/routers", response_model=RoutersResponse)
+    def list_routers() -> RoutersResponse:
+        return RoutersResponse(routers=routers_store.get_all())
+
+    @app.post("/routers", response_model=RouterResponse)
+    def create_router(req: CreateRouterRequest) -> RouterResponse:
+        router_id = (req.router_id or "").strip() or routers_store.next_available_router_id()
+        name = (req.name or "").strip() or f"总Agent_{router_id}"
+        try:
+            cfg = routers_store.create_router(router_id=router_id, name=name)
+            agents_registry.ensure_router_tree(router_id)
+            return RouterResponse(router_id=router_id, router=cfg)
+        except ValueError as e:
+            raise HTTPException(status_code=409, detail=str(e)) from e
+
+    @app.get("/routers/{router_id}", response_model=RouterResponse)
+    def get_router(router_id: str) -> RouterResponse:
+        rid = _validate_router_id(router_id)
+        return RouterResponse(router_id=rid, router=routers_store.get(rid) or {})
+
+    @app.delete("/routers/{router_id}", response_model=RouterResponse)
+    def delete_router(router_id: str) -> RouterResponse:
+        rid = _validate_router_id(router_id)
+        cfg = routers_store.get(rid) or {}
+        try:
+            deleted = routers_store.delete_router(router_id=rid)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        agents_registry.delete_router_tree(rid)
+        return RouterResponse(router_id=rid, router=deleted)
+
+    @app.post("/routers/{router_id}/rename", response_model=RouterResponse)
+    def rename_router(router_id: str, req: RenameRouterRequest) -> RouterResponse:
+        rid = _validate_router_id(router_id)
+        try:
+            cfg = routers_store.rename_router(router_id=rid, name=req.name)
+        except (KeyError, ValueError) as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        return RouterResponse(router_id=rid, router=cfg)
+
+    @app.put("/routers/{router_id}/prompt", response_model=RouterResponse)
+    def update_router_prompt(router_id: str, req: UpdateRouterPromptRequest) -> RouterResponse:
+        rid = _validate_router_id(router_id)
+        try:
+            cfg = routers_store.set_prompt(router_id=rid, router_prompt=req.router_prompt or "")
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        return RouterResponse(router_id=rid, router=cfg)
+
+    @app.put("/routers/{router_id}/split-ranges", response_model=RouterResponse)
+    def update_split_ranges(router_id: str, req: UpdateSplitRangesRequest) -> RouterResponse:
+        rid = _validate_router_id(router_id)
+        try:
+            cfg = routers_store.set_split_ranges(router_id=rid, split_ranges=req.split_ranges)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        return RouterResponse(router_id=rid, router=cfg)
+
+    @app.get("/routers/{router_id}/agents", response_model=AgentsResponse)
+    def list_router_agents(router_id: str) -> AgentsResponse:
+        rid = _validate_router_id(router_id)
+        return AgentsResponse(agents=agents_registry.get_agents_for_router(rid))
+
+    @app.post("/routers/{router_id}/agents", response_model=AgentResponse)
+    def create_router_sub_agent(router_id: str, req: CreateSubAgentRequest) -> AgentResponse:
+        rid = _validate_router_id(router_id)
+        try:
+            store = _agent_store(rid)
+            agent_id = create_sub_agent(
+                store=store,
+                routers_store=routers_store,
+                router_id=rid,
+                files_root=settings.files_root,
+                name=req.name,
+            )
+            cfg = store.get(agent_id) or {}
+            return AgentResponse(agent_id=agent_id, agent=cfg)
+        except ValueError as e:
+            raise HTTPException(status_code=409, detail=str(e)) from e
+
+    @app.post("/routers/{router_id}/upload")
+    async def upload_router_file(router_id: str, file: UploadFile = File(...)) -> Dict[str, str]:
+        rid = _validate_router_id(router_id)
+        source_root = _ensure_source_root(settings)
+        filename = _sanitize_filename(file.filename or "upload")
+        dest = source_root / filename
+        content = await file.read()
+        dest.write_bytes(content)
+        rel = dest.relative_to(settings.data_root).as_posix()
+        routers_store.add_source_file(router_id=rid, file_path=rel)
+        return {"file": rel, "router_id": rid}
+
+    @app.post("/routers/{router_id}/split", response_model=SplitRouterResponse)
+    def split_router_endpoint(router_id: str, req: SplitRouterRequest) -> SplitRouterResponse:
+        rid = _validate_router_id(router_id)
+        try:
+            result = split_router(
+                router_id=rid,
+                ranges=req.ranges,
+                source_file=req.source_file,
+                auto_initialize=req.auto_initialize,
+                store=_agent_store(rid),
+                routers_store=routers_store,
+                settings=settings,
+                llm=llm,
+            )
+            return SplitRouterResponse.model_validate(result)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        except (LLMError, RuntimeError) as e:
+            raise HTTPException(status_code=502, detail=str(e)) from e
+
+    @app.post("/routers/{router_id}/split/stream")
+    def split_router_stream_endpoint(router_id: str, req: SplitRouterRequest) -> StreamingResponse:
+        import queue
+        import threading
+
+        rid = _validate_router_id(router_id)
+
+        def generate():
+            event_q: queue.Queue = queue.Queue()
+            result_holder: Dict[str, Any] = {}
+            error_holder: Dict[str, BaseException] = {}
+
+            def progress_cb(msg: str) -> None:
+                event_q.put(("log", msg))
+
+            def worker() -> None:
+                try:
+                    result_holder["data"] = split_router(
+                        router_id=rid,
+                        ranges=req.ranges,
+                        source_file=req.source_file,
+                        auto_initialize=req.auto_initialize,
+                        store=_agent_store(rid),
+                        routers_store=routers_store,
+                        settings=settings,
+                        llm=llm,
+                        progress_cb=progress_cb,
+                    )
+                    event_q.put(("done", None))
+                except BaseException as e:  # noqa: BLE001
+                    error_holder["err"] = e
+                    event_q.put(("error", None))
+
+            threading.Thread(target=worker, daemon=True).start()
+            yield _sse_log("info", f"开始切分 · 共 {len(req.ranges)} 组页码")
+
+            while True:
+                kind, payload = event_q.get()
+                if kind == "log":
+                    yield _sse_log("info", str(payload))
+                elif kind == "done":
+                    data = result_holder.get("data") or {}
+                    yield _sse("done", data)
+                    break
+                elif kind == "error":
+                    err = error_holder.get("err")
+                    msg = str(err) if err else "切分失败"
+                    yield _sse_log("err", msg)
+                    yield _sse("error", {"message": msg})
+                    break
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     @app.get("/agents", response_model=AgentsResponse)
-    def list_agents() -> AgentsResponse:
-        # agents.json 本身不包含 API_KEY；这里也不暴露 settings
-        return AgentsResponse(agents=store.get_all())
+    def list_agents(
+        router_id: str = Query("", description="总 Agent ID；为空则汇总所有路由下的 agent"),
+    ) -> AgentsResponse:
+        if (router_id or "").strip():
+            return AgentsResponse(agents=agents_registry.get_agents_for_router(_validate_router_id(router_id)))
+        merged: Dict[str, Dict[str, Any]] = {}
+        if settings.files_root.is_dir():
+            for entry in sorted(settings.files_root.iterdir()):
+                if entry.is_dir() and entry.name.startswith("router_"):
+                    rid = entry.name.replace("router_", "", 1)
+                    if (entry / "agents.json").is_file():
+                        merged.update(agents_registry.get_agents_for_router(rid))
+        return AgentsResponse(agents=merged)
 
     @app.post("/agents", response_model=AgentResponse)
     def create_agent(req: CreateAgentRequest) -> AgentResponse:
         agent_id = req.agent_id.strip()
         name = req.name.strip()
+        rid = (req.router_id or "").strip()
         if not agent_id or not name:
             raise HTTPException(status_code=400, detail="agent_id/name 不能为空")
+        if not rid:
+            raise HTTPException(status_code=400, detail="router_id 不能为空")
+        _validate_router_id(rid)
         try:
-            cfg = store.create_agent(agent_id=agent_id, name=name)
-            _ensure_agent_folder(settings, agent_id, create_knowledge=False)
+            store = _agent_store(rid)
+            cfg = store.create_agent(agent_id=agent_id, name=name, router_id=rid)
+            _ensure_agent_folder(settings, rid, agent_id, create_knowledge=False)
+            routers_store.assign_agent(router_id=rid, agent_id=agent_id)
             return AgentResponse(agent_id=agent_id, agent=cfg)
         except ValueError as e:
             raise HTTPException(status_code=409, detail=str(e)) from e
 
     @app.post("/agents/auto", response_model=AutoCreateAgentResponse)
-    def create_agent_auto() -> AutoCreateAgentResponse:
+    def create_agent_auto(
+        router_id: str = Query("1", description="总 Agent ID"),
+    ) -> AutoCreateAgentResponse:
+        rid = _validate_router_id(router_id)
+        store = _agent_store(rid)
         agent_id = store.next_available_agent_id()
         name = f"agent_{agent_id}"
-        cfg = store.create_agent(agent_id=agent_id, name=name)
-        _ensure_agent_folder(settings, agent_id, create_knowledge=True)
+        cfg = store.create_agent(agent_id=agent_id, name=name, router_id=rid)
+        _ensure_agent_folder(settings, rid, agent_id, create_knowledge=True)
+        routers_store.assign_agent(router_id=rid, agent_id=agent_id)
         return AutoCreateAgentResponse(agent_id=agent_id, name=name, agent=cfg)
 
     @app.delete("/agents/{agent_id}", response_model=AgentResponse)
-    def delete_agent(agent_id: str) -> AgentResponse:
-        cfg = store.get(agent_id)
-        if not cfg:
-            raise HTTPException(status_code=404, detail="agent_id 不存在")
+    def delete_agent(
+        agent_id: str,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
+        rid, store, cfg = _resolve_agent(agent_id, router_id)
         try:
             deleted = store.delete_agent(agent_id=agent_id)
         except KeyError as e:
             raise HTTPException(status_code=404, detail=str(e)) from e
-        agent_dir = (settings.files_root / _agent_folder_name(agent_id)).resolve()
+        routers_store.unassign_agent(router_id=rid, agent_id=agent_id)
+        agent_dir = agent_dir_path(settings.files_root, rid, agent_id)
         if agent_dir.exists():
             shutil.rmtree(agent_dir)
         return AgentResponse(agent_id=agent_id, agent=deleted)
 
     @app.post("/agents/{agent_id}/rename", response_model=AgentResponse)
-    def rename_agent(agent_id: str, req: RenameAgentRequest) -> AgentResponse:
+    def rename_agent(
+        agent_id: str,
+        req: RenameAgentRequest,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
         new_id = req.new_agent_id.strip()
         if not new_id:
             raise HTTPException(status_code=400, detail="new_agent_id 不能为空")
-        if not store.get(agent_id):
-            raise HTTPException(status_code=404, detail="agent_id 不存在")
+        rid, store, _cfg = _resolve_agent(agent_id, router_id)
         if store.get(new_id):
             raise HTTPException(status_code=409, detail="new_agent_id 已存在")
-        old_dir = (settings.files_root / _agent_folder_name(agent_id)).resolve()
-        new_dir = (settings.files_root / _agent_folder_name(new_id)).resolve()
+        old_dir = agent_dir_path(settings.files_root, rid, agent_id)
+        new_dir = agent_dir_path(settings.files_root, rid, new_id)
         if new_dir.exists():
             raise HTTPException(status_code=409, detail="目标 agent 文件夹已存在")
         try:
             cfg = store.rename_agent(agent_id=agent_id, new_agent_id=new_id)
         except (KeyError, ValueError) as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
+        routers_store.unassign_agent(router_id=rid, agent_id=agent_id)
+        routers_store.assign_agent(router_id=rid, agent_id=new_id)
         if old_dir.exists():
             old_dir.rename(new_dir)
         else:
-            _ensure_agent_folder(settings, new_id, create_knowledge=False)
+            _ensure_agent_folder(settings, rid, new_id, create_knowledge=False)
         return AgentResponse(agent_id=new_id, agent=cfg)
 
-    @app.get("/agents/{agent_id}", response_model=AgentResponse)
-    def get_agent(agent_id: str) -> AgentResponse:
-        cfg = store.get(agent_id)
-        if not cfg:
-            raise HTTPException(status_code=404, detail="agent_id 不存在")
+    @app.post("/agents/{agent_id}/rename-display", response_model=AgentResponse)
+    def rename_agent_display(
+        agent_id: str,
+        req: RenameAgentDisplayRequest,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
+        rid, store, _cfg = _resolve_agent(agent_id, router_id)
+        try:
+            cfg = store.set_agent_name(agent_id=agent_id, name=req.name.strip())
+        except (KeyError, ValueError) as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
         return AgentResponse(agent_id=agent_id, agent=cfg)
 
+    @app.get("/agents/{agent_id}", response_model=AgentResponse)
+    def get_agent(
+        agent_id: str,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
+        _rid, _store, cfg = _resolve_agent(agent_id, router_id)
+        return AgentResponse(agent_id=agent_id, agent=cfg)
+
+    @app.get("/agents/{agent_id}/prompt-template", response_model=AgentPromptTemplateResponse)
+    def get_agent_prompt_template(
+        agent_id: str,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentPromptTemplateResponse:
+        _rid, _store, cfg = _resolve_agent(agent_id, router_id)
+        agent_name = str(cfg.get("name", agent_id))
+        max_chars = int(cfg.get("max_answer_chars") or 0)
+        custom = (cfg.get("answer_instructions") or "").strip()
+        default_tpl = _build_answer_rules_text(
+            agent_name=agent_name,
+            answer_instructions="",
+            max_answer_chars=max_chars,
+        )
+        if custom:
+            display = _build_answer_rules_text(
+                agent_name=agent_name,
+                answer_instructions=custom,
+                max_answer_chars=max_chars,
+            )
+            return AgentPromptTemplateResponse(
+                answer_instructions=custom,
+                default_template=default_tpl,
+                display_text=display,
+                is_default=False,
+            )
+        return AgentPromptTemplateResponse(
+            answer_instructions="",
+            default_template=default_tpl,
+            display_text=default_tpl,
+            is_default=True,
+        )
+
     @app.post("/agents/{agent_id}/files/register", response_model=AgentResponse)
-    def register_files(agent_id: str, req: RegisterFilesRequest) -> AgentResponse:
+    def register_files(
+        agent_id: str,
+        req: RegisterFilesRequest,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
         files = [f.strip() for f in (req.files or []) if isinstance(f, str) and f.strip()]
         if not files:
             raise HTTPException(status_code=400, detail="files 不能为空")
+        _rid, store, _cfg = _resolve_agent(agent_id, router_id)
         try:
             cfg = store.register_files(agent_id=agent_id, files=files)
             return AgentResponse(agent_id=agent_id, agent=cfg)
@@ -745,10 +1142,12 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=str(e)) from e
 
     @app.post("/agents/{agent_id}/files/upload", response_model=AgentResponse)
-    def upload_file(agent_id: str, file: UploadFile = File(...)) -> AgentResponse:
-        cfg = store.get(agent_id)
-        if not cfg:
-            raise HTTPException(status_code=404, detail="agent_id 不存在")
+    def upload_file(
+        agent_id: str,
+        file: UploadFile = File(...),
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
+        rid, store, _cfg = _resolve_agent(agent_id, router_id)
 
         filename = _sanitize_filename(file.filename or "")
         ext = Path(filename).suffix.lower()
@@ -756,7 +1155,7 @@ def create_app() -> FastAPI:
         if ext not in allowed:
             raise HTTPException(status_code=400, detail=f"不支持的文件类型：{ext}")
 
-        agent_dir = (settings.files_root / _agent_folder_name(agent_id)).resolve()
+        agent_dir = agent_dir_path(settings.files_root, rid, agent_id)
         agent_dir.mkdir(parents=True, exist_ok=True)
         dest = (agent_dir / filename).resolve()
 
@@ -766,7 +1165,6 @@ def create_app() -> FastAPI:
         except Exception as e:  # noqa: BLE001
             raise HTTPException(status_code=500, detail=f"保存上传文件失败：{type(e).__name__}: {e}") from e
 
-        # Store as relative path if possible
         try:
             rel = dest.relative_to(settings.data_root).as_posix()
         except Exception:
@@ -776,10 +1174,15 @@ def create_app() -> FastAPI:
         return AgentResponse(agent_id=agent_id, agent=cfg)
 
     @app.put("/agents/{agent_id}/knowledge", response_model=AgentResponse)
-    def update_agent_knowledge(agent_id: str, req: UpdateAgentKnowledgeRequest) -> AgentResponse:
+    def update_agent_knowledge(
+        agent_id: str,
+        req: UpdateAgentKnowledgeRequest,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
         knowledge = req.knowledge.strip()
         if not knowledge:
             raise HTTPException(status_code=400, detail="knowledge 不能为空")
+        _rid, store, _cfg = _resolve_agent(agent_id, router_id)
         try:
             cfg = store.set_knowledge(agent_id=agent_id, knowledge=knowledge)
             return AgentResponse(agent_id=agent_id, agent=cfg)
@@ -787,7 +1190,12 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=str(e)) from e
 
     @app.put("/agents/{agent_id}/instructions", response_model=AgentResponse)
-    def update_agent_instructions(agent_id: str, req: UpdateAgentInstructionsRequest) -> AgentResponse:
+    def update_agent_instructions(
+        agent_id: str,
+        req: UpdateAgentInstructionsRequest,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
+        _rid, store, _cfg = _resolve_agent(agent_id, router_id)
         try:
             cfg = store.set_answer_instructions(
                 agent_id=agent_id,
@@ -798,11 +1206,15 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=str(e)) from e
 
     @app.put("/agents/{agent_id}/prompt", response_model=AgentResponse)
-    def update_agent_prompt(agent_id: str, req: UpdateAgentPromptRequest) -> AgentResponse:
-        """Deprecated: 写入 knowledge 字段。"""
+    def update_agent_prompt(
+        agent_id: str,
+        req: UpdateAgentPromptRequest,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
         knowledge = req.answer_prompt.strip()
         if not knowledge:
             raise HTTPException(status_code=400, detail="knowledge 不能为空")
+        _rid, store, _cfg = _resolve_agent(agent_id, router_id)
         try:
             cfg = store.set_knowledge(agent_id=agent_id, knowledge=knowledge)
             return AgentResponse(agent_id=agent_id, agent=cfg)
@@ -810,16 +1222,18 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=str(e)) from e
 
     @app.post("/agents/{agent_id}/initialize", response_model=InitializeResponse)
-    def initialize(agent_id: str) -> InitializeResponse:
-        cfg = store.get(agent_id)
-        if not cfg:
-            raise HTTPException(status_code=404, detail="agent_id 不存在")
-        files_dir = agent_files_dir(agent_id)
+    def initialize(
+        agent_id: str,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> InitializeResponse:
+        rid, store, cfg = _resolve_agent(agent_id, router_id)
+        files_dir = str(cfg.get("files_dir") or agent_files_dir(rid, agent_id))
         configured_knowledge = str(cfg.get("knowledge", "") or cfg.get("answer_prompt", "") or "")
 
         knowledge_text, knowledge_source, _ = resolve_agent_knowledge(
             project_root=settings.data_root,
             agent_id=agent_id,
+            files_dir=files_dir,
             configured_knowledge=configured_knowledge,
             max_chars=settings.max_file_chars,
             require_file_knowledge=True,
@@ -828,8 +1242,9 @@ def create_app() -> FastAPI:
             store.reset_agent_to_created(agent_id=agent_id)
             raise HTTPException(
                 status_code=400,
-                detail="知识内容为空，已同步清空 agents.json 中该 agent 的缓存。请在 files/agent_{id}/ 下放置任意 .md 或 .pdf 后重新初始化。".format(
-                    id=agent_id
+                detail=(
+                    f"知识内容为空，已同步清空 agents.json 中该 agent 的缓存。"
+                    f"请在 {files_dir}/ 下放置任意 .md 或 .pdf 后重新初始化。"
                 ),
             )
 
@@ -861,23 +1276,41 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=502, detail=str(e)) from e
 
     @app.post("/agents/{agent_id}/refresh", response_model=InitializeResponse)
-    def refresh(agent_id: str) -> InitializeResponse:
-        return initialize(agent_id)
+    def refresh(
+        agent_id: str,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> InitializeResponse:
+        return initialize(agent_id, router_id=router_id)
 
     @app.post("/agents/sync-from-files", response_model=SyncAgentsResponse)
-    def sync_agents_from_files() -> SyncAgentsResponse:
-        """Align every agent in agents.json with files/agent_{id}/ on disk."""
-        results = sync_all_agents_from_files(
-            store=store,
-            project_root=settings.data_root,
-            max_chars=settings.max_file_chars,
-        )
+    def sync_agents_from_files(
+        router_id: str = Query("", description="总 Agent ID；为空则同步所有路由"),
+    ) -> SyncAgentsResponse:
+        results: Dict[str, Any] = {}
+        router_ids: List[str] = []
+        if (router_id or "").strip():
+            router_ids = [_validate_router_id(router_id)]
+        elif settings.files_root.is_dir():
+            for entry in sorted(settings.files_root.iterdir()):
+                if entry.is_dir() and entry.name.startswith("router_"):
+                    rid = entry.name.replace("router_", "", 1)
+                    if (entry / "agents.json").is_file():
+                        router_ids.append(rid)
+        for rid in router_ids:
+            partial = sync_all_agents_from_files(
+                store=_agent_store(rid),
+                project_root=settings.data_root,
+                max_chars=settings.max_file_chars,
+            )
+            results.update(partial)
         return SyncAgentsResponse(results=results)
 
     @app.post("/agents/{agent_id}/sync-from-files", response_model=SyncAgentsResponse)
-    def sync_single_agent_from_files(agent_id: str) -> SyncAgentsResponse:
-        if not store.get(agent_id):
-            raise HTTPException(status_code=404, detail="agent_id 不存在")
+    def sync_single_agent_from_files(
+        agent_id: str,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> SyncAgentsResponse:
+        _rid, store, _cfg = _resolve_agent(agent_id, router_id)
         result = sync_agent_from_files(
             store=store,
             project_root=settings.data_root,
@@ -891,16 +1324,20 @@ def create_app() -> FastAPI:
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
+        router_id = _validate_router_id(req.router_id)
+        router_prompt = _get_router_prompt(router_id)
 
         try:
             t_total0 = time.perf_counter()
-            agents = store.get_all()
+            agents = agents_registry.get_agents_for_router(router_id)
             t_route0 = time.perf_counter()
             route_result = route_question(
                 question=question,
                 agents=agents,
                 llm=llm,
                 router_model=settings.router_model,
+                router_id=router_id,
+                router_prompt=router_prompt,
             )
             route_ms = (time.perf_counter() - t_route0) * 1000.0
 
@@ -947,23 +1384,25 @@ def create_app() -> FastAPI:
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
+        router_id = _validate_router_id(req.router_id)
+        router_prompt = _get_router_prompt(router_id)
 
         def generate():
             try:
                 t_total0 = time.perf_counter()
-                agents = store.get_all()
-                yield _sse_log("info", f"开始处理提问（{len(question)} 字）")
+                agents = agents_registry.get_agents_for_router(router_id)
+                yield _sse_log("info", f"开始处理提问（{len(question)} 字）· 总Agent {router_id}")
                 t_route0 = time.perf_counter()
                 route_parts: List[str] = []
                 route_first_token_ms: float | None = None
-                eligible_agents = get_eligible_agents(agents)
+                eligible_agents = get_eligible_agents(agents, router_id=router_id)
                 yield _sse_log(
                     "info",
                     f"可路由 agent {len(eligible_agents)} 个",
                     {"agent_ids": list(eligible_agents.keys())},
                 )
                 if not eligible_agents:
-                    route_result = no_agents_router_result()
+                    route_result = no_agents_router_result(router_id=router_id)
                     route_ms = (time.perf_counter() - t_route0) * 1000.0
                     yield _sse_log("warn", "没有可路由 agent，跳过路由模型")
                 else:
@@ -971,6 +1410,7 @@ def create_app() -> FastAPI:
                     route_messages = build_route_messages(
                         question=question,
                         eligible_agents=eligible_agents,
+                        router_prompt=router_prompt,
                     )
                     yield _sse_log(
                         "info",

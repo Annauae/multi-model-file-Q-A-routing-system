@@ -36,6 +36,7 @@ class Settings:
     max_agent_workers: int
     data_root: Path
     agents_config_path: Path
+    routers_config_path: Path
     batch_tests_config_path: Path
     files_root: Path
 
@@ -80,6 +81,9 @@ class Settings:
 
         data_root = Path(os.getenv("DATA_ROOT", str(app_root))).resolve()
         agents_config_path = Path(os.getenv("AGENTS_CONFIG_PATH", str(data_root / "config" / "agents.json"))).resolve()
+        routers_config_path = Path(
+            os.getenv("ROUTERS_CONFIG_PATH", str(data_root / "config" / "routers.json"))
+        ).resolve()
         batch_tests_config_path = Path(
             os.getenv("BATCH_TESTS_CONFIG_PATH", str(data_root / "config" / "batch_tests.json"))
         ).resolve()
@@ -107,6 +111,7 @@ class Settings:
             max_agent_workers=max(1, max_agent_workers),
             data_root=data_root,
             agents_config_path=agents_config_path,
+            routers_config_path=routers_config_path,
             batch_tests_config_path=batch_tests_config_path,
             files_root=files_root,
         )

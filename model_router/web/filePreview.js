@@ -177,13 +177,21 @@ async function loadSelectedFile(panelName, path) {
   }
 }
 
+function filePanelRouterSelect(panelName) {
+  if (panelName === "batch") return $("#batchFileRouterSelect");
+  return $("#routerSelect");
+}
+
 async function loadAgentFilesList(panelName) {
   const p = _panel(panelName);
   const sel = $(p.select);
   if (!sel) return;
   const prev = sel.value;
+  const routerId = filePanelRouterSelect(panelName)?.value || "";
   try {
-    const r = await fetch("/agents/files");
+    const r = await fetch(
+      `/agents/files?router_id=${encodeURIComponent(routerId)}`
+    );
     const data = await r.json();
     if (!r.ok) throw new Error(data?.detail || "加载失败");
     const files = data.files || [];

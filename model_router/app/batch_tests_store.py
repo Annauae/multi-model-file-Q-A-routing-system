@@ -17,6 +17,7 @@ def _new_item(
     *,
     question: str,
     reference_answer: str,
+    router_id: str = "",
     knowledge_source: str = "",
 ) -> Dict[str, Any]:
     now = _now_iso()
@@ -24,6 +25,7 @@ def _new_item(
         "id": uuid.uuid4().hex[:12],
         "question": question.strip(),
         "reference_answer": reference_answer.strip(),
+        "router_id": (router_id or "").strip(),
         "model_answer": "",
         "accuracy_percent": None,
         "accuracy_reason": "",
@@ -70,14 +72,17 @@ class BatchTestsStore:
                     return dict(item)
         return None
 
-    def create(self, *, question: str, reference_answer: str) -> Dict[str, Any]:
+    def create(self, *, question: str, reference_answer: str, router_id: str = "") -> Dict[str, Any]:
         q = (question or "").strip()
         r = (reference_answer or "").strip()
+        rid = (router_id or "").strip()
         if not q:
             raise ValueError("question 不能为空")
         if not r:
             raise ValueError("reference_answer 不能为空")
-        item = _new_item(question=q, reference_answer=r)
+        if not rid:
+            raise ValueError("router_id 不能为空")
+        item = _new_item(question=q, reference_answer=r, router_id=rid)
         with self._lock:
             self._items.append(item)
             self._save()
@@ -92,10 +97,13 @@ class BatchTestsStore:
                 if not q or not r:
                     continue
                 ks = (entry.get("knowledge_source") or entry.get("source") or "").strip()
+                rid = str(entry.get("router_id") or "").strip()
+                if not rid:
+                    continue
                 agent_id = str(entry.get("agent_id") or entry.get("last_agent_id") or "").strip()
                 if not ks and agent_id:
                     ks = f"files/agent_{agent_id}/knowledge.md"
-                item = _new_item(question=q, reference_answer=r, knowledge_source=ks)
+                item = _new_item(question=q, reference_answer=r, router_id=rid, knowledge_source=ks)
                 self._items.append(item)
                 created.append(dict(item))
             if created:

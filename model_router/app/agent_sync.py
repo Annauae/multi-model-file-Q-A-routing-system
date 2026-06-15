@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Literal
 
 from .agents_store import AgentsStore
-from .knowledge_loader import agent_files_dir, resolve_agent_knowledge
+from .knowledge_loader import resolve_agent_knowledge
 
 SyncResult = Literal["missing", "reset", "staged", "unchanged"]
 
@@ -21,10 +21,11 @@ def sync_agent_from_files(
     if not cfg:
         return "missing"
 
-    files_dir = agent_files_dir(agent_id)
+    files_dir = str(cfg.get("files_dir") or "").strip()
     knowledge_text, _, _ = resolve_agent_knowledge(
         project_root=project_root,
         agent_id=agent_id,
+        files_dir=files_dir,
         configured_knowledge="",
         max_chars=max_chars,
         require_file_knowledge=True,
