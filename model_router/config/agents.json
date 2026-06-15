@@ -2561,5 +2561,17 @@
       }
     ],
     "last_initialized_at": "2026-06-12T02:29:54Z"
+  },
+  "25": {
+    "name": "agent_25",
+    "status": "created",
+    "knowledge": "",
+    "answer_instructions": "",
+    "answer_prompt": "",
+    "files_dir": "files/agent_25",
+    "files": [],
+    "route_questions": [],
+    "file_summaries": [],
+    "last_initialized_at": ""
   }
 }
