@@ -712,11 +712,20 @@ def resolve_agent_knowledge(
     return text, source, note
 
 
+def normalize_asset_ref(ref: str) -> str:
+    """Normalize legacy image refs (e.g. assets/png/foo.png → assets/foo.png)."""
+    r = (ref or "").strip().replace("\\", "/")
+    if r.startswith("assets/png/"):
+        return f"assets/{r[len('assets/png/'):]}"
+    return r
+
+
 def _build_answer_rules_text(
     *,
     agent_name: str,
     answer_instructions: str,
     max_answer_chars: int = 0,
+    knowledge_source: str = "",
 ) -> str:
     extra = ""
     instr = (answer_instructions or "").strip()
@@ -729,6 +738,8 @@ def _build_answer_rules_text(
             f"6. 输出总长不超过 {max_answer_chars} 个汉字；请精炼归纳，优先给出与用户问题最相关的要点。\n"
         )
 
+    cite_src = (knowledge_source or "knowledge.md").strip()
+
     return (
         f"你是「{agent_name}」领域的问答助手。\n"
         "本消息中的【知识库全文】是你唯一可引用的资料（含文字与插图），请**仅依据**其内容回答用户随后提出的问题。\n"
@@ -739,8 +750,8 @@ def _build_answer_rules_text(
         "   - **正文**：自然中文。若插图有助于说明，在对应步骤处**原样插入**知识库中的 Markdown 图片行，"
         "格式为 ![](assets/xxx.png)（路径须与知识库完全一致，每张图单独占一行）。\n"
         "   - **文末引用**：正文结束后空一行，逐行列出来源行号，格式：\n"
-        "     【引用】files/agent_{id}/knowledge.md L{起始行}-L{结束行}\n"
-        "     单行可写：【引用】files/agent_1/knowledge.md L28\n"
+        f"     【引用】{cite_src} L{{起始行}}-L{{结束行}}\n"
+        f"     单行可写：【引用】{cite_src} L28\n"
         "     引用须覆盖实际用到的文字行；若该页有「本页插图」，请**另起一行**引用插图行号范围。\n"
         "     只引用你实际用到的段落；可有多行引用。\n"
         "3. **禁止**在正文叙述句中写文件名、行号或【引用】（引用只放在文末专用行）。\n"
@@ -900,6 +911,7 @@ def build_answer_system_content(
             agent_name=agent_name,
             answer_instructions=answer_instructions,
             max_answer_chars=max_answer_chars,
+            knowledge_source=source_label,
         )
         + f"\n\n【知识库全文】（来源：{source_label}）\n"
     )
@@ -927,11 +939,11 @@ def build_answer_system_message(
     max_answer_chars: int = 0,
 ) -> str:
     """Return rules-only text (legacy helper for tests). Knowledge is no longer appended here."""
-    _ = knowledge, knowledge_source
     return _build_answer_rules_text(
         agent_name=agent_name,
         answer_instructions=answer_instructions,
         max_answer_chars=max_answer_chars,
+        knowledge_source=(knowledge_source or "").strip(),
     )
 
 
@@ -1316,7 +1328,7 @@ def resolve_knowledge_asset_path(*, project_root: Path, files_dir: str, asset_re
     - ../assets/foo.png (agent folder knowledge.md)
     - assets/foo.png (u001_whole.md at files root or agents.json cache)
     """
-    ref = (asset_ref or "").strip()
+    ref = normalize_asset_ref(asset_ref)
     if not ref or ref.startswith(("http://", "https://", "data:")):
         return None
 

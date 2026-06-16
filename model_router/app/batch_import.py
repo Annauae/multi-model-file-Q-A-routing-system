@@ -34,10 +34,13 @@ def _normalize_entry(raw: dict) -> dict | None:
     out = {"question": q, "reference_answer": r}
     ks = str(raw.get("knowledge_source") or raw.get("source") or "").strip()
     agent_id = str(raw.get("agent_id") or raw.get("last_agent_id") or "").strip()
+    router_id = str(raw.get("router_id") or "1").strip()
     if ks:
         out["knowledge_source"] = ks
     elif agent_id:
-        out["knowledge_source"] = f"files/agent_{agent_id}/knowledge.md"
+        out["knowledge_source"] = f"files/router_{router_id}/agent_{agent_id}/md/knowledge.md"
+    if router_id:
+        out["router_id"] = router_id
     return out
 
 

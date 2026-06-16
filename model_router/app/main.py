@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import time
 from pathlib import Path
@@ -38,6 +39,7 @@ from .paths import (
 )
 from .knowledge_loader import (
     build_answer_system_content,
+    normalize_asset_ref,
     resolve_agent_knowledge,
     resolve_knowledge_asset_path,
     format_system_content_for_log,
@@ -225,6 +227,33 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail="文件不存在")
         return resolved
 
+    def _resolve_knowledge_md_source(source: str) -> Path:
+        """Resolve markdown source path; remap legacy files/agent_{id}/... to router layout."""
+        raw = (source or "").strip()
+        if not raw:
+            raise HTTPException(status_code=400, detail="source 不能为空")
+        try:
+            return _resolve_files_root_path(raw)
+        except HTTPException as e:
+            if e.status_code != 404:
+                raise
+
+        norm = raw.replace("\\", "/")
+        m = re.match(r"files/agent_([^/]+)/(?:md/)?([^/]+\.(?:md|txt))$", norm, re.IGNORECASE)
+        if not m:
+            raise HTTPException(status_code=404, detail="文件不存在")
+        agent_id, fname = m.group(1), m.group(2)
+        found = agents_registry.find_agent(agent_id)
+        if not found:
+            raise HTTPException(status_code=404, detail="文件不存在")
+        rid, _, cfg = found
+        rel_dir = str(cfg.get("files_dir") or agent_files_dir(rid, agent_id)).replace("\\", "/")
+        base = (settings.data_root / rel_dir).resolve()
+        for candidate in (base / "md" / fname, base / fname):
+            if candidate.is_file():
+                return candidate.resolve()
+        raise HTTPException(status_code=404, detail="文件不存在")
+
     _EDITABLE_TEXT_EXTS = {".md", ".txt"}
 
     def _resolve_files_path(
@@ -373,13 +402,17 @@ def create_app() -> FastAPI:
 
     @app.get("/preview-asset")
     def preview_asset(
-        source: str = Query(..., description="Markdown 源文件路径（如 files/agent_1/knowledge.md）"),
+        source: str = Query(..., description="Markdown 源文件路径（如 files/router_1/agent_1/md/knowledge.md）"),
         ref: str = Query(..., description="MD 内相对引用（如 assets/foo.png）"),
     ) -> FileResponse:
         """解析 MD 内图片/视频相对路径并返回媒体文件。"""
-        source_path = _resolve_files_root_path(source)
+        source_path = _resolve_knowledge_md_source(source)
         if source_path.suffix.lower() not in {".md", ".txt"}:
             raise HTTPException(status_code=400, detail="source 必须是 .md 或 .txt 文件")
+
+        asset_ref = normalize_asset_ref(ref)
+        if not asset_ref:
+            raise HTTPException(status_code=400, detail="ref 不能为空")
 
         files_dir = ""
         parts = source_path.as_posix().split("/")
@@ -405,10 +438,10 @@ def create_app() -> FastAPI:
         resolved = resolve_knowledge_asset_path(
             project_root=settings.data_root,
             files_dir=files_dir,
-            asset_ref=ref,
+            asset_ref=asset_ref,
         )
         if not resolved:
-            raise HTTPException(status_code=404, detail=f"无法解析资源引用：{ref}")
+            raise HTTPException(status_code=404, detail=f"无法解析资源引用：{asset_ref}")
         asset_path = _resolve_preview_media_path(resolved)
         return _media_response(asset_path)
 
@@ -1101,16 +1134,26 @@ def create_app() -> FastAPI:
         agent_name = str(cfg.get("name", agent_id))
         max_chars = int(cfg.get("max_answer_chars") or 0)
         custom = (cfg.get("answer_instructions") or "").strip()
+        files_dir = str(cfg.get("files_dir") or agent_files_dir(_rid, agent_id))
+        _, cite_source, _ = resolve_agent_knowledge(
+            project_root=settings.data_root,
+            agent_id=agent_id,
+            files_dir=files_dir,
+            configured_knowledge=str(cfg.get("knowledge") or cfg.get("answer_prompt") or ""),
+            max_chars=0,
+        )
         default_tpl = _build_answer_rules_text(
             agent_name=agent_name,
             answer_instructions="",
             max_answer_chars=max_chars,
+            knowledge_source=cite_source or f"{files_dir}/md/knowledge.md",
         )
         if custom:
             display = _build_answer_rules_text(
                 agent_name=agent_name,
                 answer_instructions=custom,
                 max_answer_chars=max_chars,
+                knowledge_source=cite_source or f"{files_dir}/md/knowledge.md",
             )
             return AgentPromptTemplateResponse(
                 answer_instructions=custom,

@@ -1,7 +1,13 @@
 const filePanels = new Map();
 
+function normalizeAssetRef(ref) {
+  const r = (ref || "").trim().replace(/\\/g, "/");
+  if (r.startsWith("assets/png/")) return `assets/${r.slice("assets/png/".length)}`;
+  return r;
+}
+
 function assetPreviewUrl(sourceFile, ref) {
-  const r = (ref || "").trim();
+  const r = normalizeAssetRef(ref);
   if (!r) return "";
   if (isSafeHttpUrl(r)) return r;
   if (sourceFile) {
@@ -48,10 +54,19 @@ function youtubeEmbedUrl(url) {
 }
 
 function resolveMdHref(href, sourceFile) {
-  const h = (href || "").trim();
+  const h = normalizeAssetRef(href);
   if (!h) return h;
   if (isSafeHttpUrl(h)) return h;
   return assetPreviewUrl(sourceFile, h);
+}
+
+function rewriteMdInlineAssetImgs(html, sourceFile) {
+  const src = (sourceFile || "").trim();
+  if (!src || !html) return html;
+  return html.replace(
+    /(<img\b[^>]*\bsrc=["'])(assets\/[^"']+)(["'])/gi,
+    (_m, pre, ref, post) => `${pre}${assetPreviewUrl(src, ref)}${post}`
+  );
 }
 
 function renderMarkdownPreview(md, sourceFile) {
@@ -92,13 +107,14 @@ function renderMarkdownPreview(md, sourceFile) {
 
   marked.setOptions({ renderer, gfm: true, breaks: true });
   const rawHtml = marked.parse(md || "");
+  let html = rawHtml;
   if (typeof DOMPurify !== "undefined") {
-    return DOMPurify.sanitize(rawHtml, {
+    html = DOMPurify.sanitize(rawHtml, {
       ADD_TAGS: ["video", "iframe", "source"],
-      ADD_ATTR: ["controls", "preload", "allowfullscreen", "loading", "onerror"],
+      ADD_ATTR: ["controls", "preload", "allowfullscreen", "loading", "onerror", "style"],
     });
   }
-  return rawHtml;
+  return rewriteMdInlineAssetImgs(html, sourceFile);
 }
 
 function initFilePanel(name, cfg) {
