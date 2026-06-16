@@ -127,14 +127,63 @@ async function reloadManageData() {
   populateRouterSelect($("#batchRouterSelect"), manageSelectedRouterId);
 }
 
+function routerSourcePath() {
+  const files = currentRouterCfg().source_files || [];
+  return files.length ? String(files[files.length - 1]) : "";
+}
+
+function splitRangeMode() {
+  const src = routerSourcePath().toLowerCase();
+  if (src.endsWith(".md")) return "line";
+  if (src.endsWith(".pdf")) return "page";
+  return "page";
+}
+
+function splitRangeUi() {
+  if (splitRangeMode() === "line") {
+    return {
+      head: "切分行（首行 - 尾行）",
+      addBtn: "+ 添加切分行",
+      unit: "行",
+      rangeNoun: "行范围",
+      defaultRange: [1, 100],
+      stepSize: 50,
+    };
+  }
+  return {
+    head: "切分页码（始页 - 尾页）",
+    addBtn: "+ 添加切分页",
+    unit: "页",
+    rangeNoun: "页码范围",
+    defaultRange: [1, 3],
+    stepSize: 3,
+  };
+}
+
+function updateSplitRangeUi() {
+  const ui = splitRangeUi();
+  const head = $("#splitRangesHead");
+  const addBtn = $("#addSplitRangeBtn");
+  if (head) head.textContent = ui.head;
+  if (addBtn) addBtn.textContent = ui.addBtn;
+}
+
 function syncSplitRangesFromRouter() {
+  const ui = splitRangeUi();
   const ranges = currentRouterCfg().split_ranges || [];
   manageSplitRanges = ranges.map((r) => [Number(r[0]), Number(r[1])]).filter((r) => r[0] > 0 && r[1] >= r[0]);
-  if (!manageSplitRanges.length) manageSplitRanges = [[1, 3]];
+  if (!manageSplitRanges.length) manageSplitRanges = [ui.defaultRange.slice()];
+  updateSplitRangeUi();
   renderSplitRanges();
-  const files = currentRouterCfg().source_files || [];
   const label = $("#routerSourceLabel");
-  if (label) label.textContent = files.length ? `源文件: ${files[files.length - 1]}` : "尚未上传源文件";
+  const src = routerSourcePath();
+  if (label) {
+    if (!src) label.textContent = "尚未上传源文件";
+    else {
+      const kind = splitRangeMode() === "line" ? "Markdown · 按行切分" : "PDF · 按页切分";
+      label.textContent = `源文件: ${src}（${kind}）`;
+    }
+  }
 }
 
 function renderRouterList() {
@@ -258,13 +307,14 @@ function addSplitRangeRow() {
     return;
   }
   syncSplitRangesFromDom();
+  const ui = splitRangeUi();
   if (!manageSplitRanges.length) {
-    manageSplitRanges = [[1, 3]];
+    manageSplitRanges = [ui.defaultRange.slice()];
   }
   const last = manageSplitRanges[manageSplitRanges.length - 1];
   const prevEnd = Array.isArray(last) ? Number(last[1]) : 0;
   const start = prevEnd > 0 ? prevEnd + 1 : 1;
-  manageSplitRanges.push([start, start + 2]);
+  manageSplitRanges.push([start, start + ui.stepSize - 1]);
   renderSplitRanges();
   const list = $("#splitRangesList");
   list?.lastElementChild?.scrollIntoView?.({ block: "nearest" });
@@ -277,7 +327,7 @@ function removeSplitRangeRow(row) {
   if (Number.isFinite(idx) && idx >= 0) {
     manageSplitRanges.splice(idx, 1);
   }
-  if (!manageSplitRanges.length) manageSplitRanges = [[1, 3]];
+  if (!manageSplitRanges.length) manageSplitRanges = [splitRangeUi().defaultRange.slice()];
   renderSplitRanges();
 }
 
@@ -316,7 +366,7 @@ async function saveSplitRangesToServer() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ split_ranges: ranges }),
   });
-  manageSplitRanges = ranges.length ? ranges : [[1, 3]];
+  manageSplitRanges = ranges.length ? ranges : [splitRangeUi().defaultRange.slice()];
   renderSplitRanges();
   await loadRoutersCache();
 }
@@ -577,22 +627,22 @@ function appendSplitProgress(line) {
 
 async function runSplit() {
   if (!manageSelectedRouterId) return;
+  const ui = splitRangeUi();
   const ranges = collectSplitRanges();
   if (!ranges.length) {
-    manageLog("请至少添加一组页码范围", "warn");
+    manageLog(`请至少添加一组${ui.rangeNoun}`, "warn");
     return;
   }
   await saveSplitRangesToServer();
-  const cfg = currentRouterCfg();
-  const source = (cfg.source_files || []).slice(-1)[0] || "";
+  const source = routerSourcePath();
   if (!source) {
     manageLog("请先上传 PDF 或 Markdown 源文件", "warn");
     return;
   }
   const autoInit = $("#autoInitAfterSplit")?.checked;
   const runBtn = $("#runSplitBtn");
-  setSplitProgress(`准备切分 ${ranges.length} 组页码…\n源文件: ${source}`);
-  manageLog(`开始切分 ${ranges.length} 组 · ${source}`, "info");
+  setSplitProgress(`准备切分 ${ranges.length} 组${ui.unit}…\n源文件: ${source}`);
+  manageLog(`开始切分 ${ranges.length} 组${ui.unit} · ${source}`, "info");
   if (runBtn) {
     runBtn.disabled = true;
     runBtn.textContent = "切分中…";
@@ -648,7 +698,7 @@ async function runSplit() {
     if (failed.length) {
       for (const item of failed) {
         manageLog(
-          `切分失败 p${item.page_start}-${item.page_end}: ${item.error || "未知错误"}`,
+          `切分失败 ${ui.unit} ${item.page_start}-${item.page_end}: ${item.error || "未知错误"}`,
           "err"
         );
       }

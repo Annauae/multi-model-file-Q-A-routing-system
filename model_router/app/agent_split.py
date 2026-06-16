@@ -64,20 +64,15 @@ def _parse_page_sections(md_text: str) -> Dict[int, str]:
     return {p: "\n".join(lines).strip() for p, lines in sections.items() if lines}
 
 
-def extract_md_range(md_text: str, page_start: int, page_end: int) -> str:
-    sections = _parse_page_sections(md_text)
-    if sections:
-        parts: List[str] = []
-        for p in range(page_start, page_end + 1):
-            if p in sections:
-                parts.append(f"<!-- page {p} -->\n\n{sections[p]}")
-        if parts:
-            return "\n\n".join(parts).strip()
+def extract_md_line_range(md_text: str, line_start: int, line_end: int) -> str:
+    """Extract a line range from Markdown (1-based, inclusive)."""
     lines = md_text.splitlines()
-    if page_start <= len(lines):
-        chunk = lines[max(0, page_start - 1) : min(len(lines), page_end)]
-        return "\n".join(chunk).strip()
-    return ""
+    if line_start < 1 or line_end < line_start:
+        return ""
+    if line_start > len(lines):
+        return ""
+    chunk = lines[max(0, line_start - 1) : min(len(lines), line_end)]
+    return "\n".join(chunk).strip()
 
 
 def _ensure_agent_dirs(files_root: Path, router_id: str, agent_id: str) -> Tuple[Path, Path, Path]:
@@ -285,12 +280,14 @@ def split_router(
             raise ValueError(f"无效范围: {raw_range}")
         page_start, page_end = int(raw_range[0]), int(raw_range[1])
         if page_start < 1 or page_end < page_start:
-            raise ValueError(f"无效页码范围: {page_start}-{page_end}")
+            unit = "行" if suffix == ".md" else "页"
+            raise ValueError(f"无效{unit}范围: {page_start}-{page_end}")
 
         total = len(ranges)
         step = f"[{idx + 1}/{total}]"
+        range_label = "行" if suffix == ".md" else "页"
         if progress_cb:
-            progress_cb(f"{step} 正在提取第 {page_start}-{page_end} 页…")
+            progress_cb(f"{step} 正在提取第 {page_start}-{page_end} {range_label}…")
 
         try:
             knowledge_path = ""
@@ -328,11 +325,15 @@ def split_router(
                     )
             elif suffix == ".md":
                 md_text = src_path.read_text(encoding="utf-8", errors="ignore")
-                chunk = extract_md_range(md_text, page_start, page_end)
+                chunk = extract_md_line_range(md_text, page_start, page_end)
                 if not chunk:
-                    raise ValueError(f"Markdown 中未找到页码 {page_start}-{page_end} 的内容")
+                    total = len(md_text.splitlines())
+                    raise ValueError(
+                        f"Markdown 中未找到行 {page_start}-{page_end} 的内容"
+                        + (f"（文件共 {total} 行）" if total else "（文件为空）")
+                    )
                 if progress_cb:
-                    progress_cb(f"{step} Markdown 切分完成，正在创建子 Agent…")
+                    progress_cb(f"{step} 按行切分完成，正在创建子 Agent…")
                 agent_id = create_sub_agent(
                     store=store,
                     routers_store=routers_store,
@@ -378,7 +379,9 @@ def split_router(
             )
         except Exception as e:  # noqa: BLE001
             if progress_cb:
-                progress_cb(f"{step} 失败 · 第 {page_start}-{page_end} 页 · {type(e).__name__}: {e}")
+                progress_cb(
+                    f"{step} 失败 · 第 {page_start}-{page_end} {range_label} · {type(e).__name__}: {e}"
+                )
             results.append(
                 {
                     "page_start": page_start,

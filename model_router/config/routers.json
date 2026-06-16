@@ -30,11 +30,12 @@
       "模型1"
     ],
     "source_files": [
-      "files/root/ZfcRGPRC_(Sc)12.pdf"
+      "files/root/ZfcRGPRC_(Sc)12.pdf",
+      "files/root/README.md"
     ],
     "split_ranges": [],
     "created_at": "2026-06-12T00:00:00Z",
-    "updated_at": "2026-06-15T08:31:46Z"
+    "updated_at": "2026-06-16T02:22:16Z"
   },
   "3": {
     "name": "相机_2",

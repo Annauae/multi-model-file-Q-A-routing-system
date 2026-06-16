@@ -6,7 +6,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.agent_split import _run_pdf_extract  # noqa: E402
+from app.agent_split import _run_pdf_extract, extract_md_line_range  # noqa: E402
+
+
+def test_extract_md_line_range() -> None:
+    text = "a\nb\nc\nd\ne"
+    assert extract_md_line_range(text, 2, 4) == "b\nc\nd"
+    assert extract_md_line_range(text, 10, 12) == ""
 
 
 def test_run_pdf_extract_passes_pdf_flag(tmp_path: Path) -> None:
