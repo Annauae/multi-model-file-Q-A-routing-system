@@ -63,7 +63,7 @@
     {
       "id": "e9f4d7962740",
       "question": "安装镜头前有哪些注意事项？",
-      "reference_answer": "安装新镜头前请注意：\n\n1. 本照相机可与 Z 卡口镜头一起使用，安装前请先确认照相机处于关闭状态。\n2. 请注意防止灰尘进入照相机，切勿触摸影像传感器和镜头接点。\n3. 取下照相机机身盖（①、②）和镜头后盖（③、④）。\n4. 对齐照相机（⑤）和镜头（⑥）上的安装标记，完成安装。\n\n![此图解说明了尼康相机镜头盖的安装与拆卸步骤：首先将镜头盖对准镜头卡口（1），然后顺时针旋转（2）直至卡入到位；拆卸时则逆时针旋转（3）并取下镜头盖（4）。](assets/p012_docling_picture001.png)\n\n![图示为相机镜头卡口处的对焦模式切换按钮（标记⑤）与镜头卡口（标记⑥）的联动关系，用于在自动对焦与手动对焦模式间切换。](assets/p012_docling_picture002.png)",
+      "reference_answer": "安装新镜头前请注意：\n\n- 本照相机可与Z卡口镜头一起使用。本使用说明中，我们一般以一个尼克尔Z DX 16-50mm f/3.5-6.3 VR镜头为例来进行说明。\n- 请注意防止灰尘进入照相机。\n- 安装镜头前请先确认照相机处于关闭状态。\n  - 取下照相机机身盖（①、②）和镜头后盖（③、④）。\n\n![取下机身盖和镜头后盖操作图示](assets/knowledge_p67-69_001.png)\n\n  - 对齐照相机（⑤）和镜头（⑥）上的安装标记。切勿触摸影像传感器和镜头接点。\n\n![对齐安装标记操作图示](assets/knowledge_p67-69_002.png)",
       "model_answer": "安装镜头前的注意事项如下：\n1. 本照相机可与Z卡口镜头一起使用，若使用F卡口镜头，务必先安装FTZ卡口适配器（另购），不要试图将F卡口镜头直接安装至照相机，否则可能损坏镜头或影像传感器。\n2. 注意防止灰尘进入照相机。\n3. 安装前请先确认照相机处于关闭状态。\n4. 安装过程中对齐标记时，切勿触摸影像传感器和镜头接点。\n\n![取下机身盖和镜头后盖操作图示](assets/knowledge_p67-69_001.png)\n\n![对齐安装标记操作图示](assets/knowledge_p67-69_002.png)",
       "accuracy_percent": 60,
       "accuracy_reason": "模型回答存在编造信息，新增了参考中未提及的F卡口镜头及FTZ卡口适配器相关内容；同时遗漏了取下照相机机身盖和镜头后盖、对齐安装标记完成安装的关键步骤，仅提及部分注意事项，信息完整度不足。",
@@ -72,7 +72,7 @@
       "knowledge_source": "files/router_1/agent_11/md/knowledge_p67-69.md",
       "last_error": "",
       "created_at": "2026-06-10T08:43:34Z",
-      "updated_at": "2026-06-15T07:50:05Z",
+      "updated_at": "2026-06-17T06:03:22Z",
       "router_id": "1"
     },
     {
@@ -93,7 +93,7 @@
     {
       "id": "4643824d1939",
       "question": "怎么打开相机的翻转显示屏？",
-      "reference_answer": "慢慢旋转显示屏，不要过度用力。\n\n![显示屏打开步骤1](assets/knowledge_p67-69_005.png)\n![显示屏打开步骤2](assets/knowledge_p67-69_006.png)\n![显示屏打开步骤3](assets/knowledge_p67-69_007.png)\n![显示屏打开步骤4](assets/knowledge_p67-69_008.png)\n![显示屏打开步骤5](assets/knowledge_p67-69_009.png)",
+      "reference_answer": "# 打开显示屏\n慢慢旋转显示屏，不要过度用力。\n\n![显示屏打开步骤1](assets/knowledge_p67-69_005.png)\n![显示屏打开步骤2](assets/knowledge_p67-69_006.png)\n![显示屏打开步骤3](assets/knowledge_p67-69_007.png)\n![显示屏打开步骤4](assets/knowledge_p67-69_008.png)\n![显示屏打开步骤5](assets/knowledge_p67-69_009.png)",
       "model_answer": "你可以根据拍摄场景调整翻转显示屏的角度，具体操作如下：\n1. 显示屏的方向和角度可调节，最大可向外打开175°，还可在90°至180°的范围内旋转：\n![曝光补偿拨盘示意图](assets/knowledge_p31-35_001.png)\n2. 不同拍摄场景的调整方式：\n- 正常拍摄：将显示屏置于照相机机身内，屏幕朝外即可。\n| ![](assets/knowledge_p31-35_002.png) | ![](assets/knowledge_p31-35_003.png) | ![](assets/knowledge_p31-35_004.png) |\n- 低角度拍摄：将显示屏朝上调整。\n![显示屏调节角度示意图](assets/knowledge_p31-35_005.png)\n- 高角度拍摄：将显示屏朝下调整。\n![正常拍摄显示屏状态](assets/knowledge_p31-35_006.png)\n- 人像自拍模式：将显示屏朝向照相机正面，相机会自动切换为人像自拍模式。\n![低角度拍摄显示屏状态](assets/knowledge_p31-35_007.png)\n\n旋转时请在允许的范围内缓慢旋转，避免用力过度损坏机身和显示屏；不使用时建议将屏幕旋至内侧收在机身内，不要抓握显示屏携带相机。",
       "accuracy_percent": 20,
       "accuracy_reason": "模型回答仅提及了旋转时要缓慢、不要用力过度这一点与参考回答相符，其余如最大打开角度、不同场景的调整方式、自动切换自拍模式、收存和携带注意事项等内容均为参考回答未提及的编造信息，且参考回答的核心是说明打开翻转屏的操作，模型回答偏离核心且大量新增无关不实内容。",
@@ -102,7 +102,7 @@
       "knowledge_source": "files/router_1/agent_2/md/knowledge_p31-35.md",
       "last_error": "",
       "created_at": "2026-06-10T08:43:34Z",
-      "updated_at": "2026-06-15T07:50:34Z",
+      "updated_at": "2026-06-17T06:13:40Z",
       "router_id": "1"
     },
     {
@@ -194,6 +194,21 @@
       "created_at": "2026-06-15T05:45:16Z",
       "updated_at": "2026-06-15T07:51:47Z",
       "router_id": "1"
+    },
+    {
+      "id": "ec72d04b2852",
+      "question": "尼康的终身学习是什么服务？",
+      "reference_answer": "作为尼康“终身学习”保证的一部分，尼康会通过对应的官方网站持续为用户提供最新在线产品支持、教育及不断更新的各类信息，不同地区用户可访问对应站点获取服务：\n- 中国大陆用户可访问https://www.nikon.com.cn/sc_CN/，在“支持及下载”栏目下的“常见问题与解答”获取常见问题回答（FAQ）和在线技术支持，点击“如何购买”可获得本地尼康经销商的联络信息。\n- 美国用户可访问https://www.nikonusa.com/\n- 欧洲与非洲用户可访问https://www.nikoneurope.com\n- 亚洲、大洋洲和中东用户可访问https://www.nikon-asia.com/\n\n浏览上述网站，用户可持续获得最新产品信息、提示、常见问题回答（FAQ）以及有关数码成像和拍摄的一般性建议，也可向本地尼康经销商获取更详细的信息，相关联络信息可访问https://imaging.nikon.com/、https://www.nikon.com.cn/sc_CN/ 查询。",
+      "router_id": "3",
+      "model_answer": "作为尼康“终身学习”保证的一部分，尼康为用户提供持续更新的在线产品支持、教育及各类相关信息，具体服务与渠道如下：\n1. 按地区可访问对应官方网站获取服务：\n   - 中国大陆用户可访问https://www.nikon.com.cn/sc_CN/，在“支持及下载”栏目下的“常见问题与解答”获取常见问题回答（FAQ）和在线技术支持；点击“如何购买”可获取本地尼康经销商的联络信息。\n   - 美国用户可访问https://www.nikonusa.com/\n   - 欧洲与非洲用户可访问https://www.nikoneurope.com\n   - 亚洲、大洋洲和中东用户可访问https://www.nikon-asia.com/\n2. 上述网站还提供最新产品信息、提示、常见问题回答（FAQ）以及有关数码成像和拍摄的一般性建议，用户也可向本地尼康经销商获取更详细的信息，相关联络信息可访问https://imaging.nikon.com/ 或https://www.nikon.com.cn/sc_CN/ 查询。\n\n![page illustration](assets/knowledge_p7-10_003.png)",
+      "accuracy_percent": 95,
+      "accuracy_reason": "模型回答完整覆盖了参考回答的所有事实、服务内容和访问渠道信息，内容准确一致，仅额外附带了一张参考中没有的图片，不影响核心信息的准确性。",
+      "status": "done",
+      "last_agent_id": "3",
+      "knowledge_source": "files/router_3/agent_3/md/knowledge_p7-10.md",
+      "last_error": "",
+      "created_at": "2026-06-17T06:09:12Z",
+      "updated_at": "2026-06-17T06:09:28Z"
     }
   ]
 }
