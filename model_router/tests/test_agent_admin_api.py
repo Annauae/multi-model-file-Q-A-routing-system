@@ -97,3 +97,24 @@ def test_delete_agent(admin_client: TestClient) -> None:
     assert resp.status_code == 200
     assert not agent_dir.exists()
     assert "1" not in admin_client.get("/agents").json()["agents"]
+
+
+def test_update_route_questions(admin_client: TestClient) -> None:
+    admin_client.post("/agents/auto?router_id=1")
+    questions = ["快门在哪？", "怎么调曝光？"]
+    resp = admin_client.put(
+        "/agents/1/route-questions?router_id=1",
+        json={"route_questions": questions},
+    )
+    assert resp.status_code == 200
+    agent = resp.json()["agent"]
+    assert agent["route_questions"] == questions
+    assert agent["status"] == "initialized"
+
+    cleared = admin_client.put(
+        "/agents/1/route-questions?router_id=1",
+        json={"route_questions": []},
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["agent"]["route_questions"] == []
+    assert cleared.json()["agent"]["status"] == "created"

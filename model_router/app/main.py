@@ -98,6 +98,7 @@ from .schemas import (
     RegisterFilesRequest,
     SyncAgentsResponse,
     UpdateAgentInstructionsRequest,
+    UpdateAgentRouteQuestionsRequest,
     UpdateAgentKnowledgeRequest,
     UpdateAgentPromptRequest,
 )
@@ -1243,6 +1244,22 @@ def create_app() -> FastAPI:
             cfg = store.set_answer_instructions(
                 agent_id=agent_id,
                 answer_instructions=(req.answer_instructions or "").strip(),
+            )
+            return AgentResponse(agent_id=agent_id, agent=cfg)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+
+    @app.put("/agents/{agent_id}/route-questions", response_model=AgentResponse)
+    def update_agent_route_questions(
+        agent_id: str,
+        req: UpdateAgentRouteQuestionsRequest,
+        router_id: str = Query("", description="总 Agent ID"),
+    ) -> AgentResponse:
+        _rid, store, _cfg = _resolve_agent(agent_id, router_id)
+        try:
+            cfg = store.set_route_questions(
+                agent_id=agent_id,
+                route_questions=req.route_questions or [],
             )
             return AgentResponse(agent_id=agent_id, agent=cfg)
         except KeyError as e:

@@ -45,6 +45,16 @@ body {
   border-bottom: 1px solid var(--line2);
   background: rgba(10,12,18,.85);
 }
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.topbarDocsBtn {
+  font-size: 10px;
+  padding: 4px 12px;
+}
 
 .appNav {
   display: inline-flex;
@@ -751,6 +761,95 @@ body {
 .splitProgressText { white-space: pre-wrap; word-break: break-word; }
 .uploadRow { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .promptEditor { flex: 1; min-height: 0; width: 100%; resize: none; border: none; background: rgba(0,0,0,.25); color: var(--fg0); padding: 10px; font-family: var(--mono); font-size: 11px; }
+.managePromptCol { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.promptViewToggle { display: inline-flex; gap: 2px; padding: 2px; border-radius: 7px; background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.06); }
+.promptViewToggle .btn { min-width: 0; padding: 3px 8px; font-size: 10px; }
+.routeQuestionsPane {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 10px;
+  background: rgba(0,0,0,.18);
+}
+.routeQuestionsSummary {
+  font-size: 10px;
+  color: var(--mut);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.routeAgentBlock {
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,.22);
+  overflow: hidden;
+}
+.routeAgentBlock:last-child { margin-bottom: 0; }
+.routeAgentHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.routeAgentName {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg0);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.routeAgentMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.routeAgentCount {
+  font-size: 10px;
+  color: var(--mut);
+}
+.routeQuestionList {
+  margin: 0;
+  padding: 6px 10px 8px 24px;
+  list-style: decimal;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--fg1);
+}
+.routeQuestionList li { margin-bottom: 4px; }
+.routeQuestionList li:last-child { margin-bottom: 0; }
+.routeQuestionsEditor {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  max-height: 280px;
+  resize: vertical;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,.06);
+  background: rgba(0,0,0,.18);
+  color: var(--fg0);
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.routeQuestionsEditor:focus {
+  outline: none;
+  background: rgba(0,0,0,.28);
+  box-shadow: inset 0 0 0 1px rgba(116, 211, 255, 0.25);
+}
+.routeAgentEmpty {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--mut);
+  font-style: italic;
+}
 .routerSelectLabel { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--fg1); }
 .routerSelect { min-width: 120px; max-width: 180px; font-size: 11px; }
 .checkLabel { font-size: 11px; color: var(--fg1); display: inline-flex; align-items: center; gap: 4px; }
@@ -1303,6 +1402,180 @@ body {
 }
 .batchBulkInput { flex: 1; min-height: 220px; font-family: Consolas, monospace; }
 
+/* —— 文档手册弹窗 —— */
+.docsModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.docsModal.hidden { display: none; }
+.docsModalBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.62);
+}
+.docsModalCard {
+  position: relative;
+  z-index: 1;
+  width: min(1180px, 98vw);
+  height: min(92vh, 900px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  background: #0f1218;
+  box-shadow: 0 20px 56px rgba(0,0,0,.5);
+  overflow: hidden;
+}
+.docsModalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line2);
+  background: rgba(255,255,255,.03);
+  flex-shrink: 0;
+}
+.docsModalTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg0);
+}
+.docsModalBody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  overflow: hidden;
+}
+.docsToc {
+  border-right: 1px solid var(--line2);
+  padding: 12px 10px;
+  background: rgba(0,0,0,.18);
+  overflow: auto;
+}
+.docsTocLink {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--fg1);
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.docsTocLink:hover { background: rgba(255,255,255,.06); color: var(--fg0); }
+.docsTocLink.active { background: rgba(116,211,255,.12); color: var(--acc2); }
+.docsTocLink.l2 { padding-left: 18px; font-size: 10px; }
+.docsTocGroup {
+  margin-top: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mut);
+  padding: 0 8px 4px;
+}
+.docsTocGroup:first-child { margin-top: 0; }
+.docsContent {
+  padding: 20px 28px 32px;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--fg0);
+}
+.docsContent h1 {
+  font-size: 22px;
+  margin: 0 0 12px;
+  color: var(--fg0);
+  border-bottom: 1px solid var(--line2);
+  padding-bottom: 10px;
+}
+.docsContent h2 {
+  font-size: 16px;
+  margin: 28px 0 10px;
+  color: var(--acc2);
+  scroll-margin-top: 12px;
+}
+.docsContent h3 {
+  font-size: 13px;
+  margin: 18px 0 8px;
+  color: var(--fg0);
+  scroll-margin-top: 12px;
+}
+.docsContent h4 {
+  font-size: 12px;
+  margin: 14px 0 6px;
+  color: var(--fg1);
+}
+.docsContent p { margin: 0 0 10px; color: var(--fg1); }
+.docsContent ul, .docsContent ol {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  color: var(--fg1);
+}
+.docsContent li { margin-bottom: 5px; }
+.docsContent code {
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  background: rgba(255,255,255,.07);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.docsContent pre {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.35);
+  border: 1px solid var(--line2);
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.docsContent pre code {
+  background: none;
+  padding: 0;
+}
+.docsContent table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 14px;
+  font-size: 11px;
+}
+.docsContent th, .docsContent td {
+  border: 1px solid var(--line2);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+.docsContent th {
+  background: rgba(255,255,255,.05);
+  color: var(--fg0);
+}
+.docsContent blockquote {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--acc);
+  background: rgba(255,204,102,.06);
+  color: var(--fg1);
+  font-size: 12px;
+}
+.docsContent hr {
+  border: none;
+  border-top: 1px solid var(--line2);
+  margin: 20px 0;
+}
+.docsContent a { color: var(--acc2); }
+.docsMobileOnly { display: none; }
+
 @media (max-width:900px){
   .testGrid{
     grid-template-columns:1fr;
@@ -1314,6 +1587,18 @@ body {
   .manageLayout{grid-template-columns:1fr;grid-template-rows:200px minmax(0,1fr)}
   .batchLayout{grid-template-columns:1fr;grid-template-rows:180px minmax(220px,1fr) 180px}
   .batchModalBody{grid-template-columns:1fr}
+  .docsModalBody{grid-template-columns:1fr}
+  .docsToc{
+    position:absolute;
+    left:0;top:0;bottom:0;
+    width:min(260px,88vw);
+    z-index:2;
+    transform:translateX(-110%);
+    transition:transform .2s ease;
+    box-shadow:8px 0 24px rgba(0,0,0,.4);
+  }
+  .docsToc.open{transform:translateX(0)}
+  .docsMobileOnly{display:inline-flex}
   .answerLayout{grid-template-columns:1fr}
   .resourcesBox{border-left:none;border-top:1px solid var(--line2);max-height:120px}
 }

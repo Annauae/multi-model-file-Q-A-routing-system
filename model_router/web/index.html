@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>模型路由控制台</title>
-    <link rel="stylesheet" href="/static/styles.css?v=41" />
+    <link rel="stylesheet" href="/static/styles.css?v=45" />
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
   </head>
@@ -15,9 +15,12 @@
         <button type="button" class="appNavBtn" data-app-view="manage">管理</button>
         <button type="button" class="appNavBtn" data-app-view="batch">批量测试</button>
       </nav>
-      <div class="status">
-        <span class="dot" id="healthDot"></span>
-        <span class="txt" id="healthText">连接中…</span>
+      <div class="topbarRight">
+        <button type="button" id="docsBtn" class="btn ghost btnXs topbarDocsBtn">文档</button>
+        <div class="status">
+          <span class="dot" id="healthDot"></span>
+          <span class="txt" id="healthText">连接中…</span>
+        </div>
       </div>
     </header>
 
@@ -314,12 +317,36 @@
         <section class="panel manageCol managePromptCol">
           <div class="stripHead">
             <span id="promptPaneTitle">提示词</span>
-            <button id="savePromptBtn" class="btn primary btnXs" type="button">保存</button>
+            <span class="headActions">
+              <span id="routerPromptViewToggle" class="promptViewToggle hidden">
+                <button type="button" class="btn btnXs primary" data-prompt-view="prompt">路由提示词</button>
+                <button type="button" class="btn btnXs ghost" data-prompt-view="routes">路由集合</button>
+              </span>
+              <button id="savePromptBtn" class="btn primary btnXs" type="button">保存</button>
+            </span>
           </div>
           <textarea id="promptEditor" class="promptEditor scrollInner" spellcheck="false" placeholder="路由或回答提示词…"></textarea>
+          <div id="routeQuestionsPane" class="routeQuestionsPane scrollInner hidden"></div>
         </section>
       </div>
     </main>
+
+    <div id="docsModal" class="docsModal hidden">
+      <div class="docsModalBackdrop" data-docs-close></div>
+      <div class="docsModalCard">
+        <div class="docsModalHead">
+          <span class="docsModalTitle">使用说明</span>
+          <span class="headActions">
+            <button type="button" id="docsTocBtn" class="btn ghost btnXs docsMobileOnly">目录</button>
+            <button type="button" class="btn ghost btnXs" data-docs-close>关闭</button>
+          </span>
+        </div>
+        <div class="docsModalBody">
+          <nav id="docsToc" class="docsToc scrollInner" aria-label="文档目录"></nav>
+          <article id="docsContent" class="docsContent mdPreview scrollInner"></article>
+        </div>
+      </div>
+    </div>
 
     <div id="contextMenu" class="contextMenu hidden">
       <button type="button" data-ctx="new">新建文件</button>
@@ -327,11 +354,12 @@
       <button type="button" data-ctx="delete">删除</button>
     </div>
 
-    <script src="/static/common.js?v=41"></script>
-    <script src="/static/filePreview.js?v=41"></script>
-    <script src="/static/answerRender.js?v=41"></script>
-    <script src="/static/test.js?v=41"></script>
-    <script src="/static/manage.js?v=41"></script>
-    <script src="/static/batch.js?v=41"></script>
+    <script src="/static/common.js?v=45"></script>
+    <script src="/static/filePreview.js?v=45"></script>
+    <script src="/static/answerRender.js?v=45"></script>
+    <script src="/static/docs.js?v=45"></script>
+    <script src="/static/test.js?v=45"></script>
+    <script src="/static/manage.js?v=45"></script>
+    <script src="/static/batch.js?v=45"></script>
   </body>
 </html>

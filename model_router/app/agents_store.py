@@ -190,6 +190,21 @@ class AgentsStore:
             self._save()
             return dict(cfg)
 
+    def set_route_questions(self, *, agent_id: str, route_questions: List[str]) -> Dict[str, Any]:
+        with self._lock:
+            cfg = self._cache.get(agent_id)
+            if not isinstance(cfg, dict):
+                raise KeyError("agent_id 不存在")
+            cleaned = [q.strip() for q in route_questions if isinstance(q, str) and q.strip()]
+            cfg["route_questions"] = cleaned
+            if cleaned:
+                cfg["status"] = "initialized"
+            else:
+                cfg["status"] = "created"
+            self._cache[agent_id] = cfg
+            self._save()
+            return self._with_files_dir(agent_id, cfg)
+
     def set_answer_prompt(self, *, agent_id: str, answer_prompt: str) -> Dict[str, Any]:
         return self.set_knowledge(agent_id=agent_id, knowledge=answer_prompt)
 

@@ -8,6 +8,8 @@ let manageActiveFile = "";
 let manageInitRunning = false;
 const manageSubAgentChecked = new Set();
 let manageSubSelectMode = false;
+let manageRouterPromptView = "prompt";
+let manageRouteQuestionsDirty = false;
 
 function manageLog(msg, kind = "info") {
   if (typeof appendLog === "function") appendLog(`[管理] ${msg}`, kind);
@@ -123,6 +125,7 @@ async function reloadManageData() {
   renderSubAgentList();
   updateMainPanes();
   loadPromptEditor();
+  if (manageRouterPromptView === "routes") renderRouteQuestionsPane();
   populateRouterSelect($("#routerSelect"), manageSelectedRouterId);
   populateRouterSelect($("#batchRouterSelect"), manageSelectedRouterId);
 }
@@ -256,6 +259,10 @@ function renderSubAgentList() {
 }
 
 function selectRouter(routerId) {
+  if (manageRouterPromptView === "routes" && manageRouteQuestionsDirty) {
+    if (!confirm("路由集合有未保存的修改，切换总 Agent 后将丢失。继续？")) return;
+    manageRouteQuestionsDirty = false;
+  }
   manageSelectedRouterId = routerId;
   manageSelectedSubAgentId = "";
   manageSubAgentChecked.clear();
@@ -280,15 +287,179 @@ function updateMainPanes() {
   const routerPane = $("#routerOpsPane");
   const subPane = $("#subMdPane");
   const title = $("#promptPaneTitle");
+  const viewToggle = $("#routerPromptViewToggle");
+  const saveBtn = $("#savePromptBtn");
   if (manageFocus === "subagent" && manageSelectedSubAgentId) {
     routerPane?.classList.add("hidden");
     subPane?.classList.remove("hidden");
     if (title) title.textContent = "子 Agent 提示词";
+    viewToggle?.classList.add("hidden");
+    manageRouterPromptView = "prompt";
+    updatePromptPaneView();
   } else {
     routerPane?.classList.remove("hidden");
     subPane?.classList.add("hidden");
     if (title) title.textContent = "总 Agent 路由提示词";
+    viewToggle?.classList.remove("hidden");
+    updatePromptPaneView();
   }
+  if (saveBtn) {
+    saveBtn.classList.remove("hidden");
+    saveBtn.textContent =
+      manageFocus !== "subagent" && manageRouterPromptView === "routes" ? "保存路由集合" : "保存";
+  }
+}
+
+function updatePromptPaneView() {
+  const isRoutes = manageFocus !== "subagent" && manageRouterPromptView === "routes";
+  const ta = $("#promptEditor");
+  const routesPane = $("#routeQuestionsPane");
+  const viewToggle = $("#routerPromptViewToggle");
+  ta?.classList.toggle("hidden", isRoutes);
+  routesPane?.classList.toggle("hidden", !isRoutes);
+  viewToggle?.querySelectorAll("[data-prompt-view]").forEach((btn) => {
+    const active = btn.dataset.promptView === (isRoutes ? "routes" : "prompt");
+    btn.classList.toggle("primary", active);
+    btn.classList.toggle("ghost", !active);
+  });
+  if (isRoutes) renderRouteQuestionsPane();
+}
+
+function parseRouteQuestionsText(text) {
+  return String(text || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function collectRouteQuestionsFromPane() {
+  const out = [];
+  $$("#routeQuestionsPane .routeAgentBlock").forEach((block) => {
+    const agentId = (block.dataset.agentId || "").trim();
+    if (!agentId) return;
+    const text = block.querySelector(".routeQuestionsEditor")?.value || "";
+    out.push({ agentId, questions: parseRouteQuestionsText(text) });
+  });
+  return out;
+}
+
+function updateRouteQuestionsSummary() {
+  const summary = $("#routeQuestionsPane .routeQuestionsSummary");
+  if (!summary) return;
+  const blocks = $$("#routeQuestionsPane .routeAgentBlock");
+  let totalQuestions = 0;
+  let initializedCount = 0;
+  blocks.forEach((block) => {
+    const count = parseRouteQuestionsText(block.querySelector(".routeQuestionsEditor")?.value || "").length;
+    totalQuestions += count;
+    const countEl = block.querySelector(".routeAgentCount");
+    if (countEl) countEl.textContent = `${count} 条`;
+    const status = block.querySelector(".routeAgentStatus");
+    if (status) {
+      const next = count > 0 ? "initialized" : "created";
+      status.textContent = next;
+      status.classList.toggle("high", next === "initialized");
+      status.classList.toggle("low", next !== "initialized");
+      if (next === "initialized") initializedCount++;
+    }
+  });
+  summary.textContent = `共 ${blocks.length} 个子 Agent · 已初始化 ${initializedCount} · 路由问题合计 ${totalQuestions} 条 · 每行一条问题`;
+}
+
+function renderRouteQuestionsPane() {
+  const box = $("#routeQuestionsPane");
+  if (!box) return;
+  manageRouteQuestionsDirty = false;
+  if (!manageSelectedRouterId) {
+    box.innerHTML = `<div class="empty">请先选择总 Agent。</div>`;
+    return;
+  }
+  const agents = subAgentsForCurrentRouter();
+  const entries = Object.entries(agents).sort((a, b) => {
+    const ka = agentSortKey(a[0]);
+    const kb = agentSortKey(b[0]);
+    return ka[0] - kb[0] || ka[1] - kb[1] || String(ka[2]).localeCompare(String(kb[2]));
+  });
+  if (!entries.length) {
+    box.innerHTML = `<div class="empty">当前总 Agent 下暂无子 Agent。</div>`;
+    return;
+  }
+  let totalQuestions = 0;
+  let initializedCount = 0;
+  const blocks = entries.map(([id, cfg]) => {
+    const status = cfg.status || "created";
+    const questions = (cfg.route_questions || []).filter((q) => typeof q === "string" && q.trim());
+    if (status === "initialized" || questions.length) initializedCount++;
+    totalQuestions += questions.length;
+    const name = subAgentDisplayName(id, cfg);
+    const statusClass = questions.length ? "high" : "low";
+    const displayStatus = questions.length ? "initialized" : status;
+    const text = questions.join("\n");
+    return `
+      <section class="routeAgentBlock" data-agent-id="${escapeHtml(id)}">
+        <div class="routeAgentHead">
+          <span class="routeAgentName" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+          <span class="routeAgentMeta">
+            <span class="routeAgentCount">${questions.length} 条</span>
+            <span class="pill ${statusClass} routeAgentStatus">${escapeHtml(displayStatus)}</span>
+          </span>
+        </div>
+        <textarea class="routeQuestionsEditor" spellcheck="false" placeholder="每行一条路由问题…">${escapeHtml(text)}</textarea>
+      </section>`;
+  });
+  box.innerHTML = `
+    <div class="routeQuestionsSummary">
+      共 ${entries.length} 个子 Agent · 已初始化 ${initializedCount} · 路由问题合计 ${totalQuestions} 条 · 每行一条问题
+    </div>
+    ${blocks.join("")}`;
+  box.querySelectorAll(".routeQuestionsEditor").forEach((ta) => {
+    ta.addEventListener("input", () => {
+      manageRouteQuestionsDirty = true;
+      updateRouteQuestionsSummary();
+    });
+  });
+}
+
+async function saveRouteQuestionsEditor() {
+  if (!manageSelectedRouterId) {
+    manageLog("请先选择总 Agent", "warn");
+    return;
+  }
+  const entries = collectRouteQuestionsFromPane();
+  if (!entries.length) {
+    manageLog("没有可保存的子 Agent", "warn");
+    return;
+  }
+  let ok = 0;
+  let fail = 0;
+  for (const { agentId, questions } of entries) {
+    try {
+      await apiJson(agentApiUrl(`/agents/${encodeURIComponent(agentId)}/route-questions`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ route_questions: questions }),
+      });
+      ok++;
+    } catch (e) {
+      fail++;
+      manageLog(`agent ${agentId} 保存失败：${e?.message || e}`, "err");
+    }
+  }
+  manageRouteQuestionsDirty = false;
+  await reloadManageData();
+  refreshTestPageSideData();
+  manageLog(`路由集合已保存：成功 ${ok}${fail ? `，失败 ${fail}` : ""}`, fail ? "warn" : "ok");
+}
+
+function setRouterPromptView(view) {
+  const next = view === "routes" ? "routes" : "prompt";
+  if (manageRouterPromptView === next) return;
+  if (manageRouterPromptView === "routes" && manageRouteQuestionsDirty) {
+    if (!confirm("路由集合有未保存的修改，切换后将丢失。继续？")) return;
+    manageRouteQuestionsDirty = false;
+  }
+  manageRouterPromptView = next;
+  updatePromptPaneView();
 }
 
 function syncSplitRangesFromDom() {
@@ -403,6 +574,10 @@ async function loadPromptEditor() {
 async function savePromptEditor() {
   const ta = $("#promptEditor");
   if (!ta) return;
+  if (manageFocus !== "subagent" && manageRouterPromptView === "routes") {
+    await saveRouteQuestionsEditor();
+    return;
+  }
   const text = (ta.value || "").trim();
   if (manageFocus === "subagent" && manageSelectedSubAgentId) {
     const defaultTpl = (ta.dataset.defaultTemplate || "").trim();
@@ -901,6 +1076,11 @@ function bindManage() {
 
   $("#runSplitBtn")?.addEventListener("click", () => runSplit().catch((e) => manageLog(e?.message || e, "err")));
   $("#savePromptBtn")?.addEventListener("click", () => savePromptEditor().catch((e) => manageLog(e?.message || e, "err")));
+  $("#routerPromptViewToggle")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-prompt-view]");
+    if (!btn) return;
+    setRouterPromptView(btn.dataset.promptView);
+  });
   $("#editorSaveBtn")?.addEventListener("click", () => saveManageActiveFile().catch((e) => manageLog(e?.message || e, "err")));
   $("#editorPreviewBtn")?.addEventListener("click", () => {
     manageEditorMode = manageEditorMode === "preview" ? "source" : "preview";

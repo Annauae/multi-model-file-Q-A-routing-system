@@ -170,6 +170,10 @@ class UpdateAgentInstructionsRequest(BaseModel):
     answer_instructions: str = Field(default="", description="该 agent 的补充回答要求（可为空）")
 
 
+class UpdateAgentRouteQuestionsRequest(BaseModel):
+    route_questions: List[str] = Field(default_factory=list, description="路由问题列表")
+
+
 class UpdateAgentPromptRequest(BaseModel):
     """Deprecated: use UpdateAgentKnowledgeRequest."""
     answer_prompt: str = Field(..., min_length=1, description="纯知识内容（兼容旧字段名）")
