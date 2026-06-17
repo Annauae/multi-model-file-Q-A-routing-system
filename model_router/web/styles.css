@@ -679,6 +679,10 @@ body {
 .dropdownItem:hover {
   background: rgba(255, 255, 255, 0.08);
 }
+.dropdownItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .dropdownItem.activeToggle {
   color: var(--acc);
 }
@@ -1146,6 +1150,12 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
+.batchListPanel .stripHead {
+  flex-wrap: wrap;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
 .batchQuestionList {
   flex: 1;
   min-height: 0;
@@ -1367,6 +1377,9 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 0;
   overflow: auto;
+}
+.batchModalBody.editOnly {
+  grid-template-columns: 1fr;
 }
 .batchModalCol {
   min-width: 0;

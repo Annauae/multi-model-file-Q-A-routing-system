@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>模型路由控制台</title>
-    <link rel="stylesheet" href="/static/styles.css?v=45" />
+    <link rel="stylesheet" href="/static/styles.css?v=46" />
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
   </head>
@@ -125,10 +125,22 @@
         <section class="panel batchListPanel">
           <div class="stripHead">
             <span>测试用例</span>
-            <span class="headActions">
-              <button id="batchRunSelectedBtn" class="btn ghost btnXs" type="button">批量测试</button>
-              <button id="batchRunAllBtn" class="btn ghost btnXs" type="button">测试全部</button>
-              <button id="batchAddBtn" class="btn primary btnXs" type="button">新增问题</button>
+            <span class="headActions headDropdowns">
+              <div class="headDropdown">
+                <button type="button" class="btn ghost btnXs dropdownToggle" aria-haspopup="true">测试 ▾</button>
+                <div class="dropdownMenu hidden" role="menu">
+                  <button type="button" class="dropdownItem" data-batch-action="runSelected">批量测试</button>
+                  <button type="button" class="dropdownItem" data-batch-action="runAll">测试全部</button>
+                </div>
+              </div>
+              <div class="headDropdown">
+                <button type="button" class="btn primary btnXs dropdownToggle" aria-haspopup="true">操作 ▾</button>
+                <div class="dropdownMenu hidden" role="menu">
+                  <button type="button" class="dropdownItem" data-batch-action="add">新增</button>
+                  <button type="button" class="dropdownItem" data-batch-action="edit">编辑</button>
+                  <button type="button" class="dropdownItem" data-batch-action="delete">删除</button>
+                </div>
+              </div>
             </span>
           </div>
           <div id="batchQuestionList" class="batchQuestionList scrollInner">
@@ -198,11 +210,11 @@
       <div class="batchModalCard">
         <div class="batchModalHead">
           <button id="batchModalBackBtn" class="btn ghost btnXs" type="button">← 返回</button>
-          <span class="batchModalTitle">批量新增</span>
+          <span id="batchModalTitle" class="batchModalTitle">批量新增</span>
         </div>
         <div class="batchModalBody">
           <div class="batchModalCol">
-            <div class="batchModalColTitle">新增问题</div>
+            <div id="batchModalColTitle" class="batchModalColTitle">新增问题</div>
             <label class="batchFormLabel">总 Agent</label>
             <select id="batchRouterSelect" class="batchFormInput"></select>
             <label class="batchFormLabel">问题</label>
@@ -211,7 +223,7 @@
             <textarea id="batchFormReference" class="batchFormInput" rows="8" placeholder="输入参考回答…"></textarea>
             <button id="batchFormSaveBtn" class="btn primary btnXs" type="button">保存</button>
           </div>
-          <div class="batchModalCol">
+          <div id="batchModalImportCol" class="batchModalCol">
             <div class="batchModalColTitle">* 支持 JSON 格式和 MD 格式</div>
             <textarea
               id="batchBulkImport"
@@ -354,12 +366,12 @@
       <button type="button" data-ctx="delete">删除</button>
     </div>
 
-    <script src="/static/common.js?v=45"></script>
-    <script src="/static/filePreview.js?v=45"></script>
-    <script src="/static/answerRender.js?v=45"></script>
-    <script src="/static/docs.js?v=45"></script>
-    <script src="/static/test.js?v=45"></script>
-    <script src="/static/manage.js?v=45"></script>
-    <script src="/static/batch.js?v=45"></script>
+    <script src="/static/common.js?v=46"></script>
+    <script src="/static/filePreview.js?v=46"></script>
+    <script src="/static/answerRender.js?v=46"></script>
+    <script src="/static/docs.js?v=46"></script>
+    <script src="/static/test.js?v=46"></script>
+    <script src="/static/manage.js?v=46"></script>
+    <script src="/static/batch.js?v=46"></script>
   </body>
 </html>

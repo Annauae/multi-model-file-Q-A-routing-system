@@ -2,7 +2,44 @@ let batchTests = [];
 let batchSelectedId = "";
 let batchRunningId = "";
 let batchRunActive = false;
+let batchEditingId = "";
 const batchCheckedIds = new Set();
+
+function closeBatchDropdowns() {
+  $$("#viewBatch .dropdownMenu").forEach((m) => {
+    m.classList.add("hidden");
+    m.style.position = "";
+    m.style.top = "";
+    m.style.left = "";
+    m.style.right = "";
+    m.style.zIndex = "";
+  });
+}
+
+function toggleBatchDropdown(toggleBtn) {
+  const box = toggleBtn?.closest(".headDropdown");
+  const menu = box?.querySelector(".dropdownMenu");
+  if (!menu) return;
+  const willOpen = menu.classList.contains("hidden");
+  closeBatchDropdowns();
+  if (!willOpen) return;
+  menu.classList.remove("hidden");
+  const r = toggleBtn.getBoundingClientRect();
+  const menuWidth = menu.offsetWidth || 108;
+  let left = r.right - menuWidth;
+  left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+  menu.style.position = "fixed";
+  menu.style.zIndex = "200";
+  menu.style.right = "auto";
+  menu.style.left = `${left}px`;
+  menu.style.top = `${r.bottom + 4}px`;
+}
+
+function setBatchRunButtonsDisabled(disabled) {
+  $$('#viewBatch [data-batch-action="runSelected"], #viewBatch [data-batch-action="runAll"]').forEach((btn) => {
+    btn.disabled = disabled;
+  });
+}
 
 function fmtAccuracy(pct) {
   if (pct == null || pct === "") return "—";
@@ -61,7 +98,7 @@ function renderBatchQuestionList() {
   const box = $("#batchQuestionList");
   if (!box) return;
   if (!batchTests.length) {
-    box.innerHTML = `<div class="empty">暂无测试用例，点击「新增问题」添加。</div>`;
+    box.innerHTML = `<div class="empty">暂无测试用例，点击「操作 → 新增」添加。</div>`;
     return;
   }
   const groups = new Map();
@@ -219,8 +256,7 @@ async function runBatchTests(ids, { force = true } = {}) {
     return;
   }
   batchRunActive = true;
-  $("#batchRunSelectedBtn") && ($("#batchRunSelectedBtn").disabled = true);
-  $("#batchRunAllBtn") && ($("#batchRunAllBtn").disabled = true);
+  setBatchRunButtonsDisabled(true);
   try {
     let ok = 0;
     for (const id of unique) {
@@ -237,8 +273,7 @@ async function runBatchTests(ids, { force = true } = {}) {
     batchLog(`批量测试完成：${ok}/${unique.length} 条`, ok === unique.length ? "ok" : "warn");
   } finally {
     batchRunActive = false;
-    if ($("#batchRunSelectedBtn")) $("#batchRunSelectedBtn").disabled = false;
-    if ($("#batchRunAllBtn")) $("#batchRunAllBtn").disabled = false;
+    setBatchRunButtonsDisabled(false);
   }
 }
 
@@ -276,15 +311,62 @@ async function saveBatchReference() {
   batchLog("参考回答已保存", "ok");
 }
 
+function setBatchModalMode(mode) {
+  const isEdit = mode === "edit";
+  const title = $("#batchModalTitle");
+  const colTitle = $("#batchModalColTitle");
+  const importCol = $("#batchModalImportCol");
+  const body = $("#batchAddModal .batchModalBody");
+  if (title) title.textContent = isEdit ? "编辑问题" : "批量新增";
+  if (colTitle) colTitle.textContent = isEdit ? "编辑问题" : "新增问题";
+  importCol?.classList.toggle("hidden", isEdit);
+  body?.classList.toggle("editOnly", isEdit);
+}
+
 function openBatchAddModal() {
+  batchEditingId = "";
+  setBatchModalMode("add");
+  const sel = $("#batchRouterSelect");
+  if (sel) sel.disabled = false;
   loadRoutersCache()
     .then(() => populateRouterSelect($("#batchRouterSelect")))
     .catch(() => {});
+  const q = $("#batchFormQuestion");
+  const r = $("#batchFormReference");
+  if (q) q.value = "";
+  if (r) r.value = "";
   $("#batchAddModal")?.classList.remove("hidden");
-  $("#batchFormQuestion")?.focus();
+  q?.focus();
+}
+
+function openBatchEditModal() {
+  if (!batchSelectedId) {
+    batchLog("请先在左侧选择要编辑的问题", "warn");
+    return;
+  }
+  const item = getBatchItem(batchSelectedId);
+  if (!item) return;
+  batchEditingId = batchSelectedId;
+  setBatchModalMode("edit");
+  loadRoutersCache()
+    .then(() => {
+      populateRouterSelect($("#batchRouterSelect"), item.router_id || "1");
+      const sel = $("#batchRouterSelect");
+      if (sel) sel.disabled = true;
+    })
+    .catch(() => {});
+  const q = $("#batchFormQuestion");
+  const r = $("#batchFormReference");
+  if (q) q.value = item.question || "";
+  if (r) r.value = item.reference_answer || "";
+  $("#batchAddModal")?.classList.remove("hidden");
+  q?.focus();
 }
 
 function closeBatchAddModal() {
+  batchEditingId = "";
+  const sel = $("#batchRouterSelect");
+  if (sel) sel.disabled = false;
   $("#batchAddModal")?.classList.add("hidden");
 }
 
@@ -297,6 +379,20 @@ async function saveBatchFormItem() {
   const reference = ($("#batchFormReference")?.value || "").trim();
   if (!question || !reference) {
     batchLog("问题和参考回答不能为空", "warn");
+    return;
+  }
+  if (batchEditingId) {
+    const data = await apiJson(`/batch/tests/${encodeURIComponent(batchEditingId)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, reference_answer: reference }),
+    });
+    const idx = batchTests.findIndex((x) => x.id === batchEditingId);
+    if (idx >= 0) batchTests[idx] = data.item;
+    closeBatchAddModal();
+    renderBatchQuestionList();
+    renderBatchDetail(data.item);
+    batchLog("测试用例已更新", "ok");
     return;
   }
   const router_id = getSelectedRouterIdFrom($("#batchRouterSelect"));
@@ -318,6 +414,23 @@ async function saveBatchFormItem() {
   renderBatchQuestionList();
   await selectBatchTest(data.item.id, { autoRun: true });
   batchLog("已保存测试用例", "ok");
+}
+
+async function deleteBatchTest() {
+  if (!batchSelectedId) {
+    batchLog("请先在左侧选择要删除的问题", "warn");
+    return;
+  }
+  const item = getBatchItem(batchSelectedId);
+  if (!item) return;
+  const label = batchSummary(item.question, 40);
+  if (!confirm(`确定删除测试用例「${label}」？`)) return;
+  await apiJson(`/batch/tests/${encodeURIComponent(batchSelectedId)}`, { method: "DELETE" });
+  batchCheckedIds.delete(batchSelectedId);
+  batchSelectedId = "";
+  await loadBatchTests();
+  renderBatchDetail(null);
+  batchLog("测试用例已删除", "ok");
 }
 
 async function importBatchBulk() {
@@ -359,21 +472,50 @@ function bindBatch() {
     refreshBatchFileList();
   });
 
-  $("#batchRunSelectedBtn")?.addEventListener("click", () => {
-    const ids = getBatchCheckedIds();
-    if (!ids.length) {
-      batchLog("请先勾选要测试的问题", "warn");
-      return;
-    }
-    runBatchTests(ids, { force: true }).catch((e) => batchLog(e?.message || e, "err"));
+  $$("#viewBatch .dropdownToggle").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleBatchDropdown(btn);
+    });
   });
-  $("#batchRunAllBtn")?.addEventListener("click", () => {
-    runBatchTests(
-      batchTests.map((x) => x.id),
-      { force: true }
-    ).catch((e) => batchLog(e?.message || e, "err"));
+  document.addEventListener("click", (e) => {
+    if (!$("#viewBatch")?.classList.contains("active")) return;
+    if (!e.target.closest(".headDropdown")) closeBatchDropdowns();
   });
-  $("#batchAddBtn")?.addEventListener("click", openBatchAddModal);
+
+  $$("[data-batch-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      closeBatchDropdowns();
+      const action = btn.dataset.batchAction;
+      const run = () => {
+        if (action === "runSelected") {
+          const ids = getBatchCheckedIds();
+          if (!ids.length) {
+            batchLog("请先勾选要测试的问题", "warn");
+            return;
+          }
+          return runBatchTests(ids, { force: true });
+        }
+        if (action === "runAll") {
+          return runBatchTests(
+            batchTests.map((x) => x.id),
+            { force: true }
+          );
+        }
+        if (action === "add") {
+          openBatchAddModal();
+          return;
+        }
+        if (action === "edit") {
+          openBatchEditModal();
+          return;
+        }
+        if (action === "delete") return deleteBatchTest();
+      };
+      Promise.resolve(run()).catch((e) => batchLog(e?.message || e, "err"));
+    });
+  });
+
   $("#batchModalBackBtn")?.addEventListener("click", closeBatchAddModal);
   $$("[data-batch-modal-close]").forEach((el) => {
     el.addEventListener("click", closeBatchAddModal);
