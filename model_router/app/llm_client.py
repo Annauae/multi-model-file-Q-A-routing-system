@@ -216,7 +216,7 @@ class LLMClient:
             return json.dumps(payload, ensure_ascii=False)
 
         if model == self._settings.init_model:
-            route_questions = [f"（MOCK）可回答问题 {i}" for i in range(1, 51)]
+            route_questions = [f"（MOCK）可回答问题 {i}" for i in range(1, 16)]
             payload = {
                 "route_questions": route_questions,
                 "knowledge_summary": "（MOCK）该知识库可支持的问题范围。",

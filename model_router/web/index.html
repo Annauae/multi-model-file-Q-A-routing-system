@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>模型路由控制台</title>
-    <link rel="stylesheet" href="/static/styles.css?v=46" />
+    <link rel="stylesheet" href="/static/styles.css?v=51" />
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
   </head>
@@ -86,10 +86,19 @@
                 <div id="leftTabAnswer" class="leftTabPane active">
                   <div class="answerLayout">
                     <div class="answerMain">
+                      <div class="answerHeadBar">
+                        <span class="answerStreamLabel" id="answerLabel">回答</span>
+                        <div class="answerViewToolbar hidden" id="answerViewToolbar">
+                          <button type="button" id="answerPreviewBtn" class="btn btnXs primary">预览</button>
+                          <button type="button" id="answerSourceBtn" class="btn btnXs ghost">源码</button>
+                        </div>
+                      </div>
                       <div class="answersScroll">
                         <div id="answersBox" class="answersBody">
                           <div class="empty">尚无回答。</div>
                         </div>
+                        <div id="streamAnswerPreview" class="answersBody answerMdPreview mdPreview hidden"></div>
+                        <pre id="streamAnswerSource" class="answersBody answerSource hidden"></pre>
                       </div>
                     </div>
                     <aside id="resourcesBox" class="resourcesBox">
@@ -366,12 +375,12 @@
       <button type="button" data-ctx="delete">删除</button>
     </div>
 
-    <script src="/static/common.js?v=46"></script>
-    <script src="/static/filePreview.js?v=46"></script>
-    <script src="/static/answerRender.js?v=46"></script>
-    <script src="/static/docs.js?v=46"></script>
-    <script src="/static/test.js?v=46"></script>
-    <script src="/static/manage.js?v=46"></script>
-    <script src="/static/batch.js?v=46"></script>
+    <script src="/static/common.js?v=49"></script>
+    <script src="/static/filePreview.js?v=49"></script>
+    <script src="/static/answerRender.js?v=49"></script>
+    <script src="/static/docs.js?v=49"></script>
+    <script src="/static/test.js?v=51"></script>
+    <script src="/static/manage.js?v=49"></script>
+    <script src="/static/batch.js?v=49"></script>
   </body>
 </html>

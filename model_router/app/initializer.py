@@ -15,19 +15,19 @@ INIT_SYSTEM_PROMPT_ZH = """你是 agent 问题索引生成器。
 - 问题要像真实用户会问的话。
 - 包含正式问法、口语问法、模糊问法。
 - 不要只照抄标题。
-- 每个 agent 生成 50 到 100 个 route_questions。
+- 每个 agent 生成 {min_count} 到 {max_count} 个 route_questions。
 - 同时生成一条 knowledge_summary，概括知识库可支持的主题范围。
 - 输出严格 JSON。
 
 输出格式：
 
-{
+{{
   "route_questions": [
     "用户可能提出的问题1",
     "用户可能提出的问题2"
   ],
   "knowledge_summary": "该知识库主要可以支持哪些类型的问题（一段话）"
-}
+}}
 
 注意：只输出 JSON 本体，不要输出任何额外文字、不要使用 Markdown 代码块。"""
 
@@ -72,7 +72,13 @@ def generate_route_questions_and_summaries(
     raw = llm.chat(
         model=init_model,
         messages=[
-            ChatMessage(role="system", content=INIT_SYSTEM_PROMPT_ZH),
+            ChatMessage(
+                role="system",
+                content=INIT_SYSTEM_PROMPT_ZH.format(
+                    min_count=min_route_questions,
+                    max_count=max_route_questions,
+                ),
+            ),
             ChatMessage(role="user", content=json.dumps(payload, ensure_ascii=False)),
         ],
     )
