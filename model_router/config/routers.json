@@ -27,15 +27,21 @@
       "22",
       "23",
       "24",
-      "模型1"
+      "1"
     ],
     "source_files": [
       "files/root/ZfcRGPRC_(Sc)12.pdf",
-      "files/root/README.md"
+      "files/root/README.md",
+      "files/root/ZfcRGPRC_(Sc)12-33-706.pdf"
     ],
-    "split_ranges": [],
+    "split_ranges": [
+      [
+        28,
+        30
+      ]
+    ],
     "created_at": "2026-06-12T00:00:00Z",
-    "updated_at": "2026-06-17T02:34:05Z"
+    "updated_at": "2026-06-18T03:31:22Z"
   },
   "3": {
     "name": "相机_2",
