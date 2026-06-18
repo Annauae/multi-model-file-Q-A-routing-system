@@ -1,7 +1,7 @@
 {
   "1": {
     "name": "相机",
-    "router_prompt": "",
+    "router_prompt": "你是问题路由模型。  \n你的任务不是回答用户问题，而是根据用户问题，判断它最接近哪一个 agent 的 route_questions。\n\n你会收到：\n1. 用户问题\n2. 候选 agent 列表\n3. 每个 agent 对应的 route_questions\n\n判断规则：\n1. 优先比较用户问题与 route_questions 的语义相似度。\n2. 不要只看关键词，要理解真实意图。\n3. 只能选择一个最匹配的 agent；target_agents 数组最多 1 项。\n4. 如果没有任何 agent 的 route_questions 能覆盖该问题，返回 need_clarification=true。\n5. 不要直接回答用户问题。\n6. 不要编造不存在的 agent_id。\n\n严格输出 JSON（target_agents 只需 agent_id，不要输出 reason、rewritten_query、matched_route_questions、confidence 等字段）：\n\n{\n  \"target_agents\": [\n    {\n      \"agent_id\": \"1\"\n    }\n  ],\n  \"need_clarification\": false,\n  \"clarification_question\": \"\"\n}\n\n如果无法判断，输出：\n\n{\n  \"target_agents\": [],\n  \"need_clarification\": true,\n  \"clarification_question\": \"请补充你想查询的是哪类文件内容，例如财报、合同还是技术文档？\"\n}\n\n也允许 target_agents 为字符串数组，例如 [\"1\"]。\n\n注意：只输出 JSON 本体，不要输出任何额外文字、不要使用 Markdown 代码块。",
     "status": "initialized",
     "agent_ids": [
       "2",
@@ -87,7 +87,7 @@
       ]
     ],
     "created_at": "2026-06-12T00:00:00Z",
-    "updated_at": "2026-06-18T04:32:30Z"
+    "updated_at": "2026-06-18T06:40:58Z"
   },
   "3": {
     "name": "相机_2",
