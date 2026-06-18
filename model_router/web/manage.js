@@ -283,12 +283,26 @@ function selectSubAgent(agentId) {
   openSubAgentMd(agentId).catch((e) => manageLog(e?.message || e, "err"));
 }
 
+function updateSavePromptButton() {
+  const saveBtn = $("#savePromptBtn");
+  if (!saveBtn) return;
+  saveBtn.classList.remove("hidden");
+  if (manageFocus === "subagent") {
+    saveBtn.textContent = "保存提示词";
+    return;
+  }
+  if (manageRouterPromptView === "routes") {
+    saveBtn.textContent = "保存路由集合";
+    return;
+  }
+  saveBtn.textContent = "保存提示词";
+}
+
 function updateMainPanes() {
   const routerPane = $("#routerOpsPane");
   const subPane = $("#subMdPane");
   const title = $("#promptPaneTitle");
   const viewToggle = $("#routerPromptViewToggle");
-  const saveBtn = $("#savePromptBtn");
   if (manageFocus === "subagent" && manageSelectedSubAgentId) {
     routerPane?.classList.add("hidden");
     subPane?.classList.remove("hidden");
@@ -303,11 +317,7 @@ function updateMainPanes() {
     viewToggle?.classList.remove("hidden");
     updatePromptPaneView();
   }
-  if (saveBtn) {
-    saveBtn.classList.remove("hidden");
-    saveBtn.textContent =
-      manageFocus !== "subagent" && manageRouterPromptView === "routes" ? "保存路由集合" : "保存";
-  }
+  updateSavePromptButton();
 }
 
 function updatePromptPaneView() {
@@ -323,6 +333,7 @@ function updatePromptPaneView() {
     btn.classList.toggle("ghost", !active);
   });
   if (isRoutes) renderRouteQuestionsPane();
+  updateSavePromptButton();
 }
 
 function parseRouteQuestionsText(text) {
@@ -460,6 +471,7 @@ function setRouterPromptView(view) {
   }
   manageRouterPromptView = next;
   updatePromptPaneView();
+  updateSavePromptButton();
 }
 
 function syncSplitRangesFromDom() {
