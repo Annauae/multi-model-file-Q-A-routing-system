@@ -1,8 +1,93 @@
 let lastKnowledgeSource = "";
 let routeQuestionsPool = [];
+let answerViewMode = "preview";
+let answerStreaming = false;
 
 function renderAnswerHtml(text, sourceFile) {
   return renderDisplayAnswerHtml(text, sourceFile || lastKnowledgeSource || "");
+}
+
+function setAnswerViewMode(mode) {
+  answerViewMode = mode === "source" ? "source" : "preview";
+  $("#answerPreviewBtn")?.classList.toggle("primary", answerViewMode === "preview");
+  $("#answerPreviewBtn")?.classList.toggle("ghost", answerViewMode !== "preview");
+  $("#answerSourceBtn")?.classList.toggle("primary", answerViewMode === "source");
+  $("#answerSourceBtn")?.classList.toggle("ghost", answerViewMode !== "source");
+  refreshAnswerView();
+}
+
+function hideAnswerContent() {
+  $("#answerViewToolbar")?.classList.add("hidden");
+  $("#streamAnswerPreview")?.classList.add("hidden");
+  $("#streamAnswerSource")?.classList.add("hidden");
+  $("#answersBox")?.classList.remove("hidden");
+}
+
+function showAnswerContent(label) {
+  $("#answerLabel").textContent = label || "回答";
+  $("#answersBox")?.classList.add("hidden");
+  $("#answerViewToolbar")?.classList.remove("hidden");
+  refreshAnswerView();
+  scrollAnswersToBottom();
+}
+
+function refreshAnswerView() {
+  const preview = $("#streamAnswerPreview");
+  const source = $("#streamAnswerSource");
+  const raw = streamAnswerRaw || "";
+  const src = lastKnowledgeSource || "";
+  const usePreview = answerViewMode === "preview" && !answerStreaming;
+
+  preview?.classList.toggle("hidden", !usePreview);
+  source?.classList.toggle("hidden", usePreview);
+
+  if (usePreview && preview) {
+    preview.innerHTML = renderAnswerMarkdownPreview(raw, src);
+  } else if (source) {
+    source.textContent = raw || "（空）";
+  }
+}
+
+function ensureAnswerImageLightbox() {
+  let overlay = $("#answerImageLightbox");
+  if (overlay) return overlay;
+  overlay = document.createElement("div");
+  overlay.id = "answerImageLightbox";
+  overlay.className = "answerImageLightbox hidden";
+  overlay.innerHTML =
+    '<button type="button" class="answerImageLightboxClose" aria-label="关闭">×</button><img alt="" />';
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay || e.target.closest(".answerImageLightboxClose")) {
+      overlay.classList.add("hidden");
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") overlay.classList.add("hidden");
+  });
+  return overlay;
+}
+
+function openAnswerImageLightbox(src, alt) {
+  const overlay = ensureAnswerImageLightbox();
+  const img = overlay.querySelector("img");
+  if (img) {
+    img.src = src;
+    img.alt = alt || "";
+  }
+  overlay.classList.remove("hidden");
+}
+
+function bindAnswerImageZoom() {
+  const scroll = document.querySelector(".answerMain .answersScroll");
+  if (!scroll || scroll.dataset.zoomBound === "1") return;
+  scroll.dataset.zoomBound = "1";
+  scroll.addEventListener("click", (e) => {
+    const img = e.target.closest("#streamAnswerPreview img, .answerFigure img");
+    if (!img?.src) return;
+    e.preventDefault();
+    openAnswerImageLightbox(img.src, img.alt || "");
+  });
 }
 
 let streamAnswerRaw = "";
@@ -519,17 +604,23 @@ function renderResources(data) {
 function renderAnswers(data) {
   const box = $("#answersBox");
   if (!data) {
-    box.innerHTML = `<div class="empty">尚无回答。</div>`;
+    hideAnswerContent();
+    if (box) box.innerHTML = `<div class="empty">尚无回答。</div>`;
+    $("#answerLabel").textContent = "回答";
     renderResources(null);
     updateTimingBar(null);
     return;
   }
   if (data.need_clarification) {
-    box.innerHTML = `
+    hideAnswerContent();
+    if (box) {
+      box.innerHTML = `
       <div class="empty">
         <strong>未路由到 Agent</strong> · ${escapeHtml(data.clarification_question || "请补充问题信息")}
       </div>
     `;
+    }
+    $("#answerLabel").textContent = "回答";
     renderResources(data);
     updateTimingBar(data.timings, data);
     return;
@@ -540,19 +631,19 @@ function renderAnswers(data) {
 
   const merged = data.merged_answer ?? (answer0?.answer ?? "");
   if (!merged && !(data.answers || []).length) {
-    box.innerHTML = `<div class="empty">没有返回回答。</div>`;
+    hideAnswerContent();
+    if (box) box.innerHTML = `<div class="empty">没有返回回答。</div>`;
+    $("#answerLabel").textContent = "回答";
     renderResources(data);
     updateTimingBar(data.timings, data);
     return;
   }
 
-  box.innerHTML = `
-    <div class="answerStreamLabel">回答</div>
-    <div id="streamAnswer" class="answerText">${renderAnswerHtml(merged || "（空）", lastKnowledgeSource)}</div>
-  `;
+  streamAnswerRaw = merged || "";
+  answerStreaming = false;
+  showAnswerContent("回答");
   renderResources(data);
   updateTimingBar(data.timings, data);
-  scrollAnswersToBottom();
 }
 
 function resetStreamingRoute() {
@@ -582,31 +673,32 @@ function renderStreamingShell(routePayload) {
   resetStreamingAnswer();
   renderResources(null);
   if (routePayload.need_clarification) {
-    $("#answersBox").innerHTML = `
+    hideAnswerContent();
+    if ($("#answersBox")) {
+      $("#answersBox").innerHTML = `
       <div class="empty">${escapeHtml(routePayload.clarification_question || "请补充问题信息")}</div>
     `;
+    }
+    $("#answerLabel").textContent = "回答";
     return;
   }
   updateTimingBar({
     route_ms: routePayload.route_ms,
     route_first_token_ms: routePayload.route_first_token_ms,
   });
-  $("#answersBox").innerHTML = `
-    <div class="answerStreamLabel">回答（流式 · 生成中…）</div>
-    <div id="streamAnswer" class="answerText"></div>
-  `;
+  answerStreaming = true;
+  streamAnswerRaw = "";
+  showAnswerContent("回答（流式 · 生成中…）");
 }
 
 function resetStreamingAnswer() {
   streamAnswerRaw = "";
-  const box = $("#streamAnswer");
-  if (box) box.innerHTML = "";
+  refreshAnswerView();
 }
 
 function appendStreamingAnswer(text) {
   streamAnswerRaw += text;
-  const box = $("#streamAnswer");
-  if (box) box.innerHTML = renderAnswerText(streamAnswerRaw);
+  refreshAnswerView();
   ensureLogAnswerStream().textContent = streamAnswerRaw;
   scrollLogToBottom();
   scrollAnswersToBottom();
@@ -817,6 +909,10 @@ function bindTest() {
     onError: (msg) => appendLog(msg, "err"),
   });
   bindFilePanel("test");
+
+  $("#answerPreviewBtn")?.addEventListener("click", () => setAnswerViewMode("preview"));
+  $("#answerSourceBtn")?.addEventListener("click", () => setAnswerViewMode("source"));
+  bindAnswerImageZoom();
 
   $("#askBtn").addEventListener("click", ask);
   $("#clearBtn").addEventListener("click", () => {

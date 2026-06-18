@@ -35,17 +35,84 @@ def test_build_answer_system_message_synthesizes_from_knowledge() -> None:
         answer_instructions="",
     )
     assert "知识库全文" in msg or "唯一可引用" in msg
-    assert "禁止编造" in msg or "禁止编造原文" in msg
+    assert "只能输出原文" in msg or "原样复制" in msg
+    assert "必须大段输出" in msg or "大段" in msg
+    assert "页脚" in msg or "页码标记" in msg
     assert "![](assets/" in msg or "Markdown 图片行" in msg
     assert "【引用】" in msg
-    assert "原样复制" not in msg
-    assert "禁止加工" not in msg
     assert "L1 | alpha" not in msg
 
 
 def test_strip_citation_lines_from_answer() -> None:
     raw = "快门在顶部。\n\n【引用】files/agent_1/knowledge.md L2-L3"
     assert strip_citation_lines_from_answer(raw) == "快门在顶部。"
+
+
+def test_normalize_answer_image_markdown() -> None:
+    from app.knowledge_loader import normalize_answer_image_markdown
+
+    raw = (
+        "- A 模式说明。[插图说明] A模式显示屏与拨盘图示![](assets/fake_a.png)\n"
+        "- M 模式说明。[插图说明] M模式显示屏与拨盘图示![](assets/fake_m.png)"
+    )
+    out = normalize_answer_image_markdown(raw)
+    assert "![A模式显示屏与拨盘图示](assets/fake_a.png)" in out
+    assert "![M模式显示屏与拨盘图示](assets/fake_m.png)" in out
+    assert "[插图说明]" not in out
+
+
+def test_replace_invalid_images_matches_by_alt_hint(tmp_path: Path) -> None:
+    agent_dir = tmp_path / "files" / "router_1" / "agent_31"
+    md_dir = agent_dir / "md"
+    assets = agent_dir / "assets"
+    md_dir.mkdir(parents=True)
+    assets.mkdir(parents=True)
+    (assets / "knowledge_p119-124_006.png").write_bytes(b"png-a")
+    (assets / "knowledge_p119-124_007.png").write_bytes(b"png-m")
+
+    knowledge = "\n".join(
+        [
+            "## A（光圈优先自动）",
+            "![A模式显示屏与拨盘图示](assets/knowledge_p119-124_006.png)",
+            "## M（手动）",
+            "![M模式显示屏与拨盘图示](assets/knowledge_p119-124_007.png)",
+        ]
+    )
+    raw = "\n".join(
+        [
+            "## A（光圈优先自动）",
+            "- 由您选择光圈。",
+            "[插图说明] A模式显示屏与拨盘图示![](assets/ae3216169f8183d2f0e988c412960e74.png)",
+            "## M（手动）",
+            "- 您可根据曝光指示调整。",
+            "[插图说明] M模式显示屏与拨盘图示![](assets/1381bd9d36158180e13de7864b43f79b.png)",
+            "",
+            "【引用】files/router_1/agent_31/md/knowledge_p119-124.md L2-L3",
+            "【引用】files/router_1/agent_31/md/knowledge_p119-124.md L5-L6",
+        ]
+    )
+    display, cites = finalize_model_answer_display(
+        raw_answer=raw,
+        knowledge=knowledge,
+        knowledge_source="files/router_1/agent_31/md/knowledge_p119-124.md",
+        project_root=tmp_path,
+        files_dir="files/router_1/agent_31",
+    )
+    a_pos = display.find("knowledge_p119-124_006.png")
+    m_pos = display.find("knowledge_p119-124_007.png")
+    assert a_pos != -1
+    assert m_pos != -1
+    assert a_pos < m_pos
+    assert "ae3216169" not in display
+    assert "1381bd9d" not in display
+    assets = [
+        c.asset_file
+        for c in cites
+        if (c.asset_file or "").endswith(".png")
+    ]
+    assert any("knowledge_p119-124_006.png" in a for a in assets)
+    assert any("knowledge_p119-124_007.png" in a for a in assets)
+    assert len(assets) == 2
 
 
 def test_replace_invalid_display_images_with_hallucinated_urls(tmp_path: Path) -> None:

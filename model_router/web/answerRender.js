@@ -65,10 +65,35 @@ function renderAnswerText(s) {
   return result;
 }
 
+function normalizeAnswerMarkdownImages(md) {
+  let s = md || "";
+  if (!s.trim()) return s;
+  s = s.replace(
+    /\[[^\]]*\]\s*([^\n!\[]+?)!\[\]\((assets\/[^)\s]+)\)/gi,
+    (_m, alt, ref) => `\n\n![${alt.trim()}](${ref.trim()})\n\n`
+  );
+  s = s.replace(
+    /([^\n!\[\]]{2,}?)!\[\]\((assets\/[^)\s]+)\)/g,
+    (_m, alt, ref) => `\n\n![${alt.trim()}](${ref.trim()})\n\n`
+  );
+  while (s.includes("\n\n\n")) s = s.replace(/\n\n\n/g, "\n\n");
+  return s.trim();
+}
+
+function renderAnswerMarkdownPreview(text, sourceFile = "") {
+  const body = normalizeAnswerMarkdownImages(stripCitationLines(text));
+  if (!body) return `<div class="empty">（空）</div>`;
+  if (typeof renderMarkdownPreview === "function") {
+    return renderMarkdownPreview(body, (sourceFile || "").trim());
+  }
+  return renderDisplayAnswerHtml(body, sourceFile);
+}
+
 function renderDisplayAnswerHtml(text, sourceFile = "") {
   const src = (sourceFile || "").trim();
-  if (src && /!\[[^\]]*\]\([^)]+\)/.test(text || "")) {
-    return renderAnswerWithMedia(text, src);
+  const normalized = normalizeAnswerMarkdownImages(text);
+  if (src && /!\[[^\]]*\]\([^)]+\)/.test(normalized || "")) {
+    return renderAnswerWithMedia(normalized, src);
   }
-  return renderAnswerText(stripCitationLines(text));
+  return renderAnswerText(stripCitationLines(normalized));
 }

@@ -233,13 +233,13 @@ def test_init_flow_create_register_initialize_refresh_and_routing(client: TestCl
     assert init_resp.status_code == 200
     assert init_resp.json()["agent_id"] == "finance_agent"
     assert init_resp.json()["status"] == "initialized"
-    assert init_resp.json()["route_questions_count"] >= 50
+    assert init_resp.json()["route_questions_count"] >= 10
 
     get_resp = client.get("/agents/finance_agent", params={"router_id": "1"})
     assert get_resp.status_code == 200
     agent = get_resp.json()["agent"]
     assert agent["status"] == "initialized"
-    assert len(agent["route_questions"]) >= 50
+    assert len(agent["route_questions"]) >= 10
     assert len(agent["file_summaries"]) == 1
 
     # 4) uninitialized agent should not participate in routing
@@ -287,7 +287,7 @@ def test_init_flow_create_register_initialize_refresh_and_routing(client: TestCl
         if model != client.app.state.settings.init_model:
             return client.app.state.llm._mock_chat(model=model, messages=messages)
         payload = {
-            "route_questions": [f"（MOCK-NEW）问题 {i}" for i in range(1, 51)],
+            "route_questions": [f"（MOCK-NEW）问题 {i}" for i in range(1, 16)],
             "knowledge_summary": "（MOCK-NEW）更新后的摘要。",
         }
         return __import__("json").dumps(payload, ensure_ascii=False)

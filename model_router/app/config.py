@@ -75,8 +75,8 @@ class Settings:
             enable_thinking = None
         reasoning_effort_raw = os.getenv("REASONING_EFFORT", "").strip().lower()
         reasoning_effort = reasoning_effort_raw if reasoning_effort_raw in {"low", "medium", "high"} else None
-        min_route_questions = int(os.getenv("MIN_ROUTE_QUESTIONS", "50"))
-        max_route_questions = int(os.getenv("MAX_ROUTE_QUESTIONS", "100"))
+        min_route_questions = int(os.getenv("MIN_ROUTE_QUESTIONS", "10"))
+        max_route_questions = int(os.getenv("MAX_ROUTE_QUESTIONS", "15"))
         max_agent_workers = int(os.getenv("AGENT_MAX_WORKERS", "8"))
 
         data_root = Path(os.getenv("DATA_ROOT", str(app_root))).resolve()
