@@ -31,6 +31,7 @@ from docling_vlm_refine import (
     refine_batch_markdown,
     render_pdf_page_png,
     rewrite_images_by_order,
+    strip_footers_in_merged,
     validate_page_markers,
 )
 
@@ -139,7 +140,7 @@ def _docling_draft_for_page(
             idx += 1
 
     draft = rewrite_images_by_order(draft, asset_paths)
-    return draft.strip(), asset_paths, idx
+    return strip_book_footers(draft.strip()), asset_paths, idx
 
 
 def main() -> None:
@@ -237,6 +238,7 @@ def main() -> None:
         print(f"  refined: {len(refined_body)} chars")
 
     # Phase D: write output
+    refined_body = strip_footers_in_merged(refined_body)
     rel_pdf = pdf.relative_to(ROOT).as_posix() if pdf.is_relative_to(ROOT) else pdf.name
     front = build_front_matter(
         source_pdf=rel_pdf,

@@ -22,7 +22,9 @@ from docling_vlm_refine import (  # noqa: E402
     merge_pages,
     normalize_image_paths,
     rewrite_images_by_order,
+    strip_book_footers,
     strip_code_fence,
+    strip_footers_in_merged,
     validate_page_markers,
 )
 
@@ -80,6 +82,85 @@ def test_append_missing_images_skips_referenced():
     md = "![a](assets/knowledge_p1-6_001.png)"
     out = append_missing_images(md, ["assets/knowledge_p1-6_001.png"])
     assert "## 本页插图" not in out
+
+
+def test_strip_book_footers_html_and_plain():
+    md = "\n".join(
+        [
+            "- 旋转副指令拨盘可调整光圈。",
+            "",
+            '<p align="left">模式选择器</p>',
+            '<p align="center">154</p>',
+        ]
+    )
+    out = strip_book_footers(md)
+    assert "模式选择器" not in out
+    assert "154" not in out
+    assert "旋转副指令拨盘" in out
+
+
+def test_strip_book_footers_plain_title_and_number():
+    md = "\n".join(
+        [
+            "- 当照相机侦测到狗或猫的脸部时。",
+            "",
+            "对焦",
+            "129",
+        ]
+    )
+    out = strip_book_footers(md)
+    assert out.endswith("当照相机侦测到狗或猫的脸部时。")
+    assert "对焦" not in out
+    assert "129" not in out
+
+
+def test_strip_book_footers_blockquote():
+    md = "\n".join(
+        [
+            "正文段落。",
+            "",
+            "> 照相机控制",
+            "> 82",
+        ]
+    )
+    out = strip_book_footers(md)
+    assert "照相机控制" not in out
+    assert "82" not in out
+    assert "正文段落" in out
+
+
+def test_strip_footers_in_merged_by_page():
+    md = "\n".join(
+        [
+            "<!-- page 1 -->",
+            "",
+            "第一页内容",
+            "",
+            "对焦",
+            "129",
+            "",
+            "<!-- page 2 -->",
+            "",
+            "第二页内容",
+            "",
+            '<p align="left">模式选择器</p>',
+            '<p align="center">154</p>',
+        ]
+    )
+    out = strip_footers_in_merged(md)
+    assert "第一页内容" in out
+    assert "第二页内容" in out
+    assert "129" not in out
+    assert "154" not in out
+    assert "<!-- page 1 -->" in out
+    assert "<!-- page 2 -->" in out
+
+
+def test_merge_pages_strips_footers():
+    body = merge_pages([(1, "内容\n\n对焦\n129")])
+    assert "内容" in body
+    assert "对焦" not in body
+    assert "129" not in body
 
 
 def test_merge_pages_format():

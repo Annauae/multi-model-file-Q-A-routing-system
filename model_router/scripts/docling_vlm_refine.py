@@ -12,6 +12,12 @@ from app.llm_client import ChatMessage, LLMClient, LLMError
 _MD_IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 _CODE_FENCE_RE = re.compile(r"^```(?:markdown|md)?\s*\n([\s\S]*?)\n```\s*$", re.MULTILINE)
 _PAGE_MARKER_RE = re.compile(r"<!--\s*page\s+(\d+)\s*-->")
+_HTML_ALIGN_P_RE = re.compile(
+    r"^\s*<p\s+align\s*=\s*[\"']?(left|center|right)[\"']?\s*>(.*?)</p>\s*$",
+    re.IGNORECASE | re.DOTALL,
+)
+_PLAIN_BOOK_PAGE_NUM_RE = re.compile(r"^\d{1,4}$")
+_PAGE_FOOTER_LABEL_RE = re.compile(r"^页(?:脚|码)[：:].+$")
 
 VLM_SYSTEM_PROMPT = """你是技术手册 Markdown 整理助手（路线B：Docling 粗提取 + VLM 按 PDF 还原布局）。
 
@@ -27,6 +33,7 @@ VLM_SYSTEM_PROMPT = """你是技术手册 Markdown 整理助手（路线B：Docl
 - 图片引用必须使用提供的 assets/ 相对路径，禁止绝对路径；可调整图片在正文中的位置以贴近 PDF
 - 保留编号符号（①②）、表格、引用块等原有语义
 - 若草稿中有插图但未在正文中引用，可在文末用「## 本页插图」集中列出
+- 不要保留 PDF 页眉页脚、角标、书中页码（如「章节名 + 单独数字行」、`<p align="center">154</p>` 等）
 - 只输出本页 Markdown 正文：不要 <!-- page --> 标记，不要用代码块包裹整个输出，不要添加解释性前言
 """
 
@@ -45,6 +52,7 @@ VLM_BATCH_SYSTEM_PROMPT = """你是技术手册 Markdown 整理助手（路线B�
 - 保留编号符号（①②）、表格、引用块等原有语义
 - 必须保留 <!-- page N --> 分页标记，且页码与输入一致
 - 若某页插图未在正文中引用，可在该页末尾用「## 本页插图」集中列出
+- 不要保留 PDF 页眉页脚、角标、书中页码（如「章节名 + 单独数字行」、`<p align="center">154</p>` 等）
 - 只输出完整多页 Markdown 正文：不要用代码块包裹整个输出，不要添加解释性前言
 """
 
@@ -62,6 +70,134 @@ def strip_code_fence(text: str) -> str:
             lines = lines[:-1]
         return "\n".join(lines).strip()
     return s
+
+
+def _html_p_inner(text: str) -> str:
+    return re.sub(r"<[^>]+>", "", text or "").strip()
+
+
+def _looks_like_footer_title(line: str) -> bool:
+    s = (line or "").strip()
+    if not s or len(s) > 32:
+        return False
+    if s.startswith(("#", "-", "|", "!", "[", "<")):
+        return False
+    if _PAGE_FOOTER_LABEL_RE.match(s):
+        return True
+    inner = re.sub(r"^[*_`>]+|[*_`]+$", "", s).strip()
+    if not inner or len(inner) > 24:
+        return False
+    if re.match(r"^https?://", inner):
+        return False
+    if re.search(r"[。；：？！\.]{2,}", inner):
+        return False
+    if len(inner) > 15 and any(c in inner for c in "，。；："):
+        return False
+    return True
+
+
+def _is_book_page_number_line(line: str) -> bool:
+    s = (line or "").strip()
+    if not s:
+        return False
+    if s.startswith(">"):
+        s = s.lstrip(">").strip()
+    if _PLAIN_BOOK_PAGE_NUM_RE.match(s):
+        return True
+    m = _HTML_ALIGN_P_RE.match(line)
+    if m and m.group(1).lower() == "center":
+        return bool(_PLAIN_BOOK_PAGE_NUM_RE.match(_html_p_inner(m.group(2))))
+    return False
+
+
+def _collapse_blank_lines(lines: List[str]) -> str:
+    out: List[str] = []
+    blank = 0
+    for line in lines:
+        if not line.strip():
+            blank += 1
+            if blank <= 2:
+                out.append("")
+            continue
+        blank = 0
+        out.append(line.rstrip())
+    while out and not out[0].strip():
+        out.pop(0)
+    while out and not out[-1].strip():
+        out.pop()
+    return "\n".join(out)
+
+
+def strip_book_footers(md: str) -> str:
+    """Remove running headers/footers and book page numbers from one page body."""
+    lines = (md or "").splitlines()
+    kept: List[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+
+        if not stripped:
+            kept.append(line)
+            i += 1
+            continue
+
+        if _PAGE_FOOTER_LABEL_RE.match(stripped):
+            i += 1
+            continue
+
+        m_left = _HTML_ALIGN_P_RE.match(line)
+        if m_left and i + 1 < len(lines):
+            m_right = _HTML_ALIGN_P_RE.match(lines[i + 1])
+            if (
+                m_left.group(1).lower() == "left"
+                and m_right
+                and m_right.group(1).lower() == "center"
+                and _is_book_page_number_line(lines[i + 1])
+            ):
+                i += 2
+                continue
+
+        if m_left and m_left.group(1).lower() == "center" and _is_book_page_number_line(line):
+            i += 1
+            continue
+
+        if stripped.startswith(">") and i + 1 < len(lines):
+            t1 = stripped.lstrip(">").strip()
+            t2 = lines[i + 1].strip().lstrip(">").strip()
+            if _looks_like_footer_title(t1) and _PLAIN_BOOK_PAGE_NUM_RE.match(t2):
+                i += 2
+                continue
+
+        title = stripped
+        if (title.startswith("*") and title.endswith("*")) or (title.startswith("_") and title.endswith("_")):
+            title = title[1:-1].strip()
+        if _looks_like_footer_title(title) and i + 1 < len(lines):
+            if _is_book_page_number_line(lines[i + 1]):
+                i += 2
+                continue
+
+        kept.append(line)
+        i += 1
+
+    return _collapse_blank_lines(kept)
+
+
+def strip_footers_in_merged(md: str) -> str:
+    """Strip footers from each <!-- page N --> section in merged markdown."""
+    body = md or ""
+    markers = list(_PAGE_MARKER_RE.finditer(body))
+    if not markers:
+        return strip_book_footers(body)
+
+    parts: List[str] = []
+    for idx, match in enumerate(markers):
+        page_no = int(match.group(1))
+        start = match.end()
+        end = markers[idx + 1].start() if idx + 1 < len(markers) else len(body)
+        section = strip_book_footers(body[start:end])
+        parts.append(f"<!-- page {page_no} -->\n\n{section.strip()}")
+    return "\n\n".join(parts).strip() + "\n"
 
 
 def knowledge_stem(page_start: int, page_end: int) -> str:
@@ -272,6 +408,7 @@ def refine_page_markdown(
     refined = strip_code_fence(raw)
     refined = ensure_relative_asset_paths(refined)
     refined = append_missing_images(refined, asset_paths)
+    refined = strip_book_footers(refined)
     if not refined.strip():
         raise LLMError(f"第 {page_no} 页 VLM 输出为空")
     return refined.strip()
@@ -306,6 +443,7 @@ def refine_batch_markdown(
     refined = strip_code_fence(raw)
     refined = ensure_relative_asset_paths(refined)
     refined = append_missing_images_batch(refined, asset_paths, page_assets=page_assets)
+    refined = strip_footers_in_merged(refined)
 
     missing = validate_page_markers(refined, page_numbers)
     if missing:
@@ -342,5 +480,6 @@ def build_front_matter(
 def merge_pages(page_markdowns: List[Tuple[int, str]]) -> str:
     parts: List[str] = []
     for page_no, text in page_markdowns:
-        parts.append(f"<!-- page {page_no} -->\n\n{text.strip()}")
+        body = strip_book_footers(text)
+        parts.append(f"<!-- page {page_no} -->\n\n{body.strip()}")
     return "\n\n".join(parts) + "\n"
