@@ -20,13 +20,13 @@ def _raise_friendly_llm_error(e: Exception) -> None:
     msg = str(e)
     if "AuthenticationError" in msg or "401" in msg or "API key format is incorrect" in msg:
         raise LLMError(
-            "上游模型鉴权失败（401）。请检查 .env 中的 API_KEY 是否为火山方舟控制台生成的 Key，"
-            "并确认系统环境变量 ARK_API_KEY 未覆盖 .env；修改后需重启 uvicorn。"
+            "上游模型鉴权失败（401）。请检查 .env 中的 API_KEY 是否有效，"
+            "并确认系统环境变量未覆盖 .env；修改后需重启服务。"
         ) from e
     if "AccessDenied" in msg or "PermissionDeniedError" in msg or "403" in msg:
         raise LLMError(
-            "上游模型无权限访问该接入点（403）。请确认 ep-xxx 接入点与 API_KEY 属于同一火山方舟项目；"
-            "若 .env 中 API_KEY 正确，请检查系统环境变量 ARK_API_KEY 是否覆盖了 .env。"
+            "上游模型无权限访问（403）。请确认 API_KEY 与接入点/模型匹配；"
+            "Gemini 需在 Google AI Studio 启用 API 且项目未被限制。"
         ) from e
     raise LLMError(f"调用上游模型失败：{type(e).__name__}: {e}") from e
 
@@ -118,6 +118,9 @@ class LLMClient:
     def _is_volc_ark(self) -> bool:
         return "volces.com" in (self._settings.api_base_url or "").lower()
 
+    def _is_gemini(self) -> bool:
+        return "generativelanguage.googleapis.com" in (self._settings.api_base_url or "").lower()
+
     def _build_extra_body(self, *, model: str) -> Dict[str, Any]:
         """Vendor-specific body fields (via OpenAI SDK extra_body)."""
         extra: Dict[str, Any] = {}
@@ -126,10 +129,13 @@ class LLMClient:
             extra["thinking"] = {
                 "type": "enabled" if self._settings.enable_thinking else "disabled",
             }
+        elif self._is_gemini():
+            if self._settings.enable_thinking is False:
+                extra["reasoning_effort"] = "none"
         elif self._settings.enable_thinking is not None and self._model_supports_enable_thinking(model):
             extra["chat_template_kwargs"] = {"enable_thinking": self._settings.enable_thinking}
 
-        if self._settings.reasoning_effort:
+        if self._settings.reasoning_effort and not self._is_gemini():
             extra["reasoning_effort"] = self._settings.reasoning_effort
 
         return extra
