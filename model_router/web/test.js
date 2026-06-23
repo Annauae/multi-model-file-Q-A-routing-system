@@ -250,7 +250,7 @@ function logDoneDetails(data) {
     if (a.citations?.length) {
       const citeCtx = {
         routerName: routerDisplayName(getSelectedRouterIdFrom($("#routerSelect")), routersCache[getSelectedRouterIdFrom($("#routerSelect"))]),
-        agentName: (a.agent_name || "").trim() || subAgentDisplayName(a.agent_id, null),
+        agentName: (a.agent_name || "").trim() || subAgentDisplayName(a.agent_id, null, getSelectedRouterIdFrom($("#routerSelect"))),
         knowledgeSource: a.knowledge_source || "",
       };
       appendLogBlock(
@@ -289,7 +289,7 @@ function citationDisplayContext(data) {
   const answer0 = data?.answers?.[0];
   const routerId = getSelectedRouterIdFrom($("#routerSelect"));
   const routerName = routerDisplayName(routerId, routersCache[routerId]);
-  const agentName = (answer0?.agent_name || "").trim() || subAgentDisplayName(answer0?.agent_id, null);
+  const agentName = (answer0?.agent_name || "").trim() || subAgentDisplayName(answer0?.agent_id, null, routerId);
   const knowledgeSource = answer0?.knowledge_source || lastKnowledgeSource || "";
   return { routerName, agentName, knowledgeSource };
 }
@@ -868,7 +868,7 @@ async function loadRouteQuestionsPool() {
   try {
     await loadAllCaches();
     const routerId = getSelectedRouterIdFrom($("#routerSelect"));
-    const agents = routerId ? agentsForRouter(routerId) : agentsCache;
+    const agents = agentsForRouter(routerId);
     const pool = [];
     for (const cfg of Object.values(agents || {})) {
       for (const q of cfg.route_questions || []) {

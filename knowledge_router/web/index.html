@@ -1,0 +1,228 @@
+<!--
+  index.html — SPA 壳：单问题测试 + 管理 两页
+  样式：styles.css（浅色冷色调）
+  脚本加载顺序：common → filePreview → answerRender → test → manage
+-->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>知识问答控制台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css?v=1" />
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brandMark"></span>
+        <span class="brandText">Knowledge Router</span>
+      </div>
+      <nav class="appNav">
+        <button type="button" class="appNavBtn active" data-app-view="test">单问题测试</button>
+        <button type="button" class="appNavBtn" data-app-view="manage">管理</button>
+      </nav>
+      <div class="topbarRight">
+        <div class="status">
+          <span class="dot" id="healthDot"></span>
+          <span class="txt" id="healthText">连接中…</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="viewTest" class="viewPane active">
+      <div class="testGrid">
+        <section class="panel testInputPanel">
+          <div class="stripHead">输入问题</div>
+          <div class="stripBody qBody">
+            <textarea id="question" rows="3" placeholder="输入问题… Ctrl+Enter 提问"></textarea>
+            <div class="qActions">
+              <label class="kbSelectLabel">知识库
+                <select id="kbSelect" class="kbSelect"></select>
+              </label>
+              <button id="askBtn" class="btn primary btnXs" type="button">提问</button>
+              <button id="clearBtn" class="btn ghost btnXs" type="button">清空</button>
+              <button id="randomQuestionBtn" class="btn ghost btnXs" type="button">随机问题</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel rightPanel testSidePanel">
+          <div class="stripHead rightTabHead">
+            <div class="rightTabs">
+              <button type="button" class="tabBtn active" data-right-tab="log">日志</button>
+              <button type="button" class="tabBtn" data-right-tab="files">JSON</button>
+            </div>
+            <span class="headActions">
+              <button id="clearLogBtn" class="btn ghost btnXs" type="button">清空</button>
+            </span>
+          </div>
+          <div class="rightTabBody">
+            <div id="rightTabLog" class="rightTabPane active">
+              <div class="logScroll">
+                <div id="logBox" class="logBody"></div>
+              </div>
+            </div>
+            <div id="rightTabFiles" class="rightTabPane">
+              <pre id="jsonPreviewBox" class="filePreviewScroll fileSource">加载中…</pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel leftTabPanel testMainPanel">
+          <div class="stripHead leftTabHead">
+            <div class="leftTabs">
+              <button type="button" class="tabBtn active" data-left-tab="answer">回答</button>
+              <button type="button" class="tabBtn" data-left-tab="match">匹配</button>
+            </div>
+          </div>
+          <div class="leftTabBody">
+            <div class="leftContentRow">
+              <div class="leftTabPanesWrap">
+                <div id="leftTabAnswer" class="leftTabPane active">
+                  <div class="answerLayout">
+                    <div class="answerMain">
+                      <div class="answerHeadBar">
+                        <span class="answerStreamLabel" id="answerLabel">回答</span>
+                        <div class="answerViewToolbar hidden" id="answerViewToolbar">
+                          <button type="button" id="answerPreviewBtn" class="btn btnXs primary">预览</button>
+                          <button type="button" id="answerSourceBtn" class="btn btnXs ghost">源码</button>
+                        </div>
+                      </div>
+                      <div class="answersScroll">
+                        <div id="answersBox" class="answersBody">
+                          <div class="empty">尚无回答。</div>
+                        </div>
+                        <div id="streamAnswerPreview" class="answersBody answerMdPreview mdPreview hidden"></div>
+                        <pre id="streamAnswerSource" class="answersBody answerSource hidden"></pre>
+                      </div>
+                    </div>
+                    <aside id="resourcesBox" class="resourcesBox">
+                      <div class="resourcesHead">引用</div>
+                      <div id="resourcesContent" class="resourcesContent">
+                        <div class="empty">等待回答…</div>
+                      </div>
+                    </aside>
+                  </div>
+                </div>
+                <div id="leftTabMatch" class="leftTabPane">
+                  <div class="routeScroll">
+                    <div id="matchBox" class="routeBody">
+                      <div class="empty">等待提问…</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <aside id="timingAside" class="timingAside">
+                <div class="timingAsideHead">消耗时间</div>
+                <div id="timingPanel" class="timingPanel">
+                  <div class="empty">提问后显示</div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <main id="viewManage" class="viewPane hidden">
+      <div class="manageThreeCol">
+        <section class="panel manageCol">
+          <div class="stripHead">
+            <span>知识库</span>
+            <span class="headActions headDropdowns">
+              <div class="headDropdown">
+                <button type="button" class="btn primary btnXs dropdownToggle">操作 ▾</button>
+                <div class="dropdownMenu hidden">
+                  <button type="button" class="dropdownItem" data-kb-action="add">新增</button>
+                  <button type="button" class="dropdownItem" data-kb-action="rename">重命名</button>
+                  <button type="button" class="dropdownItem" data-kb-action="delete">删除</button>
+                  <button type="button" class="dropdownItem" data-kb-action="reload">重载缓存</button>
+                </div>
+              </div>
+            </span>
+          </div>
+          <div id="kbList" class="scrollInner listBody"></div>
+        </section>
+
+        <section class="panel manageCol">
+          <div class="stripHead">
+            <span>标准问题</span>
+            <span class="headActions">
+              <button type="button" id="addQuestionBtn" class="btn ghost btnXs">+ 新增</button>
+            </span>
+          </div>
+          <div class="manageSearchBar">
+            <input id="questionSearch" type="search" placeholder="搜索问题…" />
+          </div>
+          <div id="questionList" class="scrollInner listBody"></div>
+        </section>
+
+        <section class="panel manageCol manageEditorCol">
+          <div class="stripHead editorTabHead">
+            <div class="leftTabs">
+              <button type="button" class="tabBtn active" data-editor-tab="form">问答编辑</button>
+              <button type="button" class="tabBtn" data-editor-tab="json">JSON 源码</button>
+              <button type="button" class="tabBtn" data-editor-tab="prompt">匹配提示词</button>
+            </div>
+            <span class="headActions">
+              <button type="button" id="saveEditorBtn" class="btn primary btnXs">保存</button>
+            </span>
+          </div>
+          <div id="editorTabForm" class="editorTabPane active scrollInner editorForm">
+            <div class="formRow">
+              <label>ID</label>
+              <input id="editItemId" type="text" readonly />
+            </div>
+            <div class="formRow">
+              <label>标准问题</label>
+              <input id="editQuestion" type="text" />
+            </div>
+            <div class="formRow">
+              <label>变体问法（每行一条）</label>
+              <textarea id="editVariants" rows="4"></textarea>
+            </div>
+            <div class="formRow">
+              <label class="rowBetween">
+                <span>回答（Markdown）</span>
+                <span class="miniToggle">
+                  <button type="button" id="editAnswerPreviewBtn" class="btn btnXs primary">预览</button>
+                  <button type="button" id="editAnswerSourceBtn" class="btn btnXs ghost">源码</button>
+                </span>
+              </label>
+              <textarea id="editAnswer" rows="10" class="hidden"></textarea>
+              <div id="editAnswerPreview" class="mdPreview editorPreview"></div>
+            </div>
+            <div class="formRow">
+              <label>引用 citations（JSON 数组）</label>
+              <textarea id="editCitations" rows="5" spellcheck="false"></textarea>
+            </div>
+            <div class="formRow inline">
+              <label><input id="editEnabled" type="checkbox" checked /> 启用匹配</label>
+            </div>
+          </div>
+          <div id="editorTabJson" class="editorTabPane scrollInner">
+            <textarea id="jsonEditor" class="jsonEditor" spellcheck="false"></textarea>
+            <div id="jsonEditorError" class="formError hidden"></div>
+          </div>
+          <div id="editorTabPrompt" class="editorTabPane scrollInner">
+            <textarea id="promptEditor" class="promptEditor" spellcheck="false"></textarea>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="/static/common.js?v=1"></script>
+    <script src="/static/filePreview.js?v=1"></script>
+    <script src="/static/answerRender.js?v=1"></script>
+    <script src="/static/test.js?v=1"></script>
+    <script src="/static/manage.js?v=1"></script>
+  </body>
+</html>

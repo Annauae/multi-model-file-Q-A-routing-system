@@ -1,7 +1,7 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
-let agentsCache = {};
+let agentsCacheByRouter = {};
 let routersCache = {};
 let lastHealthOk = null;
 const VIDEO_EXTS = /\.(mp4|webm|mov)(\?|$)/i;
@@ -74,32 +74,52 @@ function routerDisplayName(routerId, router) {
   return (cfg.name || "").trim() || `总Agent_${routerId}`;
 }
 
-function subAgentDisplayName(agentId, agent) {
-  const cfg = agent || agentsCache[agentId] || {};
+function subAgentDisplayName(agentId, agent, routerId = "") {
+  const rid = String(routerId || "").trim() || getSelectedRouterIdFrom($("#routerSelect"));
+  const cfg = agent || agentFromCache(rid, agentId) || {};
   return (cfg.name || "").trim() || `agent_${agentId}`;
+}
+
+function agentFromCache(routerId, agentId) {
+  const rid = String(routerId || "").trim();
+  const aid = String(agentId || "").trim();
+  if (!rid || !aid) return null;
+  return (agentsCacheByRouter[rid] || {})[aid] || null;
 }
 
 function agentsForRouter(routerId) {
   const rid = String(routerId || "").trim();
   if (!rid) return {};
-  const cfg = routersCache[rid] || {};
-  const ids = new Set(cfg.agent_ids || []);
-  const out = {};
-  for (const [aid, a] of Object.entries(agentsCache || {})) {
-    if (ids.has(aid) || String(a?.router_id || "") === rid) out[aid] = a;
-  }
-  return out;
+  return agentsCacheByRouter[rid] || {};
 }
 
 async function loadAgentsCache() {
-  const data = await apiJson("/agents");
-  agentsCache = data.agents || {};
-  return Object.keys(agentsCache).length;
+  const routerIds = Object.keys(routersCache || {});
+  agentsCacheByRouter = {};
+  if (!routerIds.length) {
+    const data = await apiJson("/agents");
+    for (const [aid, a] of Object.entries(data.agents || {})) {
+      const rid = String(a?.router_id || "").trim();
+      if (!rid) continue;
+      if (!agentsCacheByRouter[rid]) agentsCacheByRouter[rid] = {};
+      agentsCacheByRouter[rid][aid] = a;
+    }
+    return Object.keys(data.agents || {}).length;
+  }
+  let total = 0;
+  await Promise.all(
+    routerIds.map(async (rid) => {
+      const data = await apiJson(`/agents?router_id=${encodeURIComponent(rid)}`);
+      agentsCacheByRouter[rid] = data.agents || {};
+      total += Object.keys(agentsCacheByRouter[rid]).length;
+    })
+  );
+  return total;
 }
 
 async function loadAllCaches() {
-  await loadAgentsCache();
   await loadRoutersCache();
+  await loadAgentsCache();
 }
 
 function populateRouterSelect(selectEl, selectedId = "") {

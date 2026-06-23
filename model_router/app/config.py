@@ -34,6 +34,7 @@ class Settings:
     min_route_questions: int
     max_route_questions: int
     max_agent_workers: int
+    llm_temperature: float
     data_root: Path
     agents_config_path: Path
     routers_config_path: Path
@@ -78,6 +79,7 @@ class Settings:
         min_route_questions = int(os.getenv("MIN_ROUTE_QUESTIONS", "10"))
         max_route_questions = int(os.getenv("MAX_ROUTE_QUESTIONS", "15"))
         max_agent_workers = int(os.getenv("AGENT_MAX_WORKERS", "8"))
+        llm_temperature = float(os.getenv("LLM_TEMPERATURE", "0"))
 
         data_root = Path(os.getenv("DATA_ROOT", str(app_root))).resolve()
         agents_config_path = Path(os.getenv("AGENTS_CONFIG_PATH", str(data_root / "config" / "agents.json"))).resolve()
@@ -109,6 +111,7 @@ class Settings:
             min_route_questions=min_route_questions,
             max_route_questions=max_route_questions,
             max_agent_workers=max(1, max_agent_workers),
+            llm_temperature=max(0.0, min(2.0, llm_temperature)),
             data_root=data_root,
             agents_config_path=agents_config_path,
             routers_config_path=routers_config_path,

@@ -32,6 +32,7 @@ def _make_settings(tmp_path: Path) -> Settings:
         min_route_questions=1,
         max_route_questions=100,
         max_agent_workers=8,
+        llm_temperature=0.0,
         data_root=data_root,
         agents_config_path=data_root / "config" / "agents.json",
         routers_config_path=data_root / "config" / "routers.json",

@@ -22,7 +22,9 @@ from .knowledge_loader import (
     parse_line_citations_from_answer,
     finalize_model_answer_display,
     expand_citations_with_images_in_range,
+    polish_answer_body,
     strip_citation_lines_from_answer,
+    sync_citations_with_display_images,
     reconcile_answer_with_retrieval,
     resolve_agent_knowledge,
     strip_line_prefix,
@@ -544,7 +546,7 @@ def _resolve_display_answer_and_citations(
     )
     if model_cites:
         return display, model_cites
-    return raw, _collect_citations(
+    citations = _collect_citations(
         question=question,
         answer=raw,
         knowledge_text=knowledge_text,
@@ -553,6 +555,34 @@ def _resolve_display_answer_and_citations(
         files_dir=files_dir,
         retrieval_citations=retrieval_citations,
     )
+    parsed = parse_line_citations_from_answer(
+        answer=raw,
+        knowledge_source=knowledge_source,
+        knowledge=knowledge_text,
+    )
+    cite_for_images = parsed or citations
+    display = polish_answer_body(
+        strip_citation_lines_from_answer(raw),
+        knowledge=knowledge_text,
+        citations=cite_for_images,
+        project_root=project_root,
+        files_dir=files_dir,
+    )
+    expanded = expand_citations_with_images_in_range(
+        citations,
+        knowledge=knowledge_text,
+        project_root=project_root,
+        files_dir=files_dir,
+    )
+    synced = sync_citations_with_display_images(
+        display,
+        expanded,
+        knowledge_source=knowledge_source,
+        knowledge=knowledge_text,
+        project_root=project_root,
+        files_dir=files_dir,
+    )
+    return display, synced
 
 
 def _run_single_agent(

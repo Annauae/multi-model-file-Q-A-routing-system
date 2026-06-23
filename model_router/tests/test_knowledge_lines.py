@@ -35,10 +35,15 @@ def test_build_answer_system_message_synthesizes_from_knowledge() -> None:
         answer_instructions="",
     )
     assert "知识库全文" in msg or "唯一可引用" in msg
+    assert "先读全文" in msg or "完整阅读" in msg
     assert "只能输出原文" in msg or "原样复制" in msg
     assert "必须大段输出" in msg or "大段" in msg
+    assert "多处匹配时只选最相关" in msg or "相似度最高" in msg
     assert "页脚" in msg or "页码标记" in msg
     assert "![](assets/" in msg or "Markdown 图片行" in msg
+    assert "图片须单独成行" in msg
+    assert "<image>" in msg
+    assert "knowledge_p77-82_005.png" in msg
     assert "【引用】" in msg
     assert "L1 | alpha" not in msg
 
@@ -160,6 +165,110 @@ def test_replace_invalid_display_images_with_hallucinated_urls(tmp_path: Path) -
     assert "assets/p012_docling_picture001.png" in display
     assert "assets/p012_docling_picture002.png" in display
     assert cites
+
+
+def test_resolve_image_tag_placeholders_inline(tmp_path: Path) -> None:
+    from app.knowledge_loader import polish_answer_body, resolve_image_tag_placeholders
+    from app.schemas import Citation
+
+    agent_dir = tmp_path / "files" / "router_1" / "agent_13"
+    assets = agent_dir / "assets"
+    assets.mkdir(parents=True)
+    for name in ("knowledge_p72-76_001.png", "knowledge_p72-76_002.png", "knowledge_p72-76_003.png"):
+        (assets / name).write_bytes(
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x0e\x00\x00\x00\x0e"
+        )
+
+    knowledge = "\n".join(
+        [
+            "<!-- page 72 -->",
+            "1. **选择照片模式。**",
+            "![照片/视频选择器操作示意图](assets/knowledge_p72-76_002.png)",
+            "2. **旋转至 AUTO。**",
+            "![模式选择器操作示意图](assets/knowledge_p72-76_003.png)",
+            "<!-- page 73 -->",
+        ]
+    )
+    raw = "\n".join(
+        [
+            "1. **选择照片模式。**",
+            "[插图说明] 照片/视频选择器操作示意图",
+            "<image>",
+            "2. **旋转至 AUTO。**",
+            "[插图说明] 模式选择器操作示意图",
+            "<image>",
+        ]
+    )
+    cites = [
+        Citation(
+            file="files/router_1/agent_13/md/knowledge_p72-76.md",
+            line_start=2,
+            line_end=5,
+            snippet="",
+        )
+    ]
+    display = resolve_image_tag_placeholders(
+        raw,
+        knowledge=knowledge,
+        citations=cites,
+        project_root=tmp_path,
+        files_dir="files/router_1/agent_13",
+    )
+    assert "<image>" not in display
+    assert "knowledge_p72-76_002.png" in display
+    assert "knowledge_p72-76_003.png" in display
+    pos2 = display.find("knowledge_p72-76_002.png")
+    pos3 = display.find("knowledge_p72-76_003.png")
+    assert pos2 != -1 and pos3 != -1
+    assert pos2 < pos3
+
+    polished = polish_answer_body(
+        raw,
+        knowledge=knowledge,
+        citations=cites,
+        project_root=tmp_path,
+        files_dir="files/router_1/agent_13",
+    )
+    assert polished.count("knowledge_p72-76_002.png") == 1
+    assert "knowledge_p72-76_001.png" not in polished
+
+
+def test_resolve_illustration_lines_without_image_tag(tmp_path: Path) -> None:
+    from app.knowledge_loader import resolve_image_tag_placeholders
+    from app.schemas import Citation
+
+    agent_dir = tmp_path / "files" / "router_1" / "agent_13"
+    assets = agent_dir / "assets"
+    assets.mkdir(parents=True)
+    for name in ("knowledge_p72-76_001.png", "knowledge_p72-76_002.png"):
+        (assets / name).write_bytes(
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x0e\x00\x00\x00\x0e"
+        )
+
+    knowledge = "\n".join(
+        [
+            "![伸缩镜筒操作示意图](assets/knowledge_p72-76_001.png)",
+            "![照片/视频选择器操作示意图](assets/knowledge_p72-76_002.png)",
+        ]
+    )
+    raw = "\n".join(
+        [
+            "1. **选择照片模式。**",
+            "[插图说明] 照片村频选择器操作示意图",
+            "2. **旋转至 AUTO。**",
+            "[插图说明] 模式选择器操作示意图",
+        ]
+    )
+    cites = [Citation(file="k.md", line_start=1, line_end=2, snippet="")]
+    display = resolve_image_tag_placeholders(
+        raw,
+        knowledge=knowledge,
+        citations=cites,
+        project_root=tmp_path,
+        files_dir="files/router_1/agent_13",
+    )
+    assert "[插图说明]" not in display
+    assert display.find("knowledge_p72-76_002.png") < display.find("模式选择器") or "knowledge_p72-76_001.png" in display
 
 
 def test_finalize_model_answer_display(tmp_path: Path) -> None:

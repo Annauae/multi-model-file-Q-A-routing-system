@@ -10,13 +10,13 @@ generated_at: 2026-06-12T02:15:38Z
 
 <!-- page 77 -->
 
-# 录制视频（<img alt="AUTO" src="" style="width:1.2em; vertical-align: middle;"/> 自动）
+# 录制视频（AUTO自动）
 
-<img alt="AUTO" src="" style="width:1.2em; vertical-align: middle;"/>（自动）模式还可用于简单的“即取即拍”型视频录制。
+AUTO（自动）模式还可用于简单的“即取即拍”型视频录制。
 
 ---
 
-## 1 通过将照片/视频选择器旋转至<img alt="视频模式标识" src="" style="width:1em; vertical-align: middle;"/>选择视频模式。
+## 1 通过将照片/视频选择器旋转至视频模式标识选择视频模式。
 
 ![照片/视频选择器操作示意](assets/knowledge_p77-82_001.png)
 
@@ -24,13 +24,13 @@ generated_at: 2026-06-12T02:15:38Z
 
 ---
 
-## 2 将模式选择器旋转至AUTO（<img alt="AUTO" src="" style="width:1.2em; vertical-align: middle;"/>）。
+## 2 将模式选择器旋转至AUTO。
 
 ![模式选择器旋转至AUTO示意](assets/knowledge_p77-82_002.png)
 
 ---
 
-录制视频（<img alt="AUTO" src="" style="width:1.2em; vertical-align: middle;"/>自动）
+录制视频（AUTO 自动）
 109
 
 <!-- page 78 -->
@@ -49,7 +49,7 @@ generated_at: 2026-06-12T02:15:38Z
 2 剩余时间
 
 - 声音通过内置麦克风进行录制。录制期间切勿遮盖麦克风。
-- 若您在录制过程中轻触显示屏中的拍摄对象，该拍摄对象在画面中移动时，对焦点将对其进行跟踪（<img alt="页码标识" src="" style="width:1em; vertical-align: middle;"/>131）。
+- 若您在录制过程中轻触显示屏中的拍摄对象，该拍摄对象在画面中移动时，对焦点将对其进行跟踪。
 
 ---
 
@@ -57,7 +57,7 @@ generated_at: 2026-06-12T02:15:38Z
 
 ---
 
-录制视频（<img alt="AUTO" src="" style="width:1.2em; vertical-align: middle;"/>自动）
+录制视频（AUTO 自动）
 110
 
 <!-- page 79 -->

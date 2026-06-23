@@ -16,6 +16,18 @@ _MALFORMED_INLINE_IMG_RE = re.compile(
     re.IGNORECASE,
 )
 _TRAILING_INLINE_IMG_RE = re.compile(r"([^\n!\[\]]{2,}?)!\[\]\((assets/[^)\s]+)\)")
+_ILLUSTRATION_TAG_RE = re.compile(
+    r"\[插图说明\]\s*(?P<alt>[^\n<\[]+?)\s*(?:\n\s*)?<image(?:\s*/>|>(?:\s*</image>)?)?",
+    re.IGNORECASE,
+)
+_ILLUSTRATION_LINE_RE = re.compile(
+    r"^\s*\[插图说明\]\s*(?P<alt>[^\n]+?)\s*$",
+    re.MULTILINE | re.IGNORECASE,
+)
+_STANDALONE_IMAGE_TAG_RE = re.compile(
+    r"^\s*<image(?:\s*/>|>(?:\s*</image>)?)?\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
 _LINE_PREFIX_RE = re.compile(r"^L(\d+)\s*\|\s*")
 _CITE_LINE_RE = re.compile(
     r"【引用】\s*(?P<file>[^\s]+)\s+L(?P<start>\d+)(?:\s*[-–—]\s*L?(?P<end>\d+))?",
@@ -243,6 +255,162 @@ def normalize_answer_image_markdown(body: str) -> str:
 
     text = _MALFORMED_INLINE_IMG_RE.sub(lambda m: _block_img(m.group(1), m.group(2)), text)
     text = _TRAILING_INLINE_IMG_RE.sub(lambda m: _block_img(m.group(1), m.group(2)), text)
+    while "\n\n\n" in text:
+        text = text.replace("\n\n\n", "\n\n")
+    return text.strip()
+
+
+def polish_answer_body(
+    body: str,
+    *,
+    knowledge: str,
+    citations: List[Citation],
+    project_root: Path,
+    files_dir: str,
+    append_missing: bool = True,
+) -> str:
+    """Normalize markdown images and resolve ``<image>`` placeholders in answer text."""
+    display = normalize_answer_image_markdown(body)
+    display = resolve_image_tag_placeholders(
+        display,
+        knowledge=knowledge,
+        citations=citations,
+        project_root=project_root,
+        files_dir=files_dir,
+    )
+    display = replace_invalid_display_images(
+        display,
+        knowledge=knowledge,
+        citations=citations,
+        project_root=project_root,
+        files_dir=files_dir,
+    )
+    if append_missing:
+        display = append_missing_images_to_display(
+            display,
+            knowledge=knowledge,
+            citations=citations,
+            project_root=project_root,
+            files_dir=files_dir,
+        )
+    return display
+
+
+def _ordered_image_markdown_from_citations(
+    citations: List[Citation],
+    *,
+    knowledge: str,
+    project_root: Path,
+    files_dir: str,
+) -> List[str]:
+    lines = (knowledge or "").splitlines()
+    if not lines:
+        return []
+
+    pool: List[str] = []
+    seen_md: set[str] = set()
+    for c in sorted(citations, key=lambda x: (x.line_start or 0, x.line_end or 0)):
+        ls = c.line_start if c.line_start and c.line_start > 0 else None
+        if ls is None:
+            continue
+        le = c.line_end if c.line_end and c.line_end >= ls else ls
+        for md_line in _image_markdown_lines_in_range(
+            lines,
+            ls,
+            le,
+            project_root=project_root,
+            files_dir=files_dir,
+        ):
+            if md_line not in seen_md:
+                seen_md.add(md_line)
+                pool.append(md_line)
+    return pool
+
+
+def resolve_image_tag_placeholders(
+    body: str,
+    *,
+    knowledge: str,
+    citations: List[Citation],
+    project_root: Path,
+    files_dir: str,
+) -> str:
+    """Turn ``[插图说明] …`` / ``<image>`` placeholders into knowledge ``![](...)`` lines."""
+    text = body or ""
+    if not text.strip():
+        return text
+
+    pool = _ordered_image_markdown_from_citations(
+        citations,
+        knowledge=knowledge,
+        project_root=project_root,
+        files_dir=files_dir,
+    )
+    if not pool:
+        pool = _ordered_image_markdown_from_citations(
+            [
+                Citation(
+                    file="",
+                    line_start=1,
+                    line_end=len((knowledge or "").splitlines()),
+                    snippet="",
+                )
+            ],
+            knowledge=knowledge,
+            project_root=project_root,
+            files_dir=files_dir,
+        )
+    pool_idx = 0
+    used_refs: set[str] = set()
+
+    def _image_md_for_alt(alt: str) -> Optional[str]:
+        nonlocal pool_idx
+        hint = (alt or "").strip()
+        md = (
+            _find_knowledge_image_line_by_alt_hint(
+                hint,
+                knowledge=knowledge,
+                project_root=project_root,
+                files_dir=files_dir,
+            )
+            if hint
+            else None
+        )
+        if md:
+            m = _MD_IMG_RE.search(md)
+            ref = m.group(2).strip() if m else ""
+            if ref and ref in used_refs:
+                md = None
+            elif ref:
+                used_refs.add(ref)
+                return md
+        while pool_idx < len(pool):
+            candidate = pool[pool_idx]
+            pool_idx += 1
+            m = _MD_IMG_RE.search(candidate)
+            ref = m.group(2).strip() if m else ""
+            if ref and ref in used_refs:
+                continue
+            if ref:
+                used_refs.add(ref)
+            return candidate
+        return None
+
+    def _illust_repl(match: re.Match[str]) -> str:
+        md = _image_md_for_alt(match.group("alt"))
+        return md if md else match.group(0)
+
+    text = _ILLUSTRATION_TAG_RE.sub(_illust_repl, text)
+    text = _ILLUSTRATION_LINE_RE.sub(_illust_repl, text)
+
+    if _STANDALONE_IMAGE_TAG_RE.search(text):
+
+        def _standalone_repl(_match: re.Match[str]) -> str:
+            md = _image_md_for_alt("")
+            return md if md else ""
+
+        text = _STANDALONE_IMAGE_TAG_RE.sub(_standalone_repl, text)
+
     while "\n\n\n" in text:
         text = text.replace("\n\n\n", "\n\n")
     return text.strip()
@@ -577,7 +745,7 @@ def append_missing_images_to_display(
     project_root: Path,
     files_dir: str,
 ) -> str:
-    """When the model omits ``![](...)`` in the answer, append page-block images."""
+    """When the model omits ``![](...)`` in the answer, append images from cited line ranges."""
     body = (display or "").strip()
     if _has_valid_display_images(body, project_root=project_root, files_dir=files_dir):
         return body
@@ -586,24 +754,35 @@ def append_missing_images_to_display(
     if not lines or not citations:
         return body
 
-    seen_blocks: set[tuple[int, int]] = set()
+    existing_refs = {m.group(2).strip() for m in _MD_IMG_RE.finditer(body)}
     img_lines: List[str] = []
     seen_md: set[str] = set()
     for c in citations:
         ls = c.line_start if c.line_start and c.line_start > 0 else None
         if ls is None:
             continue
-        block = _page_block_bounds(lines, ls)
-        if block in seen_blocks:
-            continue
-        seen_blocks.add(block)
-        for md_line in _image_markdown_lines_in_range(
+        le = c.line_end if c.line_end and c.line_end >= ls else ls
+        range_images = _image_markdown_lines_in_range(
             lines,
-            block[0],
-            block[1],
+            ls,
+            le,
             project_root=project_root,
             files_dir=files_dir,
-        ):
+        )
+        if not range_images:
+            block = _page_block_bounds(lines, ls)
+            range_images = _image_markdown_lines_in_range(
+                lines,
+                block[0],
+                block[1],
+                project_root=project_root,
+                files_dir=files_dir,
+            )
+        for md_line in range_images:
+            m = _MD_IMG_RE.search(md_line)
+            ref = m.group(2).strip() if m else ""
+            if ref and ref in existing_refs:
+                continue
             if md_line in seen_md:
                 continue
             seen_md.add(md_line)
@@ -703,15 +882,7 @@ def finalize_model_answer_display(
             files_dir=files_dir,
         )
         display = strip_citation_lines_from_answer(raw)
-        display = normalize_answer_image_markdown(display)
-        display = replace_invalid_display_images(
-            display,
-            knowledge=knowledge,
-            citations=citations,
-            project_root=project_root,
-            files_dir=files_dir,
-        )
-        display = append_missing_images_to_display(
+        display = polish_answer_body(
             display,
             knowledge=knowledge,
             citations=parsed,
@@ -879,7 +1050,7 @@ def _build_answer_rules_text(
     length_rule = ""
     if max_answer_chars > 0:
         length_rule = (
-            f"7. 输出总长不超过 {max_answer_chars} 个汉字；"
+            f"9. 输出总长不超过 {max_answer_chars} 个汉字；"
             "在限制内仍须**尽量输出大段连续原文**，不得为压缩而只留一句或改写；"
             "仅可删去页眉页脚、页码标记及与问题完全无关的整页。\n"
         )
@@ -888,9 +1059,15 @@ def _build_answer_rules_text(
 
     return (
         f"你是「{agent_name}」领域的问答助手。\n"
-        "本消息中的【知识库全文】是你唯一可引用的资料（含文字与插图），请**仅依据**其内容回答用户随后提出的问题。\n"
+        "本消息中的【知识库全文】是你唯一可引用的资料（含文字与插图）。"
+        "回答用户问题前，**必须先完整阅读**下方整份 Markdown 知识库（通读全文，含所有章节、步骤与插图说明），"
+        "再**仅依据**全文内容作答。\n"
+        "**禁止**在未通读全文的情况下凭印象、标题或零散片段猜测作答。\n"
         "\n"
         "硬性规则：\n"
+        "0. **先读全文再作答**：必须先阅读【知识库全文】从头到尾的完整内容，"
+        "在全文范围内定位与用户问题语义相似度最高的段落或小节，再输出该处原文；"
+        "不得跳过未读章节直接作答。\n"
         "1. **只能输出原文**：正文**必须**从知识库中**原样复制**文字，"
         "保留原有措辞、标点、顺序与段落结构；"
         "**禁止**用自己的话概括、解释、转述、补充或「帮助理解」式改写；"
@@ -898,22 +1075,32 @@ def _build_answer_rules_text(
         "2. **必须大段输出**：回答须包含与问题相关的**完整段落或小节**（通常不少于一整段），"
         "按知识库中的顺序**连续输出**；"
         "**禁止**只输出一句话、半句话、单个要点，或从段落中摘取零散片段。\n"
-        "3. **可跳过的内容**（不要输出这些行）：\n"
+        "3. **多处匹配时只选最相关**：若知识库中有多个段落或小节都可能回答用户问题，"
+        "只选择与用户问题**语义相似度最高**的一处，输出该处连续的大段原文；"
+        "**禁止**拼接多个相似度较低的段落，**禁止**为多处各写一行【引用】。"
+        "文末【引用】通常只保留这一处的行号范围（一行）。\n"
+        "4. **可跳过的内容**（不要输出这些行）：\n"
         "   - HTML 页码标记，如 `<!-- page 28 -->`\n"
         "   - 页脚、页眉、单独页码行（如「页码：60」「页脚：…」）\n"
         "   - 与问题完全无关的整页或整节\n"
         "   除上述可跳过项外，保留的每一句必须与原文**逐字一致**，不得改字词。\n"
-        "4. **回答结构**（必须遵守）：\n"
+        "5. **回答结构**（必须遵守）：\n"
         "   - **正文**：输出大段原文；若插图有助于说明，在对应位置**原样复制**知识库中的 Markdown 图片行"
         "（含 `![说明文字](assets/xxx.png)` 整行，路径与文件名须与知识库**完全一致**，每张图单独占一行；"
-        "禁止改写 alt 文字，禁止编造文件名）。\n"
+        "禁止改写 alt 文字，禁止编造文件名；"
+        "**禁止**输出 `<image>`、`<image>...</image>` 等 XML/HTML 图片占位符，图片**只能**使用 Markdown 格式）。\n"
+        "   - **图片须单独成行**：若知识库中文字与图片 Markdown 写在同一行，输出时须在图片前换行，文字与图片各占一行。示例——\n"
+        "     知识库原文：`文字文字![图片名](assets/knowledge_p77-82_005.png)`\n"
+        "     正确回答：\n"
+        "     文字文字\n"
+        "     ![图片名](assets/knowledge_p77-82_005.png)\n"
         "   - **文末引用**：正文结束后空一行，逐行列出来源行号，格式：\n"
         f"     【引用】{cite_src} L{{起始行}}-L{{结束行}}\n"
         f"     单行可写：【引用】{cite_src} L28\n"
         "     引用须覆盖实际输出的文字行；若该页有「本页插图」，请**另起一行**引用插图行号范围。\n"
-        "     只引用你实际用到的段落；可有多行引用。\n"
-        "5. **禁止**在正文叙述句中写文件名、行号或【引用】（引用只放在文末专用行）。\n"
-        "6. 若知识库足以回答，请直接输出相关原文大段，不要输出「未找到」。\n"
+        "     只引用你实际用到的段落；优先只保留相似度最高的一处引用。\n"
+        "6. **禁止**在正文叙述句中写文件名、行号或【引用】（引用只放在文末专用行）。\n"
+        "7. 若知识库足以回答，请直接输出相关原文大段，不要输出「未找到」。\n"
         "   仅当知识库完全无法提供任何可回答依据时，才输出：当前知识库中未找到相关信息\n"
         f"{length_rule}"
         f"{extra}"
@@ -1071,7 +1258,7 @@ def build_answer_system_content(
             max_answer_chars=max_answer_chars,
             knowledge_source=source_label,
         )
-        + f"\n\n【知识库全文】（来源：{source_label}）\n"
+        + f"\n\n【知识库全文】（来源：{source_label}；作答前须通读以下完整 Markdown）\n"
     )
     if not include_images:
         return header + (knowledge or "")
@@ -1115,7 +1302,10 @@ def build_answer_user_message(
 ) -> tuple[str, List[Citation]]:
     """User message: question only. Full knowledge lives in the system prompt."""
     _ = knowledge, knowledge_source, max_retrieval_chars
-    parts: List[str] = [f"用户问题：{question.strip()}"]
+    parts: List[str] = [
+        f"用户问题：{question.strip()}",
+        "请先结合 system 消息中的【知识库全文】通读完整 Markdown 后再作答。",
+    ]
     rq = (rewritten_query or "").strip()
     if rq:
         parts.append(f"改写后的查询：{rq}")

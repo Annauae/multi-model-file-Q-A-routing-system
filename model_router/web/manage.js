@@ -745,8 +745,8 @@ async function initAllSubAgents() {
 async function renameSubAgent() {
   if (!manageSelectedSubAgentId) return;
   const cur = manageSelectedSubAgentId;
-  const cfg = agentsCache[cur] || {};
-  const curLabel = subAgentDisplayName(cur, cfg);
+  const cfg = subAgentsForCurrentRouter()[cur] || {};
+  const curLabel = subAgentDisplayName(cur, cfg, manageSelectedRouterId);
   const name = prompt("输入新的展示名称：", curLabel);
   if (!name) return;
   const trimmed = name.trim();
@@ -763,7 +763,7 @@ async function renameSubAgent() {
 
 async function deleteSubAgent() {
   if (!manageSelectedSubAgentId) return;
-  const cfg = agentsCache[manageSelectedSubAgentId] || {};
+  const cfg = subAgentsForCurrentRouter()[manageSelectedSubAgentId] || {};
   const label = cfg.name || `agent_${manageSelectedSubAgentId}`;
   if (!confirm(`确定删除子 Agent「${label}」（ID: ${manageSelectedSubAgentId}）？`)) return;
   await apiJson(agentApiUrl(`/agents/${encodeURIComponent(manageSelectedSubAgentId)}`), { method: "DELETE" });
