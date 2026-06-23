@@ -1,369 +1,268 @@
-"""
-main.py — FastAPI 应用入口：HTTP API + 静态前端 + SSE 流式问答
-
-职责：
-  - create_app()：组装 Settings、KbStore、QuestionsStoreRegistry、QuestionsCache、LLMClient
-  - lifespan：启动时 questions_cache.load_all()
-  - POST /ask：同步问答（匹配 LLM → 内存取 answer）
-  - POST /ask/stream：SSE（log / match_delta / match / done）
-  - 知识库与 FAQ CRUD、preview-asset、health
-
-问答主链路（/ask）：
-  validate kb_id
-  → questions_cache.get_enabled_candidates()   # 内存，不读盘
-  → match_question() 或 stream                   # 匹配模型
-  → questions_cache.get_item_by_id()           # O(1) 取预存 answer
-  → AskResponse
-
-阅读顺序：第 9 个（最后读，串联以上所有模块）
-"""
-
 from __future__ import annotations
 
 import json
-import shutil
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Iterator, List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import APP_ROOT, Settings
 from .kb_store import KbStore
-from .llm_client import LLMClient, LLMError
+from .llm_client import ChatMessage, LLMClient, LLMError
 from .matcher import (
-    MATCH_SYSTEM_PROMPT_ZH,
     build_match_messages,
-    match_question,
-    no_candidates_result,
+    count_question_prompt_lines,
+    default_match_prompt,
+    is_match_resolved,
     parse_match_raw,
 )
-from .paths import kb_assets_dir_path, kb_dir_path
+from .paths import kb_assets_dir_path, kb_dir_path, questions_json_path
 from .questions_cache import QuestionsCache
-from .questions_store import QuestionsStoreRegistry
 from .schemas import (
     AskRequest,
     AskResponse,
     AskTimings,
-    CreateKnowledgeBaseRequest,
+    DefaultPromptResponse,
     HealthResponse,
-    KnowledgeBaseSummary,
-    KnowledgeBasesListResponse,
-    QAItem,
+    KnowledgeBaseCreateRequest,
+    KnowledgeBaseRenameRequest,
+    MatchPromptPreviewResponse,
+    MatchPromptUpdateRequest,
+    MatchResult,
     QAItemUpsertRequest,
     QuestionsDocument,
-    QuestionsDocumentResponse,
-    RenameKnowledgeBaseRequest,
-    SetMatchPromptRequest,
+    QuestionsReplaceRequest,
 )
 
 
 def _sse(event: str, data: Dict[str, Any]) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False, default=str)}\n\n"
 
 
-def _sse_log(level: str, message: str, detail: Any = None) -> str:
-    payload: Dict[str, Any] = {"level": level, "message": message}
-    if detail is not None:
-        payload["detail"] = detail
-    return _sse("log", payload)
+class AskLogSink:
+    """Collect structured ask pipeline logs for SSE."""
+
+    def __init__(self) -> None:
+        self._entries: List[tuple[str, str]] = []
+
+    def log(self, line: str, kind: str = "log") -> None:
+        self._entries.append((line, kind))
+
+    def drain(self) -> List[tuple[str, str]]:
+        out = list(self._entries)
+        self._entries.clear()
+        return out
+
+
+def _validate_kb_id(kb_store: KbStore, kb_id: str) -> str:
+    kid = (kb_id or "").strip()
+    if not kid:
+        raise HTTPException(status_code=400, detail="kb_id 不能为空")
+    if not kb_store.get(kid):
+        raise HTTPException(status_code=404, detail="kb_id 不存在")
+    return kid
+
+
+def _run_match(
+    *,
+    question: str,
+    kb_id: str,
+    cache: QuestionsCache,
+    llm: LLMClient,
+    settings: Settings,
+    log_sink: AskLogSink | None = None,
+    stream_log: List[str] | None = None,
+) -> tuple[MatchResult, AskTimings, str, list[dict[str, str]]]:
+    def _log(line: str, kind: str = "log") -> None:
+        if log_sink is not None:
+            log_sink.log(line, kind)
+        if stream_log is not None:
+            stream_log.append(line)
+
+    timings = AskTimings()
+    t0 = time.perf_counter()
+    _log(f"[step] _run_match 开始 kb_id={kb_id}", "step")
+
+    idx = cache.get_index(kb_id)
+    if idx is None:
+        _log("[cache] 内存索引未命中，执行 load_kb()", "cache")
+        idx = cache.load_kb(kb_id)
+    else:
+        _log(f"[cache] 命中内存索引 loaded_at={idx.loaded_at}", "cache")
+
+    prompt_lines = count_question_prompt_lines(idx.enabled_items)
+    _log(
+        f"[cache] enabled_items={len(idx.enabled_items)} prompt_lines={prompt_lines} "
+        f"(含标准问题+variants)",
+        "cache",
+    )
+
+    system_prompt = idx.match_system_prompt
+    messages_dict = build_match_messages(system_prompt=system_prompt, user_question=question)
+    messages = [ChatMessage(role=m["role"], content=m["content"]) for m in messages_dict]
+
+    _log(f"[prompt] system 长度={len(system_prompt)} 字符", "prompt")
+    _log(f"[prompt] system 内容:\n{system_prompt}", "prompt")
+    _log(f"[prompt] user 消息（用户问题注入处）:\n{question}", "prompt")
+    _log(
+        f"[match] 调用 LLM model={settings.match_model} "
+        f"max_tokens={settings.match_max_tokens} temperature={settings.match_temperature}",
+        "match",
+    )
+
+    t_match0 = time.perf_counter()
+    first_token_ms = 0.0
+    buffer = ""
+    got_first = False
+    valid_ids = idx.valid_ids
+    delta_count = 0
+
+    def _early_stop(buf: str) -> bool:
+        return is_match_resolved(buf, valid_ids)
+
+    for delta in llm.chat_stream(
+        model=settings.match_model,
+        messages=messages,
+        max_tokens=settings.match_max_tokens,
+        temperature=settings.match_temperature,
+        early_stop_check=_early_stop,
+    ):
+        delta_count += 1
+        if not got_first:
+            first_token_ms = (time.perf_counter() - t_match0) * 1000.0
+            got_first = True
+            _log(f"[match] 首 token 到达 +{first_token_ms:.1f}ms delta={delta!r}", "match")
+        buffer += delta
+        if is_match_resolved(buffer, valid_ids):
+            _log(f"[match] 早停触发 buffer={buffer.strip()!r}", "match")
+            break
+
+    raw = buffer.strip()
+    timings.match_ms = (time.perf_counter() - t_match0) * 1000.0
+    timings.match_first_token_ms = first_token_ms
+    timings.match_output_tokens = max(1, len(raw.split())) if raw else 0
+
+    _log(f"[match] stream 结束 deltas={delta_count} raw_output={raw!r}", "match")
+
+    match = parse_match_raw(raw=raw, valid_ids=idx.valid_ids)
+    if match.need_clarification:
+        _log("[parse] 未匹配或无效 id -> need_clarification=true", "parse")
+    else:
+        _log(f"[parse] 解析成功 matched_id={match.matched_id}", "parse")
+
+    if match.matched_id:
+        item = cache.resolve_item(kb_id, match.matched_id)
+        if item:
+            match.matched_question = item.question
+            _log(f"[lookup] resolve_item({match.matched_id}) 命中标准问题={item.question!r}", "lookup")
+        else:
+            _log(f"[lookup] resolve_item({match.matched_id}) 未找到 enabled 条目", "lookup")
+
+    timings.total_ms = (time.perf_counter() - t0) * 1000.0
+    _log(f"[step] _run_match 完成 total={timings.total_ms:.1f}ms", "step")
+    return match, timings, system_prompt, messages_dict
+
+
+def _finalize_ask(
+    *,
+    question: str,
+    kb_id: str,
+    match: MatchResult,
+    cache: QuestionsCache,
+    timings: AskTimings,
+    log_sink: AskLogSink | None = None,
+) -> AskResponse:
+    def _log(line: str, kind: str = "log") -> None:
+        if log_sink is not None:
+            log_sink.log(line, kind)
+
+    _log("[step] _finalize_ask 开始（内存取预存 answer，不调用回答模型）", "step")
+    t_lookup0 = time.perf_counter()
+    answer = ""
+    if not match.need_clarification and match.matched_id:
+        item = cache.resolve_item(kb_id, match.matched_id)
+        if item:
+            answer = item.answer
+            _log(
+                f"[lookup] 返回预存 answer len={len(answer)} cache_hit=true",
+                "lookup",
+            )
+        else:
+            match.need_clarification = True
+            match.clarification_question = match.clarification_question or "匹配结果无效，请重试。"
+            _log("[lookup] matched_id 无效，转为 need_clarification", "lookup")
+    else:
+        _log("[lookup] 跳过取 answer（未匹配）", "lookup")
+
+    timings.lookup_ms = (time.perf_counter() - t_lookup0) * 1000.0
+    timings.total_ms = timings.match_ms + timings.lookup_ms
+    _log(f"[step] _finalize_ask 完成 lookup={timings.lookup_ms:.2f}ms total={timings.total_ms:.1f}ms", "step")
+    return AskResponse(
+        question=question,
+        kb_id=kb_id,
+        match=match,
+        answer=answer if not match.need_clarification else "",
+        timings=timings,
+        cache_hit=True,
+    )
 
 
 def create_app() -> FastAPI:
     settings = Settings.load()
     kb_store = KbStore.open(settings.kb_config_path)
-    questions_cache_holder: Dict[str, QuestionsCache] = {}
-
-    def _on_questions_changed(kb_id: str) -> None:
-        cache = questions_cache_holder.get("cache")
-        if cache:
-            cache.reload_kb(kb_id)
-
-    store_registry = QuestionsStoreRegistry(files_root=settings.files_root, on_changed=_on_questions_changed)
-    questions_cache = QuestionsCache(store_registry=store_registry)
-    questions_cache_holder["cache"] = questions_cache
+    cache = QuestionsCache(kb_store=kb_store, files_root=settings.files_root)
     llm = LLMClient(settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
-        kb_ids = list(kb_store.get_all().keys())
-        questions_cache.load_all(kb_ids)
+        cache.load_all()
         yield
 
     app = FastAPI(title="知识问答匹配系统", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.kb_store = kb_store
-    app.state.store_registry = store_registry
-    app.state.questions_cache = questions_cache
+    app.state.cache = cache
     app.state.llm = llm
-
-    def _validate_kb_id(kb_id: str) -> str:
-        kid = (kb_id or "").strip()
-        if not kid:
-            raise HTTPException(status_code=400, detail="kb_id 不能为空")
-        if not kb_store.get(kid):
-            raise HTTPException(status_code=404, detail="kb_id 不存在")
-        return kid
-
-    def _get_match_prompt(kb_id: str) -> str:
-        cfg = kb_store.get(kb_id) or {}
-        return str(cfg.get("match_prompt") or "")
-
-    def _kb_summary(kb_id: str, cfg: Dict[str, Any]) -> KnowledgeBaseSummary:
-        return KnowledgeBaseSummary(
-            kb_id=kb_id,
-            name=str(cfg.get("name") or kb_id),
-            status=str(cfg.get("status") or "ready"),
-            match_prompt=str(cfg.get("match_prompt") or ""),
-            item_count=questions_cache.item_count(kb_id),
-            enabled_count=questions_cache.enabled_count(kb_id),
-            created_at=str(cfg.get("created_at") or ""),
-            updated_at=str(cfg.get("updated_at") or ""),
-        )
-
-    def _resolve_asset(kb_id: str, ref: str) -> Path:
-        kid = _validate_kb_id(kb_id)
-        raw = (ref or "").strip().replace("\\", "/")
-        if raw.startswith("../"):
-            raw = raw[3:]
-        if raw.startswith("assets/"):
-            raw = raw[len("assets/") :]
-        if ".." in raw or raw.startswith("/"):
-            raise HTTPException(status_code=400, detail="非法 asset 路径")
-        assets_dir = kb_assets_dir_path(settings.files_root, kid)
-        resolved = (assets_dir / raw).resolve()
-        if assets_dir.resolve() not in resolved.parents and resolved != assets_dir.resolve():
-            raise HTTPException(status_code=403, detail="不允许访问该路径")
-        if not resolved.is_file():
-            raise HTTPException(status_code=404, detail="资源不存在")
-        return resolved
-
-    def _build_ask_response(
-        *,
-        question: str,
-        kb_id: str,
-        match_result,
-        answer: str,
-        citations: List,
-        timings: AskTimings,
-    ) -> AskResponse:
-        index = questions_cache.get_index(kb_id)
-        return AskResponse(
-            question=question,
-            kb_id=kb_id,
-            match=match_result,
-            answer=answer,
-            citations=citations,
-            timings=timings,
-            cache_hit=True,
-            enabled_count=len(index.enabled_items) if index else 0,
-            kb_loaded_at=index.loaded_at if index else "",
-        )
 
     web_root = (APP_ROOT / "web").resolve()
     if web_root.exists():
         app.mount("/static", StaticFiles(directory=str(web_root)), name="static")
 
-        @app.get("/", response_class=HTMLResponse)
-        def ui() -> HTMLResponse:
-            return HTMLResponse(
-                (web_root / "index.html").read_text(encoding="utf-8"),
-                headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
-            )
+    @app.get("/", response_class=HTMLResponse)
+    def index() -> HTMLResponse:
+        index_path = web_root / "index.html"
+        if not index_path.exists():
+            return HTMLResponse("<h1>knowledge_router</h1><p>web/index.html 缺失</p>")
+        return HTMLResponse(index_path.read_text(encoding="utf-8"))
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
         return HealthResponse()
-
-    @app.get("/knowledge-bases", response_model=KnowledgeBasesListResponse)
-    def list_knowledge_bases() -> KnowledgeBasesListResponse:
-        all_kb = kb_store.get_all()
-        summaries = {kid: _kb_summary(kid, cfg) for kid, cfg in all_kb.items()}
-        return KnowledgeBasesListResponse(knowledge_bases=summaries)
-
-    @app.post("/knowledge-bases", response_model=KnowledgeBaseSummary)
-    def create_knowledge_base(req: CreateKnowledgeBaseRequest) -> KnowledgeBaseSummary:
-        kb_id = (req.kb_id or "").strip() or kb_store.next_available_kb_id()
-        name = req.name.strip()
-        try:
-            cfg = kb_store.create_kb(kb_id=kb_id, name=name)
-            kb_dir_path(settings.files_root, kb_id).mkdir(parents=True, exist_ok=True)
-            kb_assets_dir_path(settings.files_root, kb_id).mkdir(parents=True, exist_ok=True)
-            store_registry.for_kb(kb_id).replace_all({"version": 1, "items": []})
-            questions_cache.load_kb(kb_id)
-            return _kb_summary(kb_id, cfg)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-
-    @app.get("/knowledge-bases/{kb_id}", response_model=KnowledgeBaseSummary)
-    def get_knowledge_base(kb_id: str) -> KnowledgeBaseSummary:
-        kid = _validate_kb_id(kb_id)
-        cfg = kb_store.get(kid) or {}
-        return _kb_summary(kid, cfg)
-
-    @app.delete("/knowledge-bases/{kb_id}", response_model=KnowledgeBaseSummary)
-    def delete_knowledge_base(kb_id: str) -> KnowledgeBaseSummary:
-        kid = _validate_kb_id(kb_id)
-        try:
-            cfg = kb_store.delete_kb(kb_id=kid)
-            questions_cache.evict_kb(kid)
-            kb_path = kb_dir_path(settings.files_root, kid)
-            if kb_path.exists():
-                shutil.rmtree(kb_path, ignore_errors=True)
-            return _kb_summary(kid, cfg)
-        except KeyError as e:
-            raise HTTPException(status_code=404, detail=str(e)) from e
-
-    @app.post("/knowledge-bases/{kb_id}/rename", response_model=KnowledgeBaseSummary)
-    def rename_knowledge_base(kb_id: str, req: RenameKnowledgeBaseRequest) -> KnowledgeBaseSummary:
-        kid = _validate_kb_id(kb_id)
-        try:
-            cfg = kb_store.rename_kb(kb_id=kid, name=req.name.strip())
-            return _kb_summary(kid, cfg)
-        except (KeyError, ValueError) as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-
-    @app.put("/knowledge-bases/{kb_id}/prompt", response_model=KnowledgeBaseSummary)
-    def set_match_prompt(kb_id: str, req: SetMatchPromptRequest) -> KnowledgeBaseSummary:
-        kid = _validate_kb_id(kb_id)
-        try:
-            cfg = kb_store.set_match_prompt(kb_id=kid, match_prompt=req.match_prompt)
-            return _kb_summary(kid, cfg)
-        except KeyError as e:
-            raise HTTPException(status_code=404, detail=str(e)) from e
-
-    @app.get("/knowledge-bases/default-prompt")
-    def default_match_prompt() -> Dict[str, str]:
-        return {"match_prompt": MATCH_SYSTEM_PROMPT_ZH}
-
-    @app.post("/knowledge-bases/{kb_id}/reload")
-    def reload_knowledge_base(kb_id: str) -> Dict[str, Any]:
-        kid = _validate_kb_id(kb_id)
-        index = questions_cache.reload_kb(kid)
-        return {
-            "kb_id": kid,
-            "loaded_at": index.loaded_at,
-            "item_count": len(index.items_by_id),
-            "enabled_count": len(index.enabled_items),
-            "source_mtime": index.source_mtime,
-        }
-
-    @app.get("/knowledge-bases/{kb_id}/questions", response_model=QuestionsDocumentResponse)
-    def get_questions_document(kb_id: str) -> QuestionsDocumentResponse:
-        kid = _validate_kb_id(kb_id)
-        items, loaded_at, source_mtime = questions_cache.get_document_snapshot(kid)
-        doc = QuestionsDocument(version=1, items=items)
-        return QuestionsDocumentResponse(
-            kb_id=kid,
-            document=doc,
-            loaded_at=loaded_at,
-            source_mtime=source_mtime,
-        )
-
-    @app.put("/knowledge-bases/{kb_id}/questions", response_model=QuestionsDocumentResponse)
-    def replace_questions_document(kb_id: str, body: QuestionsDocument) -> QuestionsDocumentResponse:
-        kid = _validate_kb_id(kb_id)
-        try:
-            store_registry.for_kb(kid).replace_all(body.model_dump(mode="json"))
-            index = questions_cache.reload_kb(kid)
-            items = list(index.items_by_id.values())
-            return QuestionsDocumentResponse(
-                kb_id=kid,
-                document=QuestionsDocument(version=body.version or 1, items=items),
-                loaded_at=index.loaded_at,
-                source_mtime=index.source_mtime,
-            )
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-
-    @app.post("/knowledge-bases/{kb_id}/questions/items", response_model=QAItem)
-    def create_question_item(kb_id: str, req: QAItemUpsertRequest) -> QAItem:
-        kid = _validate_kb_id(kb_id)
-        item = QAItem(**req.model_dump())
-        try:
-            return store_registry.for_kb(kid).upsert_item(item)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-
-    @app.put("/knowledge-bases/{kb_id}/questions/items/{item_id}", response_model=QAItem)
-    def update_question_item(kb_id: str, item_id: str, req: QAItemUpsertRequest) -> QAItem:
-        kid = _validate_kb_id(kb_id)
-        if req.id.strip() != item_id.strip():
-            raise HTTPException(status_code=400, detail="URL item_id 与 body.id 不一致")
-        item = QAItem(**req.model_dump())
-        try:
-            return store_registry.for_kb(kid).upsert_item(item)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-
-    @app.delete("/knowledge-bases/{kb_id}/questions/items/{item_id}", response_model=QAItem)
-    def delete_question_item(kb_id: str, item_id: str) -> QAItem:
-        kid = _validate_kb_id(kb_id)
-        try:
-            return store_registry.for_kb(kid).delete_item(item_id)
-        except KeyError as e:
-            raise HTTPException(status_code=404, detail=str(e)) from e
-
-    @app.get("/preview-asset")
-    def preview_asset(kb_id: str, ref: str) -> FileResponse:
-        resolved = _resolve_asset(kb_id, ref)
-        return FileResponse(resolved)
 
     @app.post("/ask", response_model=AskResponse)
     def ask(req: AskRequest) -> AskResponse:
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
-        kb_id = _validate_kb_id(req.kb_id)
-        match_prompt = _get_match_prompt(kb_id)
+        kb_id = _validate_kb_id(kb_store, req.kb_id)
         try:
-            t_total0 = time.perf_counter()
-            candidates = questions_cache.get_enabled_candidates(kb_id)
-            index = questions_cache.get_index(kb_id)
-            t_match0 = time.perf_counter()
-            match_result = match_question(
-                question=question,
-                candidates=candidates,
-                llm=llm,
-                match_model=settings.match_model,
-                match_prompt=match_prompt,
-            )
-            match_ms = (time.perf_counter() - t_match0) * 1000.0
-            if match_result.need_clarification:
-                total_ms = (time.perf_counter() - t_total0) * 1000.0
-                return _build_ask_response(
-                    question=question,
-                    kb_id=kb_id,
-                    match_result=match_result,
-                    answer="",
-                    citations=[],
-                    timings=AskTimings(total_ms=total_ms, match_ms=match_ms, lookup_ms=0.0),
-                )
-            t_lookup0 = time.perf_counter()
-            item = questions_cache.get_item_by_id(kb_id, match_result.matched_id)
-            lookup_ms = (time.perf_counter() - t_lookup0) * 1000.0
-            if not item:
-                match_result = no_candidates_result()
-                total_ms = (time.perf_counter() - t_total0) * 1000.0
-                return _build_ask_response(
-                    question=question,
-                    kb_id=kb_id,
-                    match_result=match_result,
-                    answer="",
-                    citations=[],
-                    timings=AskTimings(total_ms=total_ms, match_ms=match_ms, lookup_ms=lookup_ms),
-                )
-            total_ms = (time.perf_counter() - t_total0) * 1000.0
-            return _build_ask_response(
+            match, timings, _, _ = _run_match(
                 question=question,
                 kb_id=kb_id,
-                match_result=match_result,
-                answer=item.answer,
-                citations=item.citations,
-                timings=AskTimings(total_ms=total_ms, match_ms=match_ms, lookup_ms=lookup_ms),
+                cache=cache,
+                llm=llm,
+                settings=settings,
+            )
+            return _finalize_ask(
+                question=question,
+                kb_id=kb_id,
+                match=match,
+                cache=cache,
+                timings=timings,
             )
         except LLMError as e:
             raise HTTPException(status_code=502, detail=str(e)) from e
@@ -373,168 +272,240 @@ def create_app() -> FastAPI:
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
-        kb_id = _validate_kb_id(req.kb_id)
-        match_prompt = _get_match_prompt(kb_id)
+        kb_id = _validate_kb_id(kb_store, req.kb_id)
 
-        def generate() -> Generator[str, None, None]:
+        def gen() -> Iterator[str]:
+            sink = AskLogSink()
             try:
-                t_total0 = time.perf_counter()
-                index = questions_cache.get_index(kb_id)
-                candidates = questions_cache.get_enabled_candidates(kb_id)
-                yield _sse_log("info", f"开始处理提问（{len(question)} 字）· 知识库 {kb_id}")
-                yield _sse_log(
-                    "info",
-                    "内存缓存已就绪",
-                    {
-                        "cache_hit": True,
-                        "enabled_count": len(candidates),
-                        "kb_loaded_at": index.loaded_at if index else "",
-                        "source_mtime": index.source_mtime if index else 0,
-                    },
-                )
-                if not candidates:
-                    match_result = no_candidates_result()
-                    yield _sse_log("warn", match_result.clarification_question)
-                    total_ms = (time.perf_counter() - t_total0) * 1000.0
-                    yield _sse(
-                        "match",
-                        {
-                            "match": match_result.model_dump(mode="json"),
-                            "timings": {"total_ms": total_ms, "match_ms": 0.0, "lookup_ms": 0.0},
-                        },
-                    )
-                    yield _sse(
-                        "done",
-                        _build_ask_response(
-                            question=question,
-                            kb_id=kb_id,
-                            match_result=match_result,
-                            answer="",
-                            citations=[],
-                            timings=AskTimings(total_ms=total_ms),
-                        ).model_dump(mode="json"),
-                    )
-                    return
+                sink.log("[step] POST /ask/stream 收到请求", "step")
+                sink.log(f"question: {question}", "log")
+                sink.log(f"kb_id: {kb_id}", "log")
+                for line, kind in sink.drain():
+                    yield _sse("log", {"line": line, "kind": kind})
 
-                t_match0 = time.perf_counter()
-                match_messages = build_match_messages(
+                match, timings, system_prompt, messages_dict = _run_match(
                     question=question,
-                    candidates=candidates,
-                    match_prompt=match_prompt,
+                    kb_id=kb_id,
+                    cache=cache,
+                    llm=llm,
+                    settings=settings,
+                    log_sink=sink,
                 )
-                yield _sse_log(
-                    "info",
-                    "匹配 prompt 已构建",
-                    {
-                        "model": settings.match_model,
-                        "candidate_count": len(candidates),
-                        "messages": [
-                            {"role": m.role, "content": m.content if isinstance(m.content, str) else m.content}
-                            for m in match_messages
-                        ],
-                    },
+                for line, kind in sink.drain():
+                    yield _sse("log", {"line": line, "kind": kind})
+
+                resp = _finalize_ask(
+                    question=question,
+                    kb_id=kb_id,
+                    match=match,
+                    cache=cache,
+                    timings=timings,
+                    log_sink=sink,
                 )
-                yield _sse_log("match", f"调用匹配模型 {settings.match_model}")
-                match_parts: List[str] = []
-                match_first_token_ms: float | None = None
-                for chunk in llm.chat_stream(model=settings.match_model, messages=match_messages):
-                    if match_first_token_ms is None:
-                        match_first_token_ms = (time.perf_counter() - t_total0) * 1000.0
-                        yield _sse_log("match", f"匹配首字 · {match_first_token_ms:.0f} ms")
-                    match_parts.append(chunk)
-                    delta_payload: Dict[str, Any] = {"content": chunk}
-                    if len(match_parts) == 1 and match_first_token_ms is not None:
-                        delta_payload["match_first_token_ms"] = match_first_token_ms
-                    yield _sse("match_delta", delta_payload)
-                match_ms = (time.perf_counter() - t_match0) * 1000.0
-                raw = "".join(match_parts)
-                yield _sse_log(
-                    "match",
-                    f"匹配 JSON 解析 · {match_ms:.0f} ms",
-                    {"raw": raw},
-                )
-                match_result = parse_match_raw(raw=raw, candidates=candidates)
+                for line, kind in sink.drain():
+                    yield _sse("log", {"line": line, "kind": kind})
+
+                sink.log("[step] 推送 match / done 事件到前端", "step")
+                for line, kind in sink.drain():
+                    yield _sse("log", {"line": line, "kind": kind})
+
                 yield _sse(
                     "match",
                     {
-                        "match": match_result.model_dump(mode="json"),
-                        "timings": {
-                            "match_ms": match_ms,
-                            "match_first_token_ms": match_first_token_ms or 0.0,
-                        },
+                        "raw_output": match.raw_output,
+                        "matched_id": match.matched_id,
+                        "matched_question": match.matched_question,
+                        "need_clarification": match.need_clarification,
+                        "clarification_question": match.clarification_question,
+                        "enabled_count": cache.get_enabled_count(kb_id),
+                        "messages": messages_dict,
                     },
                 )
-                if match_result.need_clarification:
-                    yield _sse_log("warn", match_result.clarification_question or "需要澄清")
-                    total_ms = (time.perf_counter() - t_total0) * 1000.0
-                    yield _sse(
-                        "done",
-                        _build_ask_response(
-                            question=question,
-                            kb_id=kb_id,
-                            match_result=match_result,
-                            answer="",
-                            citations=[],
-                            timings=AskTimings(
-                                total_ms=total_ms,
-                                match_ms=match_ms,
-                                match_first_token_ms=match_first_token_ms or 0.0,
-                            ),
-                        ).model_dump(mode="json"),
-                    )
-                    return
-
-                t_lookup0 = time.perf_counter()
-                item = questions_cache.get_item_by_id(kb_id, match_result.matched_id)
-                lookup_ms = (time.perf_counter() - t_lookup0) * 1000.0
-                yield _sse_log(
-                    "ok",
-                    f"内存查表命中 {match_result.matched_id} · lookup {lookup_ms:.3f} ms",
-                    {"matched_question": match_result.matched_question},
+                yield _sse(
+                    "done",
+                    {
+                        "question": resp.question,
+                        "kb_id": resp.kb_id,
+                        "match": resp.match.model_dump(),
+                        "answer": resp.answer,
+                        "timings": resp.timings.model_dump(),
+                        "cache_hit": resp.cache_hit,
+                    },
                 )
-                if not item:
-                    match_result = no_candidates_result()
-                    total_ms = (time.perf_counter() - t_total0) * 1000.0
-                    yield _sse(
-                        "done",
-                        _build_ask_response(
-                            question=question,
-                            kb_id=kb_id,
-                            match_result=match_result,
-                            answer="",
-                            citations=[],
-                            timings=AskTimings(
-                                total_ms=total_ms,
-                                match_ms=match_ms,
-                                match_first_token_ms=match_first_token_ms or 0.0,
-                                lookup_ms=lookup_ms,
-                            ),
-                        ).model_dump(mode="json"),
-                    )
-                    return
-
-                total_ms = (time.perf_counter() - t_total0) * 1000.0
-                response = _build_ask_response(
-                    question=question,
-                    kb_id=kb_id,
-                    match_result=match_result,
-                    answer=item.answer,
-                    citations=item.citations,
-                    timings=AskTimings(
-                        total_ms=total_ms,
-                        match_ms=match_ms,
-                        match_first_token_ms=match_first_token_ms or 0.0,
-                        lookup_ms=lookup_ms,
-                    ),
-                )
-                yield _sse_log("ok", f"返回预存回答 · {len(item.answer)} 字")
-                yield _sse("done", response.model_dump(mode="json"))
             except LLMError as e:
-                yield _sse("error", {"message": str(e)})
-            except Exception as e:  # noqa: BLE001
-                yield _sse("error", {"message": f"{type(e).__name__}: {e}"})
+                yield _sse("error", {"detail": str(e)})
 
-        return StreamingResponse(generate(), media_type="text/event-stream")
+        return StreamingResponse(gen(), media_type="text/event-stream")
+
+    @app.get("/knowledge-bases")
+    def list_kbs() -> Dict[str, Any]:
+        items = []
+        for kb_id, cfg in kb_store.get_all().items():
+            enabled_count = 0
+            idx = cache.get_index(kb_id)
+            if idx:
+                enabled_count = len(idx.enabled_items)
+            items.append({"kb_id": kb_id, **cfg, "enabled_count": enabled_count})
+        return {"items": items}
+
+    @app.post("/knowledge-bases")
+    def create_kb(req: KnowledgeBaseCreateRequest) -> Dict[str, Any]:
+        kb_id = (req.kb_id or "").strip() or kb_store.next_available_kb_id()
+        name = req.name.strip()
+        try:
+            cfg = kb_store.create_kb(kb_id=kb_id, name=name)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        kb_dir_path(settings.files_root, kb_id).mkdir(parents=True, exist_ok=True)
+        kb_assets_dir_path(settings.files_root, kb_id).mkdir(parents=True, exist_ok=True)
+        qpath = questions_json_path(settings.files_root, kb_id)
+        if not qpath.exists():
+            qpath.write_text(
+                json.dumps({"version": 1, "items": []}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        cache.load_kb(kb_id)
+        return {"kb_id": kb_id, **cfg}
+
+    @app.get("/knowledge-bases/{kb_id}")
+    def get_kb(kb_id: str) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        cfg = kb_store.get(kid)
+        assert cfg is not None
+        return {"kb_id": kid, **cfg, "enabled_count": cache.get_enabled_count(kid)}
+
+    @app.delete("/knowledge-bases/{kb_id}")
+    def delete_kb(kb_id: str) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        try:
+            cfg = kb_store.delete_kb(kb_id=kid)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        cache.evict_kb(kid)
+        kb_store.delete_kb_files(kb_id=kid, files_root=settings.files_root)
+        return {"kb_id": kid, **cfg}
+
+    @app.post("/knowledge-bases/{kb_id}/rename")
+    def rename_kb(kb_id: str, req: KnowledgeBaseRenameRequest) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        try:
+            cfg = kb_store.rename_kb(kb_id=kid, name=req.name.strip())
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        return {"kb_id": kid, **cfg}
+
+    @app.put("/knowledge-bases/{kb_id}/prompt")
+    def update_prompt(kb_id: str, req: MatchPromptUpdateRequest) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        try:
+            cfg = kb_store.set_match_prompt(kb_id=kid, match_prompt=req.match_prompt)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        cache.reload_kb(kid)
+        return {"kb_id": kid, **cfg}
+
+    @app.get("/knowledge-bases/default-prompt", response_model=DefaultPromptResponse)
+    def default_prompt() -> DefaultPromptResponse:
+        return DefaultPromptResponse(match_prompt=default_match_prompt())
+
+    @app.get("/knowledge-bases/{kb_id}/match-prompt-preview", response_model=MatchPromptPreviewResponse)
+    def match_prompt_preview(kb_id: str) -> MatchPromptPreviewResponse:
+        kid = _validate_kb_id(kb_store, kb_id)
+        try:
+            match_prompt, system_prompt, enabled_count = cache.preview_system_prompt(kid)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        return MatchPromptPreviewResponse(
+            kb_id=kid,
+            match_prompt=match_prompt,
+            system_prompt=system_prompt,
+            enabled_count=enabled_count,
+        )
+
+    @app.post("/knowledge-bases/{kb_id}/reload")
+    def reload_kb(kb_id: str) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        idx = cache.reload_kb(kid)
+        return {
+            "kb_id": kid,
+            "loaded_at": idx.loaded_at,
+            "enabled_count": len(idx.enabled_items),
+        }
+
+    @app.get("/knowledge-bases/{kb_id}/questions", response_model=QuestionsDocument)
+    def get_questions(kb_id: str) -> QuestionsDocument:
+        kid = _validate_kb_id(kb_store, kb_id)
+        return cache.store(kid).get_document()
+
+    @app.put("/knowledge-bases/{kb_id}/questions", response_model=QuestionsDocument)
+    def replace_questions(kb_id: str, req: QuestionsReplaceRequest) -> QuestionsDocument:
+        kid = _validate_kb_id(kb_store, kb_id)
+        try:
+            doc = cache.store(kid).replace_all(
+                version=req.version,
+                items=[item.model_dump() for item in req.items],
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        cache.reload_kb(kid)
+        return doc
+
+    @app.post("/knowledge-bases/{kb_id}/questions/items")
+    def create_question_item(kb_id: str, req: QAItemUpsertRequest) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        store = cache.store(kid)
+        if store.get_item(req.id):
+            raise HTTPException(status_code=400, detail="item id 已存在")
+        try:
+            item = store.upsert_item(item=req.model_dump())
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        cache.reload_kb(kid)
+        return item.model_dump()
+
+    @app.put("/knowledge-bases/{kb_id}/questions/items/{item_id}")
+    def update_question_item(kb_id: str, item_id: str, req: QAItemUpsertRequest) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        if req.id != item_id:
+            raise HTTPException(status_code=400, detail="路径 item_id 与 body.id 不一致")
+        store = cache.store(kid)
+        if not store.get_item(item_id):
+            raise HTTPException(status_code=404, detail="item_id 不存在")
+        try:
+            item = store.upsert_item(item=req.model_dump())
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        cache.reload_kb(kid)
+        return item.model_dump()
+
+    @app.delete("/knowledge-bases/{kb_id}/questions/items/{item_id}")
+    def delete_question_item(kb_id: str, item_id: str) -> Dict[str, Any]:
+        kid = _validate_kb_id(kb_store, kb_id)
+        store = cache.store(kid)
+        try:
+            item = store.delete_item(item_id=item_id)
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        cache.reload_kb(kid)
+        return item.model_dump()
+
+    @app.get("/preview-asset")
+    def preview_asset(kb_id: str = Query(...), ref: str = Query(...)) -> FileResponse:
+        kid = _validate_kb_id(kb_store, kb_id)
+        r = (ref or "").strip().replace("\\", "/")
+        if r.startswith("../"):
+            r = r[3:]
+        if r.startswith("assets/"):
+            r = r[len("assets/") :]
+        if ".." in Path(r).parts:
+            raise HTTPException(status_code=400, detail="非法 ref")
+        asset_path = (kb_assets_dir_path(settings.files_root, kid) / r).resolve()
+        base = kb_assets_dir_path(settings.files_root, kid).resolve()
+        if not str(asset_path).startswith(str(base)):
+            raise HTTPException(status_code=400, detail="非法 ref")
+        if not asset_path.exists():
+            raise HTTPException(status_code=404, detail="资源不存在")
+        return FileResponse(asset_path)
 
     return app
 

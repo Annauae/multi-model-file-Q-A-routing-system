@@ -1,15 +1,9 @@
-/**
- * common.js — 前端公共层
- *
- * 职责：DOM 工具、apiJson 封装、知识库下拉、视图切换、健康检查、Tab 切换
- * 依赖：无（最先加载）
- */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 let kbCache = {};
 let lastHealthOk = null;
-let currentKbId = "";
+let modalOkHandler = null;
 
 function escapeHtml(s) {
   return (s ?? "")
@@ -18,15 +12,6 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
-}
-
-function isSafeHttpUrl(url) {
-  try {
-    const u = new URL(String(url).trim());
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch (e) {
-    return false;
-  }
 }
 
 function fmtMs(ms) {
@@ -54,7 +39,7 @@ async function apiJson(url, options = {}) {
   let data = null;
   try {
     data = JSON.parse(txt);
-  } catch (e) {
+  } catch {
     if (!r.ok) throw new Error(txt || r.statusText);
     return txt;
   }
@@ -64,126 +49,83 @@ async function apiJson(url, options = {}) {
 
 async function loadKbCache() {
   const data = await apiJson("/knowledge-bases");
-  kbCache = data.knowledge_bases || {};
+  kbCache = {};
+  for (const item of data.items || []) {
+    kbCache[item.kb_id] = item;
+  }
   return Object.keys(kbCache).length;
 }
 
-function kbDisplayName(kbId, cfg) {
-  const c = cfg || kbCache[kbId] || {};
-  return (c.name || "").trim() || `知识库_${kbId}`;
+function kbDisplayName(kbId) {
+  const cfg = kbCache[kbId] || {};
+  return (cfg.name || "").trim() || `kb_${kbId}`;
 }
 
-function populateKbSelect(selectEl, selectedId = "") {
-  if (!selectEl) return;
-  const entries = Object.entries(kbCache || {}).sort((a, b) => {
-    const na = Number(a[0]);
-    const nb = Number(b[0]);
-    if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
-    return String(a[0]).localeCompare(String(b[0]));
-  });
-  selectEl.innerHTML =
-    entries.length === 0
-      ? `<option value="">（无知识库）</option>`
-      : entries
-          .map(([id, cfg]) => {
-            const label = kbDisplayName(id, cfg);
-            const sel = id === selectedId ? " selected" : "";
-            return `<option value="${escapeHtml(id)}"${sel}>${escapeHtml(label)}</option>`;
-          })
-          .join("");
-  if (selectedId && selectEl.querySelector(`option[value="${CSS.escape(selectedId)}"]`)) {
-    selectEl.value = selectedId;
-  } else if (entries.length) {
-    selectEl.value = entries[0][0];
+function getSelectedKbId(fromEl) {
+  const el = fromEl || $("#kbSelect");
+  return (el?.value || "").trim();
+}
+
+async function populateKbSelect(selectEl) {
+  const el = selectEl || $("#kbSelect");
+  if (!el) return;
+  await loadKbCache();
+  const ids = Object.keys(kbCache).sort((a, b) => Number(a) - Number(b));
+  el.innerHTML = ids.length
+    ? ids.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(kbDisplayName(id))}</option>`).join("")
+    : `<option value="">无知识库</option>`;
+}
+
+async function pollHealth() {
+  try {
+    await apiJson("/health");
+    lastHealthOk = true;
+    $("#healthDot")?.classList.add("ok");
+    $("#healthDot")?.classList.remove("err");
+    if ($("#healthText")) $("#healthText").textContent = "已连接";
+  } catch {
+    lastHealthOk = false;
+    $("#healthDot")?.classList.add("err");
+    $("#healthDot")?.classList.remove("ok");
+    if ($("#healthText")) $("#healthText").textContent = "连接失败";
   }
-  currentKbId = getSelectedKbIdFrom(selectEl);
-}
-
-function getSelectedKbIdFrom(selectEl) {
-  return (selectEl?.value || currentKbId || "").trim();
 }
 
 function switchAppView(name) {
-  $$("[data-app-view]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.appView === name);
-  });
-  $("#viewTest").classList.toggle("active", name === "test");
-  $("#viewTest").classList.toggle("hidden", name !== "test");
-  $("#viewManage").classList.toggle("active", name === "manage");
-  $("#viewManage").classList.toggle("hidden", name !== "manage");
+  $$(".viewPane").forEach((p) => p.classList.add("hidden"));
+  $$(".viewPane").forEach((p) => p.classList.remove("active"));
+  const pane = $(`#view${name.charAt(0).toUpperCase()}${name.slice(1)}`);
+  if (pane) {
+    pane.classList.remove("hidden");
+    pane.classList.add("active");
+  }
+  $$(".appNavBtn").forEach((b) => b.classList.toggle("active", b.dataset.appView === name));
   if (name === "test" && typeof testViewEnter === "function") testViewEnter();
   if (name === "manage" && typeof manageViewEnter === "function") manageViewEnter();
 }
 
-function testViewEnter() {
-  loadKbCache()
-    .then(() => populateKbSelect($("#kbSelect")))
-    .then(() => {
-      if (typeof refreshJsonPreview === "function") refreshJsonPreview();
-    })
-    .catch(() => {});
+function showModal(title, bodyHtml, onOk) {
+  $("#modalTitle").textContent = title;
+  $("#modalBody").innerHTML = bodyHtml;
+  modalOkHandler = onOk;
+  $("#modalOverlay").classList.remove("hidden");
 }
 
-async function pollHealth() {
-  const dot = $("#healthDot");
-  const txt = $("#healthText");
-  try {
-    await apiJson("/health");
-    if (lastHealthOk !== true) {
-      dot?.classList.remove("bad");
-      dot?.classList.add("ok");
-      if (txt) txt.textContent = "已连接";
-    }
-    lastHealthOk = true;
-  } catch (e) {
-    if (lastHealthOk !== false) {
-      dot?.classList.remove("ok");
-      dot?.classList.add("bad");
-      if (txt) txt.textContent = "未连接";
-    }
-    lastHealthOk = false;
-  }
+function hideModal() {
+  $("#modalOverlay").classList.add("hidden");
+  modalOkHandler = null;
 }
 
-$$("[data-app-view]").forEach((btn) => {
-  btn.addEventListener("click", () => switchAppView(btn.dataset.appView));
-});
-
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".headDropdown")) {
-    $$(".dropdownMenu").forEach((m) => m.classList.add("hidden"));
-  }
-});
-
-$$(".dropdownToggle").forEach((btn) => {
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const menu = btn.closest(".headDropdown")?.querySelector(".dropdownMenu");
-    if (!menu) return;
-    const open = menu.classList.contains("hidden");
-    $$(".dropdownMenu").forEach((m) => m.classList.add("hidden"));
-    if (open) menu.classList.remove("hidden");
+document.addEventListener("DOMContentLoaded", () => {
+  $$(".appNavBtn").forEach((btn) => {
+    btn.addEventListener("click", () => switchAppView(btn.dataset.appView));
   });
-});
-
-$$("[data-right-tab]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const tab = btn.dataset.rightTab;
-    $$("[data-right-tab]").forEach((b) => b.classList.toggle("active", b.dataset.rightTab === tab));
-    $("#rightTabLog")?.classList.toggle("active", tab === "log");
-    $("#rightTabFiles")?.classList.toggle("active", tab === "files");
+  $("#modalCancelBtn")?.addEventListener("click", hideModal);
+  $("#modalOkBtn")?.addEventListener("click", async () => {
+    if (modalOkHandler) await modalOkHandler();
+    hideModal();
   });
+  pollHealth();
+  setInterval(pollHealth, 7000);
+  switchAppView("test");
 });
-
-$$("[data-left-tab]").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const tab = btn.dataset.leftTab;
-    $$(".leftTabHead [data-left-tab]").forEach((b) => b.classList.toggle("active", b.dataset.leftTab === tab));
-    $("#leftTabAnswer")?.classList.toggle("active", tab === "answer");
-    $("#leftTabMatch")?.classList.toggle("active", tab === "match");
-  });
-});
-
-pollHealth();
-setInterval(pollHealth, 7000);
-switchAppView("test");
