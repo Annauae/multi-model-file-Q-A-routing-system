@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Optional, Union
 
@@ -97,9 +98,10 @@ class LLMClient:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         early_stop_check=None,
+        mock_mode: str = "match",
     ) -> Iterator[str]:
         if self._settings.mock_llm:
-            text = self._mock_match(messages=messages)
+            text = self._mock_match(messages=messages) if mock_mode != "confidence" else self._mock_confidence(messages=messages)
             step = 2
             for i in range(0, len(text), step):
                 yield text[i : i + step]
@@ -226,3 +228,35 @@ class LLMClient:
                 if q in question or question[:4] in q:
                     return item_id
         return "q001"
+
+    def _mock_confidence(self, *, messages: List[ChatMessage]) -> str:
+        user_text = next((m.content for m in reversed(messages) if m.role == "user"), "")
+        if not isinstance(user_text, str):
+            user_text = str(user_text)
+        q = user_text.strip().lower()
+        if not q or "不知道" in q or "无关" in q:
+            return "[]"
+        hits: list[tuple[str, float]] = []
+        system_text = next((m.content for m in messages if m.role == "system"), "")
+        if isinstance(system_text, str):
+            for line in system_text.splitlines():
+                line = line.strip()
+                if "|" not in line:
+                    continue
+                item_id, question = line.split("|", 1)
+                item_id = item_id.strip()
+                question = question.strip().lower()
+                if not item_id or item_id.startswith("("):
+                    continue
+                score = 0.0
+                if q in question or question in q:
+                    score = 0.92
+                elif question[:4] in q or q[:4] in question:
+                    score = 0.55
+                if score > 0 and not any(h[0] == item_id for h in hits):
+                    hits.append((item_id, score))
+        if not hits:
+            hits = [("q001", 0.75)]
+        hits.sort(key=lambda x: x[1], reverse=True)
+        payload = [{"id": item_id, "confidence": conf} for item_id, conf in hits[:5]]
+        return json.dumps(payload, ensure_ascii=False)

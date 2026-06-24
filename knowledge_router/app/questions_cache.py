@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from .kb_store import KbStore
-from .matcher import build_match_system_prompt
+from .matcher import build_match_system_prompt, build_confidence_system_prompt
 from .paths import questions_json_path
 from .questions_store import QuestionsStore
 from .schemas import QAItem
@@ -24,14 +24,16 @@ class KbMemoryIndex:
     enabled_items: List[QAItem] = field(default_factory=list)
     valid_ids: set[str] = field(default_factory=set)
     match_system_prompt: str = ""
+    confidence_system_prompt: str = ""
     loaded_at: str = ""
     source_mtime: float = 0.0
 
 
 class QuestionsCache:
-    def __init__(self, *, kb_store: KbStore, files_root: Path):
+    def __init__(self, *, kb_store: KbStore, files_root: Path, confidence_top_k: int = 5):
         self._kb_store = kb_store
         self._files_root = files_root
+        self._confidence_top_k = confidence_top_k
         self._lock = threading.RLock()
         self._indexes: Dict[str, KbMemoryIndex] = {}
         self._stores: Dict[str, QuestionsStore] = {}
@@ -39,7 +41,7 @@ class QuestionsCache:
     def _normalize_question(self, question: str) -> str:
         return " ".join((question or "").strip().split())
 
-    def _build_index(self, *, kb_id: str, doc_items: List[QAItem], match_prompt: str) -> KbMemoryIndex:
+    def _build_index(self, *, kb_id: str, doc_items: List[QAItem], match_prompt: str, confidence_top_k: int = 5) -> KbMemoryIndex:
         items_by_id: Dict[str, QAItem] = {}
         items_by_question: Dict[str, QAItem] = {}
         enabled_items: List[QAItem] = []
@@ -53,12 +55,18 @@ class QuestionsCache:
                 enabled_items.append(item)
                 valid_ids.add(item.id)
         system_prompt = build_match_system_prompt(match_prompt=match_prompt, enabled_items=enabled_items)
+        confidence_prompt = build_confidence_system_prompt(
+            match_prompt="",
+            enabled_items=enabled_items,
+            top_k=confidence_top_k,
+        )
         return KbMemoryIndex(
             items_by_id=items_by_id,
             items_by_question=items_by_question,
             enabled_items=enabled_items,
             valid_ids=valid_ids,
             match_system_prompt=system_prompt,
+            confidence_system_prompt=confidence_prompt,
             loaded_at=_now_iso(),
             source_mtime=0.0,
         )
@@ -85,6 +93,7 @@ class QuestionsCache:
             kb_id=kid,
             doc_items=doc.items,
             match_prompt=str(cfg.get("match_prompt") or ""),
+            confidence_top_k=self._confidence_top_k,
         )
         idx.source_mtime = store.source_mtime
         with self._lock:
@@ -120,6 +129,19 @@ class QuestionsCache:
         if idx is None:
             idx = self.load_kb(kb_id)
         return idx.match_system_prompt
+
+    def get_confidence_system_prompt(self, kb_id: str, *, top_k: int | None = None) -> str:
+        idx = self.get_index(kb_id)
+        if idx is None:
+            idx = self.load_kb(kb_id)
+        if top_k is None or top_k == self._confidence_top_k:
+            return idx.confidence_system_prompt
+        cfg = self._kb_store.get(kb_id) or {}
+        return build_confidence_system_prompt(
+            match_prompt=str(cfg.get("confidence_match_prompt") or cfg.get("match_prompt") or ""),
+            enabled_items=idx.enabled_items,
+            top_k=top_k,
+        )
 
     def get_enabled_count(self, kb_id: str) -> int:
         idx = self.get_index(kb_id)

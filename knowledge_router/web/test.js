@@ -8,13 +8,14 @@ function logKindFromLine(line) {
   if (line.startsWith("[match]")) return "match";
   if (line.startsWith("[parse]")) return "parse";
   if (line.startsWith("[lookup]")) return "lookup";
+  if (line.startsWith("[timing]")) return "timing";
   if (line.startsWith("ERROR")) return "error";
   return "log";
 }
 
 function appendLog(line, kind) {
   const k = kind || logKindFromLine(line);
-  logLines.push({ line, kind: k, ts: new Date().toLocaleTimeString() });
+  logLines.push({ line, kind: k, ts: fmtLogTime() });
   if (logLines.length > 800) logLines = logLines.slice(-800);
   renderLog();
 }
@@ -39,9 +40,10 @@ function renderTimings(timings) {
   }
   const chips = [
     ["总耗时", timings.total_ms],
-    ["匹配", timings.match_ms],
+    ["准备(索引+prompt)", timings.prepare_ms],
+    ["匹配(LLM)", timings.match_ms],
     ["首 token", timings.match_first_token_ms],
-    ["内存查表", timings.lookup_ms],
+    ["查表(取 answer)", timings.lookup_ms],
     ["输出 tokens", timings.match_output_tokens],
   ];
   panel.innerHTML = chips
@@ -190,6 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#clearLogBtn")?.addEventListener("click", () => {
     logLines = [];
     renderLog();
+    showToast("日志已清空");
   });
   $("#kbSelect")?.addEventListener("change", async () => {
     const kbId = getSelectedKbId();

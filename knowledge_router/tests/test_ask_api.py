@@ -71,3 +71,26 @@ def test_ask_stream_done(client: TestClient) -> None:
         body = resp.read().decode("utf-8")
     assert "event: done" in body
     assert "预存回答内容" in body
+
+
+def test_ask_confidence_returns_candidates(client: TestClient) -> None:
+    resp = client.post("/ask/confidence", json={"question": "曝光补偿", "kb_id": "1", "top_k": 3})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["answer"] == "预存回答内容"
+    assert data["match"]["candidates"]
+    assert data["match"]["candidates"][0]["id"] == "q001"
+    assert data["match"]["candidates"][0]["confidence"] > 0
+
+
+def test_ask_confidence_stream_done(client: TestClient) -> None:
+    with client.stream(
+        "POST",
+        "/ask/confidence/stream",
+        json={"question": "曝光补偿", "kb_id": "1", "top_k": 3},
+    ) as resp:
+        assert resp.status_code == 200
+        body = resp.read().decode("utf-8")
+    assert "event: candidates" in body
+    assert "event: done" in body
+    assert "q001" in body

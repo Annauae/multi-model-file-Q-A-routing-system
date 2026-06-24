@@ -1,0 +1,153 @@
+# 用途：fix_answer_headings.py 运行后生成的修复报告（文本输出，非可执行脚本）
+#
+total items: 166
+already had heading: 23
+fixed: 130
+unmatched: 13
+
+=== fixed ===
+q001 <- knowledge_p28-30 # 模式选择器
+q002 <- knowledge_p28-30 # 快门速度拨盘
+q003 <- knowledge_p28-30 # 指令拨盘
+q004 <- knowledge_p28-30 # ISO感光度拨盘
+q005 <- knowledge_p28-30 ## ❚❚ 照片模式
+q006 <- knowledge_p28-30 ## ❚❚ 视频模式
+q007 <- knowledge_p31-35 # 曝光补偿拨盘
+q008 <- knowledge_p31-35 # 显示屏
+q010 <- knowledge_p31-35 # 使用人像自拍模式拍摄
+q011 <- knowledge_p31-35 # 使用人像自拍模式拍摄
+q017 <- knowledge_p40-43 ## 文本输入
+q018 <- knowledge_p40-43 ## 菜单操作方法
+q019 <- knowledge_p40-43 ## 菜单操作方法
+q020 <- knowledge_p40-43 ## 菜单操作方法
+q021 <- knowledge_p40-43 ## DISP按钮
+q022 <- knowledge_p44-45 # 🔍和🔍❏（？）按钮
+q023 <- knowledge_p44-45 # 🔍和🔍❏（？）按钮
+q024 <- knowledge_p44-45 # AE-L/AF-L（<sub>O<sub>m</sub></sub>）按钮
+q025 <- knowledge_p46-49 # MENU按钮
+q026 <- knowledge_p46-49 # ▌▌使用菜单
+q027 <- knowledge_p46-49 ## 1 加亮显示当前菜单的图标。
+q028 <- knowledge_p46-49 ## 4 加亮显示菜单项目。
+q029 <- knowledge_p46-49 ## 7 选择加亮显示的选项。
+q034 <- knowledge_p50-53 ### 1 加亮显示自定义设定`f1`或`g1`[自定义`i`菜单]并按下`OK`。
+q036 <- knowledge_p54-56 ## 1 加亮显示自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]并按下<kbd>OK</kbd>。
+q037 <- knowledge_p54-56 ## 安装挂带
+q038 <- knowledge_p57-62 ## 使用充电器充电
+q039 <- knowledge_p57-62 ## 使用充电器充电
+q040 <- knowledge_p57-62 ### 1 将EN-EL25插入照相机（☞95）。
+q041 <- knowledge_p57-62 ### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。
+q042 <- knowledge_p57-62 ### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。
+q043 <- knowledge_p57-62 ### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。
+q044 <- knowledge_p57-62 ### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。
+q045 <- knowledge_p57-62 ### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。
+q046 <- knowledge_p63-66 # 插入电池和存储卡
+q047 <- knowledge_p63-66 # 插入电池和存储卡
+q048 <- knowledge_p63-66 # 电池电量
+q049 <- knowledge_p63-66 # 剩余可拍摄张数
+q050 <- knowledge_p67-69 # 安装镜头
+q051 <- knowledge_p67-69 # 安装镜头
+q052 <- knowledge_p67-69 # 取下镜头
+q053 <- knowledge_p67-69 # 打开显示屏
+q054 <- knowledge_p70-71 ## 1 开启照相机。
+q056 <- knowledge_p72-76 # 拍摄照片（📷<sup>AUTO</sup>自动）
+q057 <- knowledge_p72-76 # 拍摄照片（📷<sup>AUTO</sup>自动）
+q058 <- knowledge_p72-76 # 拍摄照片（📷<sup>AUTO</sup>自动）
+q059 <- knowledge_p72-76 # 拍摄照片（📷<sup>AUTO</sup>自动）
+q060 <- knowledge_p77-82 ## 3 按下视频录制按钮开始录制。
+q061 <- knowledge_p77-82 ## 4 再次按下视频录制按钮结束录制。
+q062 <- knowledge_p77-82 # 在视频模式下拍摄照片
+q063 <- knowledge_p77-82 # 在视频模式下拍摄照片
+q064 <- knowledge_p77-82 # 在视频模式下拍摄照片
+q065 <- knowledge_p77-82 # 在视频模式下拍摄照片
+q066 <- knowledge_p83-87 # 查看照片
+q067 <- knowledge_p83-87 ## 视频播放期间的显示屏显示
+q068 <- knowledge_p83-87 ## 视频播放操作
+q069 <- knowledge_p83-87 ## 2 删除照片。
+q070 <- knowledge_p1-6 # 安全须知
+q071 <- knowledge_p1-6 # 安全须知
+q072 <- knowledge_p1-6 # 安全须知
+q073 <- knowledge_p1-6 # 安全须知
+q074 <- knowledge_p1-6 # 安全须知
+q075 <- knowledge_p1-6 # 安全须知
+q076 <- knowledge_p7-10 # 声明
+q077 <- knowledge_p7-10 ### ·法律禁止拷贝或复制的项目
+q082 <- knowledge_p11-12 ## 关于尼康提供的内容
+q083 <- knowledge_p11-12 ## 推荐使用的应用程序
+q084 <- knowledge_p11-12 ## SnapBridge
+q085 <- knowledge_p11-12 ## 尼康工坊
+q086 <- knowledge_p13-13 ## SnapBridge
+q087 <- knowledge_p13-13 ## 尼康影速传
+q088 <- knowledge_p14-16 # 计算机软件
+q089 <- knowledge_p14-16 ## 尼康工坊
+q090 <- knowledge_p14-16 ## 尼康远控
+q091 <- knowledge_p14-16 ## Wireless Transmitter Utility
+q092 <- knowledge_p14-16 ## Webcam Utility
+q093 <- knowledge_p17-19 ### 照相机机身
+q094 <- knowledge_p17-19 ### 照相机机身
+q095 <- knowledge_p17-19 ### 照相机机身
+q099 <- knowledge_p22-24 ## 照片模式
+q100 <- knowledge_p22-24 ## 照片模式
+q101 <- knowledge_p22-24 ## 视频模式
+q102 <- knowledge_p25-27 ## 取景器
+q103 <- knowledge_p25-27 ## ✅ 屈光度调节控制器
+q104 <- knowledge_p25-27 ## 📝 长时间使用
+q105 <- knowledge_p25-27 ## 🖥️（显示屏模式）按钮
+q106 <- knowledge_p25-27 ## 📝 显示屏模式
+q107 <- knowledge_p88-94 ### 对焦模式
+q110 <- knowledge_p88-94 ### AF区域模式
+q111 <- knowledge_p95-98 ## ▢：中央对焦点
+q112 <- knowledge_p95-98 ## 快速对焦点选择
+q113 <- knowledge_p95-98 ## 对焦点选择
+q114 <- knowledge_p95-98 ## 侦测人物拍摄对象的脸部或眼部（脸部/眼部侦测自动对焦）
+q115 <- knowledge_p95-98 ## ✅ 脸部/眼部侦测自动对焦
+q116 <- knowledge_p95-98 ## 对焦于动物的脸部或眼部（动物侦测自动对焦）
+q119 <- knowledge_p99-102 ## 对象跟踪AF
+q121 <- knowledge_p99-102 ## 触控快门
+q122 <- knowledge_p99-102 ## 触控快门
+q125 <- knowledge_p103-106 ## 手动对焦
+q126 <- knowledge_p103-106 ## 手动对焦
+q127 <- knowledge_p103-106 ## 手动对焦
+q128 <- knowledge_p107-112 ## 调整白平衡
+q129 <- knowledge_p107-112 ## 调整白平衡
+q130 <- knowledge_p107-112 ## 调整白平衡
+q131 <- knowledge_p107-112 ## 调整白平衡
+q132 <- knowledge_p107-112 ## 调整白平衡
+q133 <- knowledge_p107-112 ## 调整白平衡
+q134 <- knowledge_p113-118 # 静音拍摄
+q135 <- knowledge_p113-118 # 静音拍摄
+q136 <- knowledge_p113-118 ## 1 按下▶按钮开始播放。
+q137 <- knowledge_p113-118 ## 2 选择所需照片并按下📌（🔒）按钮。
+q138 <- knowledge_p113-118 ## 2 选择所需照片并按下📌（🔒）按钮。
+q139 <- knowledge_p119-124 ### 使用模式选择器
+q144 <- knowledge_p119-124 ## A（光圈优先自动）
+q151 <- knowledge_p125-129 ### ██ 长时间曝光
+q152 <- knowledge_p130-135 ## 调整ISO感光度
+q153 <- knowledge_p130-135 ## 照片模式
+q154 <- knowledge_p130-135 ## 视频模式
+q155 <- knowledge_p130-135 ## 视频模式
+q156 <- knowledge_p130-135 # 曝光补偿拨盘
+q157 <- knowledge_p130-135 ## 通过曝光补偿拨盘之外的方式进行设定
+q158 <- knowledge_p130-135 ## 通过曝光补偿拨盘之外的方式进行设定
+q159 <- knowledge_p130-135 ## 通过曝光补偿拨盘之外的方式进行设定
+q160 <- knowledge_p136-138 # AE-L/AF-L（on）按钮
+q161 <- knowledge_p136-138 ## 曝光锁定
+q162 <- knowledge_p136-138 ## 对焦锁定
+q163 <- knowledge_p136-138 ### 2 按AE-L/AF-L（on）按钮。
+q164 <- knowledge_p136-138 ### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。
+q165 <- knowledge_p136-138 ### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。
+q166 <- knowledge_p136-138 ### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。
+
+=== unmatched ===
+q030
+q031
+q032
+q096
+q097
+q108
+q109
+q117
+q123
+q146
+q147
+q148
+q149

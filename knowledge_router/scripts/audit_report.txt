@@ -1,0 +1,79 @@
+﻿# 用途：audit_import.py 运行后生成的审计报告（文本输出，非可执行脚本）
+#
+=== 鎬昏 ===
+FAQ 鏉＄洰: 167
+婧?md 鏂囦欢: 34
+answer 寮曠敤鍥剧墖: 214 / 纾佺洏 assets: 229
+缂哄け鍥剧墖: 1
+鏈紩鐢ㄥ浘鐗? 16
+
+=== 鍚?md 瑕嗙洊 (鐢熸垚鏉℃暟 | h1 | h2) ===
+  knowledge_p28-30:  4 | h1=4 h2=2 | agent_1
+  knowledge_p63-66:  4 | h1=3 h2=1 | agent_10
+  knowledge_p67-69:  3 | h1=3 h2=0 | agent_11
+  knowledge_p70-71:  1 | h1=1 h2=3 | agent_12
+  knowledge_p72-76:  4 | h1=2 h2=0 | agent_13
+  knowledge_p77-82:  3 | h1=2 h2=4 | agent_14
+  knowledge_p83-87:  3 | h1=3 h2=4 | agent_15
+  knowledge_p1-6:  0 | h1=1 h2=0 | agent_16
+  knowledge_p7-10:  1 | h1=1 h2=5 | agent_17
+  knowledge_p11-12:  3 | h1=1 h2=4 | agent_18
+  knowledge_p13-13:  2 | h1=1 h2=2 | agent_19
+  knowledge_p31-35:  4 | h1=3 h2=4 | agent_2
+  knowledge_p14-16:  4 | h1=1 h2=4 | agent_20
+  knowledge_p17-19:  3 | h1=1 h2=1 | agent_21
+  knowledge_p20-21:  2 | h1=1 h2=0 | agent_22
+  knowledge_p22-24:  3 | h1=1 h2=2 | agent_23
+  knowledge_p25-27:  3 | h1=1 h2=5 | agent_24
+  knowledge_p88-94:  2 | h1=1 h2=1 | agent_25
+  knowledge_p95-98:  3 | h1=0 h2=6 | agent_26
+  knowledge_p99-102:  4 | h1=0 h2=2 | agent_27
+  knowledge_p103-106:  3 | h1=0 h2=1 | agent_28
+  knowledge_p107-112:  3 | h1=1 h2=1 | agent_29
+  knowledge_p36-39:  5 | h1=1 h2=5 | agent_3
+  knowledge_p113-118:  3 | h1=3 h2=6 | agent_30
+  knowledge_p119-124:  6 | h1=1 h2=7 | agent_31
+  knowledge_p125-129:  2 | h1=0 h2=0 | agent_32
+  knowledge_p130-135:  3 | h1=2 h2=5 | agent_33
+  knowledge_p136-138:  2 | h1=1 h2=3 | agent_34
+  knowledge_p40-43:  3 | h1=0 h2=5 | agent_4
+  knowledge_p44-45:  3 | h1=2 h2=4 | agent_5
+  knowledge_p46-49:  5 | h1=2 h2=7 | agent_6
+  knowledge_p50-53:  4 | h1=0 h2=3 | agent_7
+  knowledge_p54-56:  2 | h1=2 h2=5 | agent_8
+  knowledge_p57-62:  2 | h1=1 h2=2 | agent_9
+
+=== 闂 (27) ===
+  [knowledge_p28-30] 鍙兘閬楁紡姝ｆ枃鐗囨 (4): 閫氳繃鎸変綇iso鎰熷厜搴︽嫧鐩橀攣瀹氳В闄ゅ苟鏃嬭浆iso鎰熷厜搴︽嫧鐩橈紝鍙互璋冭妭iso鎰熷厜搴︺€傗€?
+  [knowledge_p63-66] 绛旀缂哄浘 1: ['knowledge_p63-66_008.png']
+  [knowledge_p72-76] 绛旀缂哄浘 1: ['knowledge_p72-76_017.png']
+  [knowledge_p83-87] 绛旀缂哄浘 1: ['knowledge_p83-87_008.png']
+  [knowledge_p83-87] 鍙兘閬楁紡姝ｆ枃鐗囨 (10): 瑙嗛鎾斁鏈熼棿鐨勬樉绀哄睆鏄剧ず鍜屾搷浣滃涓嬫墍绀恒€傗€?
+  [knowledge_p1-6] 鍙兘閬楁紡姝ｆ枃鐗囨 (15): 涓洪闃插鎮ㄦ垨浠栦汉閫犳垚浜鸿韩浼ゅ鎴栬储浜ф崯澶憋紝璇峰湪浣跨敤鍓嶄粩缁嗛槄璇烩€滃畨鍏ㄩ』鐭モ€濓紝骞朵互姝ｇ‘鐨勬柟娉曚娇鐢ㄣ€傝鍦ㄩ槄璇烩€?
+  [knowledge_p7-10] 绛旀缂哄浘 3: ['knowledge_p7-10_002.png', 'knowledge_p7-10_003.png', 'knowledge_p7-10_004.png']
+  [knowledge_p7-10] 鍙兘閬楁紡姝ｆ枃鐗囨 (13): -鏈粡灏煎悍鍏徃鐨勪簨鍏堜功闈㈣鍙紝瀵规湰浜у搧闄勫睘鐨勭浉鍏充娇鐢ㄨ鏄庝箣鎵€鏈夊唴瀹癸紝涓嶅緱浠ヤ换浣曞舰寮忓拰浠讳綍鏂瑰紡杩涜缈荤増鈥?
+  [knowledge_p7-10] 鏉＄洰鍋忓皯: 鐢熸垚 1 鏉? h1=1 h2=5 (agent agent_17)
+  [knowledge_p88-94] 鍙兘閬楁紡姝ｆ枃鐗囨 (9): -浠ヤ笅鎯呭喌鏃讹紝鐓х浉鏈哄彲鑳芥棤娉曞鐒︼細鈥?
+  [knowledge_p95-98] 鍙兘閬楁紡姝ｆ枃鐗囨 (6): 褰撳鐒︾偣浣嶄簬鐢婚潰涓ぎ鏃讹紝瀵圭劍鐐逛腑浼氬嚭鐜颁竴涓偣銆傗€?
+  [knowledge_p99-102] 鍙兘閬楁紡姝ｆ枃鐗囨 (10): -鍔ㄧ墿鑴搁儴鍜岀溂閮ㄤ睛娴嬪湪浠ヤ笅鎯呭喌鏃跺彲鑳芥棤娉曟甯告墽琛岋細鈥?
+  [knowledge_p103-106] 鍙兘閬楁紡姝ｆ枃鐗囨 (6): 鉁呬娇鐢ㄨЕ鎺ф媿鎽勯€夐」鎷嶆憚鐓х墖鈥?
+  [knowledge_p107-112] 鍙兘閬楁紡姝ｆ枃鐗囨 (15): 鐧藉钩琛″彲纭繚鏃犺鍏夋簮鑹插僵濡備綍锛岀櫧鑹茬墿浣撻兘鏄剧ず涓虹櫧鑹层€傛帹鑽愭偍鍦ㄥぇ澶氭暟鍏夋簮涓嬩娇鐢ㄩ粯璁よ瀹氾紙鑷姩鐧藉钩琛★紝鎴栤€?
+  [knowledge_p36-39] 绛旀缂哄浘 2: ['knowledge_p36-39_001.png', 'knowledge_p36-39_013.png']
+  [knowledge_p113-118] 鍙兘閬楁紡姝ｆ枃鐗囨 (8): -[闈欓煶鎷嶆憚]閫変负[寮€鍚痌涓嶄細浣跨収鐩告満瀹屽叏闈欓煶銆傜収鐩告満澹伴煶浠嶇劧鍙兘鍚埌锛屼緥濡傚湪鑷姩瀵圭劍鎴栧厜鍦堣皟鏁磋繃绋嬧€?
+  [knowledge_p125-129] 鍙兘閬楁紡姝ｆ枃鐗囨 (5): 鑻ユ墍閫夎瀹氳秴鍑轰簡鏇濆厜娴嬪厜绯荤粺鐨勯檺鍒讹紝鏄剧ず灏嗕細闂儊銆傗€?
+  [knowledge_p130-135] 鍙兘閬楁紡姝ｆ枃鐗囨 (10): -浠巌so100鑷?1200鐨勫€间腑杩涜閫夋嫨銆傚彲浠ュ皢iso鎰熷厜搴︽嫧鐩樿涓?*[h1]锛坔i1锛?*鎴?鈥?
+  [knowledge_p136-138] 绛旀缂哄浘 1: ['knowledge_p136-138_006.png']
+  [knowledge_p136-138] 鍙兘閬楁紡姝ｆ枃鐗囨 (12): -瀵瑰皢涓嶅湪鏈€缁堟瀯鍥句腑鎵€閫夊鐒﹀尯鍩熺殑鎷嶆憚瀵硅薄杩涜娴嬪厜鍚庯紝鏇濆厜閿佸畾鍙敤浜庨噸鏂拌繘琛屾瀯鍥俱€傗€?
+  [knowledge_p40-43] 绛旀缂哄浘 1: ['knowledge_p40-43_009.png']
+  [knowledge_p40-43] 鍙兘閬楁紡姝ｆ枃鐗囨 (5): 銉昏Е鎽稿睆鍙闈欑數浣滃嚭鍙嶅簲銆備娇鐢ㄦ寚鐢叉垨鎴寸潃鎵嬪瑙︽懜鏃讹紝灞忓箷鍙兘涓嶄細浣滃嚭鍙嶅簲銆傗€?
+  [knowledge_p44-45] 绛旀缂哄浘 1: ['knowledge_p44-45_003.png']
+  [knowledge_p57-62] 绛旀缂哄浘 2: ['knowledge_p57-62_004.png', 'knowledge_p57-62_005.png']
+  [knowledge_p57-62] 鍙兘閬楁紡姝ｆ枃鐗囨 (8): 璇峰湪浣跨敤鍓嶄负闄勯€佺殑en-el25鐢垫睜鍏呯數銆傗€?
+  閲嶅 question 1 缁?
+  鏃犳硶褰掑睘婧?md 鐨勬潯鐩? 65
+
+=== 鎶芥牱锛歛gent_2 浜哄儚鑷媿 ===
+  q009: 濡備綍浣跨敤浜哄儚鑷媿妯″紡鍙婃樉绀哄睆鐨勬敞鎰忎簨椤规湁鍝簺锛?
+    answer len=230, imgs=1
+  q010: 浜哄儚鑷媿妯″紡鏈夊摢浜涘姛鑳藉拰鎿嶄綔鏂规硶锛?
+    answer len=602, imgs=4

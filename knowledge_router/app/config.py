@@ -11,13 +11,24 @@ def _project_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+def _first_env(*keys: str, default: str = "") -> str:
+    for key in keys:
+        val = os.getenv(key, "").strip()
+        if val:
+            return val
+    return default
+
+
 @dataclass(frozen=True)
 class Settings:
     api_base_url: str
     api_key: str
     match_model: str
+    import_model: str
     max_tokens: int
     match_max_tokens: int
+    confidence_max_tokens: int
+    confidence_top_k: int
     match_temperature: float
     use_max_completion_tokens: bool
     mock_llm: bool
@@ -35,10 +46,14 @@ class Settings:
 
         api_base_url = os.getenv("API_BASE_URL", "https://api.openai.com/v1").strip()
         api_key = (os.getenv("API_KEY", "") or os.getenv("ARK_API_KEY", "")).strip()
-        match_model = os.getenv("MATCH_MODEL", "gpt-4.1-mini").strip()
+        match_model = _first_env("MATCH_MODEL", "INIT_MODEL", "ANSWER_MODEL", default="gpt-4.1-mini")
+        import_model = _first_env("IMPORT_MODEL", "INIT_MODEL", "MATCH_MODEL", default=match_model)
         max_tokens = int(os.getenv("MAX_TOKENS", "4096"))
         match_max_tokens = max(16, int(os.getenv("MATCH_MAX_TOKENS", "8")))
-        match_temperature = float(os.getenv("MATCH_TEMPERATURE", "0"))
+        confidence_max_tokens = max(64, int(os.getenv("CONFIDENCE_MAX_TOKENS", "512")))
+        confidence_top_k = max(1, min(20, int(os.getenv("CONFIDENCE_TOP_K", "5"))))
+        temp_raw = _first_env("MATCH_TEMPERATURE", "LLM_TEMPERATURE", default="0")
+        match_temperature = float(temp_raw)
         use_max_completion_tokens = os.getenv("USE_MAX_COMPLETION_TOKENS", "0").strip() in {
             "1",
             "true",
@@ -74,8 +89,11 @@ class Settings:
             api_base_url=api_base_url,
             api_key=api_key,
             match_model=match_model,
+            import_model=import_model,
             max_tokens=max_tokens,
             match_max_tokens=match_max_tokens,
+            confidence_max_tokens=confidence_max_tokens,
+            confidence_top_k=confidence_top_k,
             match_temperature=max(0.0, min(2.0, match_temperature)),
             use_max_completion_tokens=use_max_completion_tokens,
             mock_llm=mock_llm,

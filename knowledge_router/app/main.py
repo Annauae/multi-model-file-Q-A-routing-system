@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import queue
+import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, Iterator, List
+from typing import Any, Callable, Dict, Iterator, List
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
@@ -18,6 +20,7 @@ from .matcher import (
     count_question_prompt_lines,
     default_match_prompt,
     is_match_resolved,
+    parse_confidence_raw,
     parse_match_raw,
 )
 from .paths import kb_assets_dir_path, kb_dir_path, questions_json_path
@@ -26,6 +29,10 @@ from .schemas import (
     AskRequest,
     AskResponse,
     AskTimings,
+    ConfidenceAskRequest,
+    ConfidenceAskResponse,
+    ConfidenceCandidate,
+    ConfidenceMatchResult,
     DefaultPromptResponse,
     HealthResponse,
     KnowledgeBaseCreateRequest,
@@ -43,14 +50,28 @@ def _sse(event: str, data: Dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False, default=str)}\n\n"
 
 
+def _format_timings_log(timings: AskTimings) -> str:
+    return (
+        f"[timing] 准备(索引+prompt)={timings.prepare_ms:.1f}ms "
+        f"匹配(LLM)={timings.match_ms:.1f}ms "
+        f"首token={timings.match_first_token_ms:.1f}ms "
+        f"查表(取answer)={timings.lookup_ms:.2f}ms "
+        f"总计={timings.total_ms:.1f}ms "
+        f"输出tokens={timings.match_output_tokens}"
+    )
+
+
 class AskLogSink:
     """Collect structured ask pipeline logs for SSE."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, emit: Callable[[str, str], None] | None = None) -> None:
         self._entries: List[tuple[str, str]] = []
+        self._emit = emit
 
     def log(self, line: str, kind: str = "log") -> None:
         self._entries.append((line, kind))
+        if self._emit is not None:
+            self._emit(line, kind)
 
     def drain(self) -> List[tuple[str, str]]:
         out = list(self._entries)
@@ -115,6 +136,7 @@ def _run_match(
     )
 
     t_match0 = time.perf_counter()
+    timings.prepare_ms = (t_match0 - t0) * 1000.0
     first_token_ms = 0.0
     buffer = ""
     got_first = False
@@ -199,8 +221,9 @@ def _finalize_ask(
         _log("[lookup] 跳过取 answer（未匹配）", "lookup")
 
     timings.lookup_ms = (time.perf_counter() - t_lookup0) * 1000.0
-    timings.total_ms = timings.match_ms + timings.lookup_ms
+    timings.total_ms = timings.prepare_ms + timings.match_ms + timings.lookup_ms
     _log(f"[step] _finalize_ask 完成 lookup={timings.lookup_ms:.2f}ms total={timings.total_ms:.1f}ms", "step")
+    _log(_format_timings_log(timings), "timing")
     return AskResponse(
         question=question,
         kb_id=kb_id,
@@ -211,10 +234,123 @@ def _finalize_ask(
     )
 
 
+def _run_confidence_match(
+    *,
+    question: str,
+    kb_id: str,
+    top_k: int,
+    cache: QuestionsCache,
+    llm: LLMClient,
+    settings: Settings,
+    log_sink: AskLogSink | None = None,
+) -> tuple[ConfidenceMatchResult, AskTimings, str, list[dict[str, str]], ConfidenceAskResponse]:
+    def _log(line: str, kind: str = "log") -> None:
+        if log_sink is not None:
+            log_sink.log(line, kind)
+
+    timings = AskTimings()
+    t0 = time.perf_counter()
+    _log(f"[step] _run_confidence_match 开始 kb_id={kb_id} top_k={top_k}", "step")
+
+    idx = cache.get_index(kb_id)
+    if idx is None:
+        _log("[cache] 内存索引未命中，执行 load_kb()", "cache")
+        idx = cache.load_kb(kb_id)
+    else:
+        _log(f"[cache] 命中内存索引 loaded_at={idx.loaded_at}", "cache")
+
+    prompt_lines = count_question_prompt_lines(idx.enabled_items)
+    _log(f"[cache] enabled_items={len(idx.enabled_items)} prompt_lines={prompt_lines}", "cache")
+
+    system_prompt = cache.get_confidence_system_prompt(kb_id, top_k=top_k)
+    messages_dict = build_match_messages(system_prompt=system_prompt, user_question=question)
+    messages = [ChatMessage(role=m["role"], content=m["content"]) for m in messages_dict]
+
+    _log(f"[prompt] confidence system 长度={len(system_prompt)} 字符", "prompt")
+    _log(f"[prompt] confidence system 内容:\n{system_prompt}", "prompt")
+    _log(f"[prompt] user 消息:\n{question}", "prompt")
+    _log(
+        f"[match] 调用 LLM model={settings.match_model} "
+        f"max_tokens={settings.confidence_max_tokens} temperature={settings.match_temperature}",
+        "match",
+    )
+
+    t_match0 = time.perf_counter()
+    timings.prepare_ms = (t_match0 - t0) * 1000.0
+    first_token_ms = 0.0
+    buffer = ""
+    got_first = False
+    delta_count = 0
+
+    for delta in llm.chat_stream(
+        model=settings.match_model,
+        messages=messages,
+        max_tokens=settings.confidence_max_tokens,
+        temperature=settings.match_temperature,
+        mock_mode="confidence",
+    ):
+        delta_count += 1
+        if not got_first:
+            first_token_ms = (time.perf_counter() - t_match0) * 1000.0
+            got_first = True
+            _log(f"[match] 首 token 到达 +{first_token_ms:.1f}ms", "match")
+        buffer += delta
+
+    raw = buffer.strip()
+    timings.match_ms = (time.perf_counter() - t_match0) * 1000.0
+    timings.match_first_token_ms = first_token_ms
+    timings.match_output_tokens = max(1, len(raw.split())) if raw else 0
+    _log(f"[match] stream 结束 deltas={delta_count} raw_output={raw!r}", "match")
+
+    parsed, raw_output = parse_confidence_raw(raw=raw, valid_ids=idx.valid_ids, top_k=top_k)
+    candidates: List[ConfidenceCandidate] = []
+    for row in parsed:
+        item = cache.resolve_item(kb_id, row["id"])
+        candidates.append(
+            ConfidenceCandidate(
+                id=row["id"],
+                confidence=row["confidence"],
+                question=item.question if item else "",
+            )
+        )
+        _log(f"[parse] candidate id={row['id']} confidence={row['confidence']:.3f}", "parse")
+
+    if not candidates:
+        _log("[parse] 未解析到有效候选", "parse")
+
+    match = ConfidenceMatchResult(raw_output=raw_output, candidates=candidates)
+
+    t_lookup0 = time.perf_counter()
+    answer = ""
+    if candidates:
+        top_item = cache.resolve_item(kb_id, candidates[0].id)
+        if top_item:
+            answer = top_item.answer
+            _log(f"[lookup] 取 Top1 answer len={len(answer)} id={candidates[0].id}", "lookup")
+    timings.lookup_ms = (time.perf_counter() - t_lookup0) * 1000.0
+    timings.total_ms = (time.perf_counter() - t0) * 1000.0
+    _log(f"[step] _run_confidence_match 完成 total={timings.total_ms:.1f}ms", "step")
+    _log(_format_timings_log(timings), "timing")
+
+    resp = ConfidenceAskResponse(
+        question=question,
+        kb_id=kb_id,
+        match=match,
+        answer=answer,
+        timings=timings,
+        cache_hit=True,
+    )
+    return match, timings, system_prompt, messages_dict, resp
+
+
 def create_app() -> FastAPI:
     settings = Settings.load()
     kb_store = KbStore.open(settings.kb_config_path)
-    cache = QuestionsCache(kb_store=kb_store, files_root=settings.files_root)
+    cache = QuestionsCache(
+        kb_store=kb_store,
+        files_root=settings.files_root,
+        confidence_top_k=settings.confidence_top_k,
+    )
     llm = LLMClient(settings)
 
     @asynccontextmanager
@@ -275,67 +411,189 @@ def create_app() -> FastAPI:
         kb_id = _validate_kb_id(kb_store, req.kb_id)
 
         def gen() -> Iterator[str]:
-            sink = AskLogSink()
-            try:
-                sink.log("[step] POST /ask/stream 收到请求", "step")
-                sink.log(f"question: {question}", "log")
-                sink.log(f"kb_id: {kb_id}", "log")
-                for line, kind in sink.drain():
-                    yield _sse("log", {"line": line, "kind": kind})
+            log_q: queue.Queue[tuple[str, Any]] = queue.Queue()
+            result_box: dict[str, Any] = {}
+            error_box: list[LLMError] = []
 
-                match, timings, system_prompt, messages_dict = _run_match(
-                    question=question,
-                    kb_id=kb_id,
-                    cache=cache,
-                    llm=llm,
-                    settings=settings,
-                    log_sink=sink,
-                )
-                for line, kind in sink.drain():
-                    yield _sse("log", {"line": line, "kind": kind})
+            def emit_log(line: str, kind: str) -> None:
+                log_q.put(("log", line, kind))
 
-                resp = _finalize_ask(
-                    question=question,
-                    kb_id=kb_id,
-                    match=match,
-                    cache=cache,
-                    timings=timings,
-                    log_sink=sink,
-                )
-                for line, kind in sink.drain():
-                    yield _sse("log", {"line": line, "kind": kind})
+            def worker() -> None:
+                sink = AskLogSink(emit=emit_log)
+                try:
+                    sink.log("[step] POST /ask/stream 收到请求", "step")
+                    sink.log(f"question: {question}", "log")
+                    sink.log(f"kb_id: {kb_id}", "log")
+                    match, timings, system_prompt, messages_dict = _run_match(
+                        question=question,
+                        kb_id=kb_id,
+                        cache=cache,
+                        llm=llm,
+                        settings=settings,
+                        log_sink=sink,
+                    )
+                    resp = _finalize_ask(
+                        question=question,
+                        kb_id=kb_id,
+                        match=match,
+                        cache=cache,
+                        timings=timings,
+                        log_sink=sink,
+                    )
+                    sink.log("[step] 推送 match / done 事件到前端", "step")
+                    result_box["payload"] = (match, timings, system_prompt, messages_dict, resp)
+                except LLMError as e:
+                    error_box.append(e)
+                finally:
+                    log_q.put(("done", None))
 
-                sink.log("[step] 推送 match / done 事件到前端", "step")
-                for line, kind in sink.drain():
-                    yield _sse("log", {"line": line, "kind": kind})
+            threading.Thread(target=worker, daemon=True).start()
 
-                yield _sse(
-                    "match",
-                    {
-                        "raw_output": match.raw_output,
-                        "matched_id": match.matched_id,
-                        "matched_question": match.matched_question,
-                        "need_clarification": match.need_clarification,
-                        "clarification_question": match.clarification_question,
-                        "enabled_count": cache.get_enabled_count(kb_id),
-                        "messages": messages_dict,
-                    },
-                )
-                yield _sse(
-                    "done",
-                    {
-                        "question": resp.question,
-                        "kb_id": resp.kb_id,
-                        "match": resp.match.model_dump(),
-                        "answer": resp.answer,
-                        "timings": resp.timings.model_dump(),
-                        "cache_hit": resp.cache_hit,
-                    },
-                )
-            except LLMError as e:
-                yield _sse("error", {"detail": str(e)})
+            while True:
+                try:
+                    evt = log_q.get(timeout=0.05)
+                except queue.Empty:
+                    continue
+                if evt[0] == "done":
+                    break
+                if evt[0] == "log":
+                    yield _sse("log", {"line": evt[1], "kind": evt[2]})
 
-        return StreamingResponse(gen(), media_type="text/event-stream")
+            if error_box:
+                yield _sse("error", {"detail": str(error_box[0])})
+                return
+
+            match, timings, system_prompt, messages_dict, resp = result_box["payload"]
+            yield _sse(
+                "match",
+                {
+                    "raw_output": match.raw_output,
+                    "matched_id": match.matched_id,
+                    "matched_question": match.matched_question,
+                    "need_clarification": match.need_clarification,
+                    "clarification_question": match.clarification_question,
+                    "enabled_count": cache.get_enabled_count(kb_id),
+                    "messages": messages_dict,
+                },
+            )
+            yield _sse(
+                "done",
+                {
+                    "question": resp.question,
+                    "kb_id": resp.kb_id,
+                    "match": resp.match.model_dump(),
+                    "answer": resp.answer,
+                    "timings": resp.timings.model_dump(),
+                    "cache_hit": resp.cache_hit,
+                },
+            )
+
+        return StreamingResponse(
+            gen(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    @app.post("/ask/confidence", response_model=ConfidenceAskResponse)
+    def ask_confidence(req: ConfidenceAskRequest) -> ConfidenceAskResponse:
+        question = req.question.strip()
+        if not question:
+            raise HTTPException(status_code=400, detail="question 不能为空")
+        kb_id = _validate_kb_id(kb_store, req.kb_id)
+        top_k = req.top_k
+        try:
+            _, _, _, _, resp = _run_confidence_match(
+                question=question,
+                kb_id=kb_id,
+                top_k=top_k,
+                cache=cache,
+                llm=llm,
+                settings=settings,
+            )
+            return resp
+        except LLMError as e:
+            raise HTTPException(status_code=502, detail=str(e)) from e
+
+    @app.post("/ask/confidence/stream")
+    def ask_confidence_stream(req: ConfidenceAskRequest) -> StreamingResponse:
+        question = req.question.strip()
+        if not question:
+            raise HTTPException(status_code=400, detail="question 不能为空")
+        kb_id = _validate_kb_id(kb_store, req.kb_id)
+        top_k = req.top_k
+
+        def gen() -> Iterator[str]:
+            log_q: queue.Queue[tuple[str, Any]] = queue.Queue()
+            result_box: dict[str, Any] = {}
+            error_box: list[LLMError] = []
+
+            def emit_log(line: str, kind: str) -> None:
+                log_q.put(("log", line, kind))
+
+            def worker() -> None:
+                sink = AskLogSink(emit=emit_log)
+                try:
+                    sink.log("[step] POST /ask/confidence/stream 收到请求", "step")
+                    sink.log(f"question: {question}", "log")
+                    sink.log(f"kb_id: {kb_id} top_k: {top_k}", "log")
+                    match, timings, system_prompt, messages_dict, resp = _run_confidence_match(
+                        question=question,
+                        kb_id=kb_id,
+                        top_k=top_k,
+                        cache=cache,
+                        llm=llm,
+                        settings=settings,
+                        log_sink=sink,
+                    )
+                    result_box["payload"] = (match, timings, system_prompt, messages_dict, resp)
+                except LLMError as e:
+                    error_box.append(e)
+                finally:
+                    log_q.put(("done", None))
+
+            threading.Thread(target=worker, daemon=True).start()
+
+            while True:
+                try:
+                    evt = log_q.get(timeout=0.05)
+                except queue.Empty:
+                    continue
+                if evt[0] == "done":
+                    break
+                if evt[0] == "log":
+                    yield _sse("log", {"line": evt[1], "kind": evt[2]})
+
+            if error_box:
+                yield _sse("error", {"detail": str(error_box[0])})
+                return
+
+            match, timings, system_prompt, messages_dict, resp = result_box["payload"]
+            yield _sse(
+                "candidates",
+                {
+                    "raw_output": match.raw_output,
+                    "candidates": [c.model_dump() for c in match.candidates],
+                    "enabled_count": cache.get_enabled_count(kb_id),
+                    "messages": messages_dict,
+                },
+            )
+            yield _sse(
+                "done",
+                {
+                    "question": resp.question,
+                    "kb_id": resp.kb_id,
+                    "match": resp.match.model_dump(),
+                    "answer": resp.answer,
+                    "timings": resp.timings.model_dump(),
+                    "cache_hit": resp.cache_hit,
+                },
+            )
+
+        return StreamingResponse(
+            gen(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     @app.get("/knowledge-bases")
     def list_kbs() -> Dict[str, Any]:

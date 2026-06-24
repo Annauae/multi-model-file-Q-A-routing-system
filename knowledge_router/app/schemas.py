@@ -34,6 +34,7 @@ class MatchResult(BaseModel):
 
 class AskTimings(BaseModel):
     total_ms: float = 0.0
+    prepare_ms: float = 0.0
     match_ms: float = 0.0
     match_first_token_ms: float = 0.0
     lookup_ms: float = 0.0
@@ -47,6 +48,32 @@ class AskResponse(BaseModel):
     answer: str = ""
     timings: AskTimings = Field(default_factory=AskTimings)
     cache_hit: bool = True
+
+
+class ConfidenceCandidate(BaseModel):
+    id: str
+    confidence: float
+    question: str = ""
+
+
+class ConfidenceMatchResult(BaseModel):
+    raw_output: str = ""
+    candidates: List[ConfidenceCandidate] = Field(default_factory=list)
+
+
+class ConfidenceAskResponse(BaseModel):
+    question: str
+    kb_id: str
+    match: ConfidenceMatchResult
+    answer: str = ""
+    timings: AskTimings = Field(default_factory=AskTimings)
+    cache_hit: bool = True
+
+
+class ConfidenceAskRequest(BaseModel):
+    question: str = Field(..., min_length=1)
+    kb_id: str = Field(..., min_length=1)
+    top_k: int = Field(default=5, ge=1, le=20)
 
 
 class HealthResponse(BaseModel):
