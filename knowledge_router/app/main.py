@@ -1,3 +1,9 @@
+"""FastAPI 应用入口：问答 API、知识库 CRUD、静态 Web 控制台。
+
+核心流程：
+  单 id 匹配：_run_match -> parse_match_raw -> _finalize_ask（内存取 answer）
+  置信度匹配：_run_confidence_match -> parse_confidence_raw -> Top1 answer
+"""
 from __future__ import annotations
 
 import json
@@ -47,10 +53,12 @@ from .schemas import (
 
 
 def _sse(event: str, data: Dict[str, Any]) -> str:
+    """格式化为 SSE 单条事件（event + data JSON）。"""
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False, default=str)}\n\n"
 
 
 def _format_timings_log(timings: AskTimings) -> str:
+    """将 AskTimings 格式化为单行日志，供前端日志面板展示。"""
     return (
         f"[timing] 准备(索引+prompt)={timings.prepare_ms:.1f}ms "
         f"匹配(LLM)={timings.match_ms:.1f}ms "
@@ -62,24 +70,27 @@ def _format_timings_log(timings: AskTimings) -> str:
 
 
 class AskLogSink:
-    """Collect structured ask pipeline logs for SSE."""
+    """问答流水线日志收集器；可同步写入内存或实时 emit 到 SSE 队列。"""
 
     def __init__(self, *, emit: Callable[[str, str], None] | None = None) -> None:
         self._entries: List[tuple[str, str]] = []
-        self._emit = emit
+        self._emit = emit  # 非空时每条 log 立即推给流式接口
 
     def log(self, line: str, kind: str = "log") -> None:
+        """记录一行日志；kind 用于前端着色（step/match/prompt 等）。"""
         self._entries.append((line, kind))
         if self._emit is not None:
             self._emit(line, kind)
 
     def drain(self) -> List[tuple[str, str]]:
+        """取出并清空缓冲（非流式场景备用）。"""
         out = list(self._entries)
         self._entries.clear()
         return out
 
 
 def _validate_kb_id(kb_store: KbStore, kb_id: str) -> str:
+    """校验 kb_id 非空且存在于配置；失败抛 HTTPException。"""
     kid = (kb_id or "").strip()
     if not kid:
         raise HTTPException(status_code=400, detail="kb_id 不能为空")
@@ -98,6 +109,11 @@ def _run_match(
     log_sink: AskLogSink | None = None,
     stream_log: List[str] | None = None,
 ) -> tuple[MatchResult, AskTimings, str, list[dict[str, str]]]:
+    """执行单 id 匹配：加载索引 -> 流式 LLM -> 解析 id/NONE。
+
+    Returns:
+        match, timings, system_prompt, messages_dict（供 SSE 调试展示）
+    """
     def _log(line: str, kind: str = "log") -> None:
         if log_sink is not None:
             log_sink.log(line, kind)
@@ -144,6 +160,7 @@ def _run_match(
     delta_count = 0
 
     def _early_stop(buf: str) -> bool:
+        """流式早停：已输出合法 id 或 NONE 则不再等待后续 token。"""
         return is_match_resolved(buf, valid_ids)
 
     for delta in llm.chat_stream(
@@ -198,6 +215,7 @@ def _finalize_ask(
     timings: AskTimings,
     log_sink: AskLogSink | None = None,
 ) -> AskResponse:
+    """匹配成功后从内存取预存 answer，不调用回答生成模型。"""
     def _log(line: str, kind: str = "log") -> None:
         if log_sink is not None:
             log_sink.log(line, kind)
@@ -244,6 +262,7 @@ def _run_confidence_match(
     settings: Settings,
     log_sink: AskLogSink | None = None,
 ) -> tuple[ConfidenceMatchResult, AskTimings, str, list[dict[str, str]], ConfidenceAskResponse]:
+    """执行置信度匹配：流式 LLM 输出 JSON 数组 -> 解析多候选 -> Top1 answer。"""
     def _log(line: str, kind: str = "log") -> None:
         if log_sink is not None:
             log_sink.log(line, kind)
@@ -344,6 +363,7 @@ def _run_confidence_match(
 
 
 def create_app() -> FastAPI:
+    """工厂函数：组装依赖、注册路由、挂载静态资源。模块级 app = create_app()。"""
     settings = Settings.load()
     kb_store = KbStore.open(settings.kb_config_path)
     cache = QuestionsCache(
@@ -355,6 +375,7 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
+        """启动时预热所有知识库内存索引。"""
         cache.load_all()
         yield
 
@@ -370,6 +391,7 @@ def create_app() -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
+        """返回 Web 控制台 index.html。"""
         index_path = web_root / "index.html"
         if not index_path.exists():
             return HTMLResponse("<h1>knowledge_router</h1><p>web/index.html 缺失</p>")
@@ -377,10 +399,12 @@ def create_app() -> FastAPI:
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
+        """探活接口，前端顶栏轮询。"""
         return HealthResponse()
 
     @app.post("/ask", response_model=AskResponse)
     def ask(req: AskRequest) -> AskResponse:
+        """同步单 id 问答：匹配 + 取预存 answer。"""
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
@@ -405,6 +429,7 @@ def create_app() -> FastAPI:
 
     @app.post("/ask/stream")
     def ask_stream(req: AskRequest) -> StreamingResponse:
+        """流式单 id 问答：SSE 推送 log -> match -> done。"""
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
@@ -419,6 +444,7 @@ def create_app() -> FastAPI:
                 log_q.put(("log", line, kind))
 
             def worker() -> None:
+                """后台线程跑匹配，避免阻塞 SSE 生成器。"""
                 sink = AskLogSink(emit=emit_log)
                 try:
                     sink.log("[step] POST /ask/stream 收到请求", "step")
@@ -496,6 +522,7 @@ def create_app() -> FastAPI:
 
     @app.post("/ask/confidence", response_model=ConfidenceAskResponse)
     def ask_confidence(req: ConfidenceAskRequest) -> ConfidenceAskResponse:
+        """同步置信度问答：返回多候选 + Top1 answer。"""
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
@@ -516,6 +543,7 @@ def create_app() -> FastAPI:
 
     @app.post("/ask/confidence/stream")
     def ask_confidence_stream(req: ConfidenceAskRequest) -> StreamingResponse:
+        """流式置信度问答：SSE 推送 log -> candidates -> done。"""
         question = req.question.strip()
         if not question:
             raise HTTPException(status_code=400, detail="question 不能为空")
@@ -597,6 +625,7 @@ def create_app() -> FastAPI:
 
     @app.get("/knowledge-bases")
     def list_kbs() -> Dict[str, Any]:
+        """列出所有知识库及 enabled_count。"""
         items = []
         for kb_id, cfg in kb_store.get_all().items():
             enabled_count = 0
@@ -608,6 +637,7 @@ def create_app() -> FastAPI:
 
     @app.post("/knowledge-bases")
     def create_kb(req: KnowledgeBaseCreateRequest) -> Dict[str, Any]:
+        """创建知识库：写配置 + 空 questions.json + 建索引。"""
         kb_id = (req.kb_id or "").strip() or kb_store.next_available_kb_id()
         name = req.name.strip()
         try:
@@ -627,6 +657,7 @@ def create_app() -> FastAPI:
 
     @app.get("/knowledge-bases/{kb_id}")
     def get_kb(kb_id: str) -> Dict[str, Any]:
+        """获取单个知识库元数据。"""
         kid = _validate_kb_id(kb_store, kb_id)
         cfg = kb_store.get(kid)
         assert cfg is not None
@@ -634,6 +665,7 @@ def create_app() -> FastAPI:
 
     @app.delete("/knowledge-bases/{kb_id}")
     def delete_kb(kb_id: str) -> Dict[str, Any]:
+        """删除知识库配置、磁盘目录与内存索引。"""
         kid = _validate_kb_id(kb_store, kb_id)
         try:
             cfg = kb_store.delete_kb(kb_id=kid)
@@ -645,6 +677,7 @@ def create_app() -> FastAPI:
 
     @app.post("/knowledge-bases/{kb_id}/rename")
     def rename_kb(kb_id: str, req: KnowledgeBaseRenameRequest) -> Dict[str, Any]:
+        """重命名知识库。"""
         kid = _validate_kb_id(kb_store, kb_id)
         try:
             cfg = kb_store.rename_kb(kb_id=kid, name=req.name.strip())
@@ -654,6 +687,7 @@ def create_app() -> FastAPI:
 
     @app.put("/knowledge-bases/{kb_id}/prompt")
     def update_prompt(kb_id: str, req: MatchPromptUpdateRequest) -> Dict[str, Any]:
+        """更新 match_prompt 并 reload 索引。"""
         kid = _validate_kb_id(kb_store, kb_id)
         try:
             cfg = kb_store.set_match_prompt(kb_id=kid, match_prompt=req.match_prompt)
@@ -664,10 +698,12 @@ def create_app() -> FastAPI:
 
     @app.get("/knowledge-bases/default-prompt", response_model=DefaultPromptResponse)
     def default_prompt() -> DefaultPromptResponse:
+        """返回内置默认单 id 匹配规则。"""
         return DefaultPromptResponse(match_prompt=default_match_prompt())
 
     @app.get("/knowledge-bases/{kb_id}/match-prompt-preview", response_model=MatchPromptPreviewResponse)
     def match_prompt_preview(kb_id: str) -> MatchPromptPreviewResponse:
+        """管理页：预览规则 + 完整 system prompt。"""
         kid = _validate_kb_id(kb_store, kb_id)
         try:
             match_prompt, system_prompt, enabled_count = cache.preview_system_prompt(kid)
@@ -682,6 +718,7 @@ def create_app() -> FastAPI:
 
     @app.post("/knowledge-bases/{kb_id}/reload")
     def reload_kb(kb_id: str) -> Dict[str, Any]:
+        """手动重建内存索引（questions 外部修改后）。"""
         kid = _validate_kb_id(kb_store, kb_id)
         idx = cache.reload_kb(kid)
         return {
@@ -692,11 +729,13 @@ def create_app() -> FastAPI:
 
     @app.get("/knowledge-bases/{kb_id}/questions", response_model=QuestionsDocument)
     def get_questions(kb_id: str) -> QuestionsDocument:
+        """读取整份 questions.json。"""
         kid = _validate_kb_id(kb_store, kb_id)
         return cache.store(kid).get_document()
 
     @app.put("/knowledge-bases/{kb_id}/questions", response_model=QuestionsDocument)
     def replace_questions(kb_id: str, req: QuestionsReplaceRequest) -> QuestionsDocument:
+        """整库替换 FAQ 并 reload 索引。"""
         kid = _validate_kb_id(kb_store, kb_id)
         try:
             doc = cache.store(kid).replace_all(
@@ -710,6 +749,7 @@ def create_app() -> FastAPI:
 
     @app.post("/knowledge-bases/{kb_id}/questions/items")
     def create_question_item(kb_id: str, req: QAItemUpsertRequest) -> Dict[str, Any]:
+        """新增单条 FAQ（id 不可重复）。"""
         kid = _validate_kb_id(kb_store, kb_id)
         store = cache.store(kid)
         if store.get_item(req.id):
@@ -723,6 +763,7 @@ def create_app() -> FastAPI:
 
     @app.put("/knowledge-bases/{kb_id}/questions/items/{item_id}")
     def update_question_item(kb_id: str, item_id: str, req: QAItemUpsertRequest) -> Dict[str, Any]:
+        """更新单条 FAQ；路径 item_id 须与 body.id 一致。"""
         kid = _validate_kb_id(kb_store, kb_id)
         if req.id != item_id:
             raise HTTPException(status_code=400, detail="路径 item_id 与 body.id 不一致")
@@ -738,6 +779,7 @@ def create_app() -> FastAPI:
 
     @app.delete("/knowledge-bases/{kb_id}/questions/items/{item_id}")
     def delete_question_item(kb_id: str, item_id: str) -> Dict[str, Any]:
+        """删除单条 FAQ。"""
         kid = _validate_kb_id(kb_store, kb_id)
         store = cache.store(kid)
         try:
@@ -749,6 +791,7 @@ def create_app() -> FastAPI:
 
     @app.get("/preview-asset")
     def preview_asset(kb_id: str = Query(...), ref: str = Query(...)) -> FileResponse:
+        """安全提供 kb assets 图片；ref 防路径穿越。"""
         kid = _validate_kb_id(kb_store, kb_id)
         r = (ref or "").strip().replace("\\", "/")
         if r.startswith("../"):
@@ -768,4 +811,4 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
+app = create_app()  # uvicorn 入口：app.main:app

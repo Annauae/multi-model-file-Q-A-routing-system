@@ -1,3 +1,4 @@
+"""应用配置：从 .env 与环境变量加载 Settings。"""
 from __future__ import annotations
 
 import os
@@ -8,10 +9,12 @@ from dotenv import load_dotenv
 
 
 def _project_root() -> Path:
+    """knowledge_router 包根目录（含 app/、web/、.env）。"""
     return Path(__file__).resolve().parents[1]
 
 
 def _first_env(*keys: str, default: str = "") -> str:
+    """按 keys 顺序取第一个非空环境变量，用于模型名等多别名兼容。"""
     for key in keys:
         val = os.getenv(key, "").strip()
         if val:
@@ -21,28 +24,31 @@ def _first_env(*keys: str, default: str = "") -> str:
 
 @dataclass(frozen=True)
 class Settings:
-    api_base_url: str
-    api_key: str
-    match_model: str
-    import_model: str
-    max_tokens: int
-    match_max_tokens: int
-    confidence_max_tokens: int
-    confidence_top_k: int
-    match_temperature: float
-    use_max_completion_tokens: bool
-    mock_llm: bool
-    use_content_parts: bool
-    enable_thinking: bool | None
-    reasoning_effort: str | None
-    data_root: Path
-    kb_config_path: Path
-    files_root: Path
+    """全局不可变配置，由 Settings.load() 构造。"""
+
+    api_base_url: str  # OpenAI 兼容 API 地址
+    api_key: str  # 鉴权密钥（API_KEY 或 ARK_API_KEY）
+    match_model: str  # 问题匹配所用模型
+    import_model: str  # 离线导入 FAQ 所用模型
+    max_tokens: int  # 通用 completion 上限
+    match_max_tokens: int  # 单 id 匹配输出很短，默认 8
+    confidence_max_tokens: int  # 置信度 JSON 数组需要更长输出
+    confidence_top_k: int  # 默认 Top-K 候选数（1~20）
+    match_temperature: float  # 匹配温度，默认 0 求确定性
+    use_max_completion_tokens: bool  # 部分厂商用 max_completion_tokens 替代 max_tokens
+    mock_llm: bool  # True 时不调真实 API，用本地启发式 mock
+    use_content_parts: bool  # user 消息是否包装为 content parts 数组
+    enable_thinking: bool | None  # 推理模型 thinking 开关（None=不传）
+    reasoning_effort: str | None  # low/medium/high，None=不传
+    data_root: Path  # 数据根目录
+    kb_config_path: Path  # knowledge_bases.json 路径
+    files_root: Path  # 各 kb 的 files/kb_* 父目录
 
     @staticmethod
     def load() -> "Settings":
+        """读取 .env 与环境变量，组装 Settings。服务启动时调用一次。"""
         app_root = _project_root()
-        load_dotenv(app_root / ".env", override=False)
+        load_dotenv(app_root / ".env", override=False)  # 不覆盖已存在的系统环境变量
 
         api_base_url = os.getenv("API_BASE_URL", "https://api.openai.com/v1").strip()
         api_key = (os.getenv("API_KEY", "") or os.getenv("ARK_API_KEY", "")).strip()
@@ -64,6 +70,7 @@ class Settings:
         mock_llm = os.getenv("MOCK_LLM", "0").strip() in {"1", "true", "True", "YES", "yes"}
         use_content_parts = os.getenv("USE_CONTENT_PARTS", "0").strip() in {"1", "true", "True", "YES", "yes"}
 
+        # thinking：显式 ENABLE_THINKING 优先；否则 DISABLE_THINKING=1 时关闭
         enable_thinking_raw = os.getenv("ENABLE_THINKING", "").strip().lower()
         disable_thinking = os.getenv("DISABLE_THINKING", "1").strip() in {"1", "true", "True", "YES", "yes"}
         enable_thinking: bool | None

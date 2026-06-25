@@ -113,12 +113,15 @@ function switchAppView(name) {
 function showModal(title, bodyHtml, onOk) {
   $("#modalTitle").textContent = title;
   $("#modalBody").innerHTML = bodyHtml;
+  const modal = document.querySelector("#modalOverlay .modal");
+  modal?.classList.toggle("modalWide", /modalItem/.test(bodyHtml));
   modalOkHandler = onOk;
   $("#modalOverlay").classList.remove("hidden");
 }
 
 function hideModal() {
   $("#modalOverlay").classList.add("hidden");
+  document.querySelector("#modalOverlay .modal")?.classList.remove("modalWide");
   modalOkHandler = null;
 }
 

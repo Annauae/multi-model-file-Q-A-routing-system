@@ -1,3 +1,7 @@
+"""离线导入：从 model_router agent Markdown 经 LLM 生成 FAQ 条目。
+
+供 scripts/import_from_router.py 调用，不参与在线问答服务。
+"""
 from __future__ import annotations
 
 import json
@@ -8,6 +12,7 @@ from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 from .llm_client import ChatMessage, LLMClient, LLMError
 
+# 导入用 system prompt：要求按标题拆分 md 并输出 JSON items
 IMPORT_SYSTEM_PROMPT_ZH = """你是 FAQ 知识库生成器。根据 Markdown 知识文档拆分为多条问答条目，供后续语义匹配使用。
 
 拆分规则：
@@ -37,6 +42,7 @@ def _now_iso() -> str:
 
 
 def _extract_first_json_object(text: str) -> str:
+    """从模型输出中提取第一个 {...} JSON 对象（容忍前后废话）。"""
     s = (text or "").strip()
     if not s:
         raise ValueError("模型输出为空")
@@ -50,6 +56,7 @@ def _extract_first_json_object(text: str) -> str:
 
 
 def strip_md_frontmatter(text: str) -> str:
+    """去掉 YAML frontmatter（--- ... ---）。"""
     body = text or ""
     if body.startswith("---"):
         end = body.find("\n---", 3)
@@ -59,6 +66,7 @@ def strip_md_frontmatter(text: str) -> str:
 
 
 def normalize_import_items(raw_items: Any) -> List[Dict[str, str]]:
+    """校验 LLM 返回的 items，补齐 3 条 variants，过滤无效行。"""
     if not isinstance(raw_items, list):
         raise LLMError("模型输出 items 必须是数组")
     out: List[Dict[str, str]] = []
@@ -77,7 +85,7 @@ def normalize_import_items(raw_items: Any) -> List[Dict[str, str]]:
                 if s and s not in variants:
                     variants.append(s)
         while len(variants) < 3:
-            variants.append(question)
+            variants.append(question)  # 不足 3 条用标准问题填充
         variants = variants[:3]
         out.append({"question": question, "variants": variants, "answer": answer})
     if not out:
@@ -92,6 +100,7 @@ def generate_faq_items_from_markdown(
     llm: LLMClient,
     import_model: str,
 ) -> List[Dict[str, str]]:
+    """单份 Markdown 调用 LLM 拆分为多条 FAQ（无 id，后续 assign_question_ids）。"""
     body = strip_md_frontmatter(md_text)
     if not body:
         raise LLMError(f"{source_label} 内容为空")
@@ -113,6 +122,7 @@ def generate_faq_items_from_markdown(
 
 
 def copy_agent_assets(*, agent_assets_dir: Path, kb_assets_dir: Path) -> int:
+    """将 agent 目录下插图复制到 kb assets，返回复制文件数。"""
     kb_assets_dir.mkdir(parents=True, exist_ok=True)
     if not agent_assets_dir.is_dir():
         return 0
@@ -125,6 +135,7 @@ def copy_agent_assets(*, agent_assets_dir: Path, kb_assets_dir: Path) -> int:
 
 
 def assign_question_ids(items: Iterable[Dict[str, Any]], *, start: int = 1) -> List[Dict[str, Any]]:
+    """为无 id 的导入条目顺序分配 q001、q002…"""
     out: List[Dict[str, Any]] = []
     n = start
     for item in items:
@@ -143,6 +154,7 @@ def assign_question_ids(items: Iterable[Dict[str, Any]], *, start: int = 1) -> L
 
 
 def list_agent_md_files(router_dir: Path, agent_nums: List[int]) -> List[Tuple[int, Path]]:
+    """枚举 router_dir/agent_{n}/md/*.md 文件。"""
     found: List[Tuple[int, Path]] = []
     for num in agent_nums:
         md_dir = router_dir / f"agent_{num}" / "md"
@@ -162,6 +174,7 @@ def import_router_agents(
     import_model: str,
     on_progress: Callable[[str], None] | None = None,
 ) -> List[Dict[str, Any]]:
+    """批量导入多个 agent 的全部 md，合并 FAQ 列表（仍无 id）。"""
     all_items: List[Dict[str, Any]] = []
     md_files = list_agent_md_files(router_dir, agent_nums)
     if not md_files:

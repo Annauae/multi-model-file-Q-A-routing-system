@@ -278,20 +278,32 @@ function promptCreateItem() {
   if (!selectedKbId) return showToast("请先选择知识库", "error");
   showModal(
     "新增标准问题",
-    `<label class="fieldLabel">ID<input id="modalItemId" type="text" placeholder="q004" /></label>
-     <label class="fieldLabel">标准问题<textarea id="modalItemQ" rows="2"></textarea></label>`,
+    `<p style="margin:0 0 10px;color:var(--text-secondary);font-size:13px">必填：标准问题、回答。其余选填。</p>
+     <label class="fieldLabel">ID（选填，留空自动分配）<input id="modalItemId" type="text" placeholder="如 q004；留空则 q001、q002…" /></label>
+     <label class="fieldLabel">标准问题（必填）<textarea id="modalItemQ" rows="2"></textarea></label>
+     <label class="fieldLabel">变体问法（选填，每行一条）<textarea id="modalItemVariants" rows="3" placeholder="用户可能的其他问法"></textarea></label>
+     <label class="fieldLabel">回答 Markdown（必填）<textarea id="modalItemAnswer" rows="6"></textarea></label>
+     <label class="fieldCheck"><input id="modalItemEnabled" type="checkbox" checked /> 启用匹配（选填，默认启用）</label>`,
     async () => {
-      const id = ($("#modalItemId")?.value || "").trim();
       const question = ($("#modalItemQ")?.value || "").trim();
-      if (!id || !question) throw new Error("ID 与问题不能为空");
+      const answer = ($("#modalItemAnswer")?.value || "").trim();
+      const variants = ($("#modalItemVariants")?.value || "")
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const enabled = $("#modalItemEnabled")?.checked !== false;
+      if (!question) throw new Error("标准问题不能为空");
+      if (!answer) throw new Error("回答不能为空");
+      let id = ($("#modalItemId")?.value || "").trim();
+      if (!id) id = allocateQuestionId(new Set());
       await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}/questions/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, question, variants: [], answer: "待填写回答", enabled: true }),
+        body: JSON.stringify({ id, question, variants, answer, enabled }),
       });
       await loadItems();
       selectItem(id);
-      showToast("问题已新增");
+      showToast(`问题已新增（${id}）`);
     }
   );
 }

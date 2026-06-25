@@ -338,10 +338,14 @@ body {
 }
 .modal {
   background: var(--bg-surface); border-radius: var(--radius); width: min(420px, 92vw);
+  max-height: min(88vh, 720px);
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
-.modalHead { padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--border); }
-.modalBody { padding: 16px; }
+.modalWide { width: min(520px, 92vw); }
+.modalHead { padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.modalBody { padding: 16px; overflow-y: auto; flex: 1; min-height: 0; }
 .modalFoot { padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
 
 .fileTabToolbar { padding: 8px 12px; border-bottom: 1px solid var(--border); }

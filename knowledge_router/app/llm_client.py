@@ -1,3 +1,4 @@
+"""上游 LLM 客户端：OpenAI 兼容 chat/completions，含 mock 与流式早停。"""
 from __future__ import annotations
 
 import json
@@ -11,10 +12,11 @@ from .matcher import NONE_SENTINEL
 
 
 class LLMError(RuntimeError):
-    pass
+    """模型调用失败时抛出，main 层转为 HTTP 502。"""
 
 
 def _raise_friendly_llm_error(e: Exception) -> None:
+    """将 OpenAI SDK 异常转为用户可读中文提示。"""
     msg = str(e)
     if "AuthenticationError" in msg or "401" in msg or "API key format is incorrect" in msg:
         raise LLMError(
@@ -30,18 +32,24 @@ def _raise_friendly_llm_error(e: Exception) -> None:
 
 @dataclass(frozen=True)
 class ChatMessage:
-    role: str
-    content: Union[str, List[Dict[str, Any]]]
+    """单条对话消息。"""
+
+    role: str  # system / user / assistant
+    content: Union[str, List[Dict[str, Any]]]  # 纯文本或多模态 parts
 
     def to_openai(self, *, use_content_parts: bool) -> Dict[str, Any]:
+        """转为 OpenAI API messages 元素。"""
         if isinstance(self.content, list):
             return {"role": self.role, "content": self.content}
+        # 部分厂商要求 user 内容为 [{"type":"text","text":"..."}]
         if use_content_parts and isinstance(self.content, str) and self.role == "user":
             return {"role": self.role, "content": [{"type": "text", "text": self.content}]}
         return {"role": self.role, "content": self.content}
 
 
 class LLMClient:
+    """封装 chat.completions 同步/流式调用。"""
+
     def __init__(self, settings: Settings):
         self._settings = settings
         self._client: Optional[OpenAI] = None
@@ -50,6 +58,7 @@ class LLMClient:
 
     @property
     def client(self) -> OpenAI:
+        """懒初始化 OpenAI 客户端。"""
         if self._client is None:
             self._client = OpenAI(base_url=self._settings.api_base_url, api_key=self._settings.api_key)
         return self._client
@@ -62,6 +71,7 @@ class LLMClient:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
     ) -> str:
+        """非流式 completion，返回完整 assistant 文本（用于导入等场景）。"""
         if self._settings.mock_llm:
             return self._mock_match(messages=messages)
         token_limit = max_tokens or self._settings.max_tokens
@@ -76,6 +86,7 @@ class LLMClient:
             return (resp.choices[0].message.content or "").strip()
         except Exception as e:  # noqa: BLE001
             msg = str(e)
+            # 兼容只支持 max_completion_tokens 的端点
             if "Unsupported parameter: 'max_tokens'" in msg or "max_completion_tokens" in msg:
                 try:
                     resp = self._create_completion(
@@ -100,6 +111,12 @@ class LLMClient:
         early_stop_check=None,
         mock_mode: str = "match",
     ) -> Iterator[str]:
+        """流式 yield 文本片段。
+
+        Args:
+            early_stop_check: 传入累积 buffer，返回 True 时中断流（单 id 匹配早停）
+            mock_mode: "match" | "confidence"，mock 时分流不同启发式
+        """
         if self._settings.mock_llm:
             text = self._mock_match(messages=messages) if mock_mode != "confidence" else self._mock_confidence(messages=messages)
             step = 2
@@ -144,6 +161,7 @@ class LLMClient:
         force_max_completion_tokens: bool = False,
         stream: bool = False,
     ) -> Dict[str, Any]:
+        """组装 create() 参数字典。"""
         kwargs: Dict[str, Any] = {
             "model": model,
             "messages": [m.to_openai(use_content_parts=self._settings.use_content_parts) for m in messages],
@@ -185,6 +203,7 @@ class LLMClient:
         force_max_completion_tokens: bool = False,
         early_stop_check=None,
     ) -> Iterator[str]:
+        """消费 SSE chunk，逐段 yield content；支持 early_stop_check。"""
         kwargs = self._build_completion_kwargs(
             model=model,
             messages=messages,
@@ -208,6 +227,7 @@ class LLMClient:
                 break
 
     def _mock_match(self, *, messages: List[ChatMessage]) -> str:
+        """本地 mock：在 system 问题列表中做简单子串匹配，返回 id 或 NONE。"""
         user_text = next((m.content for m in reversed(messages) if m.role == "user"), "")
         if not isinstance(user_text, str):
             user_text = str(user_text)
@@ -230,6 +250,7 @@ class LLMClient:
         return "q001"
 
     def _mock_confidence(self, *, messages: List[ChatMessage]) -> str:
+        """本地 mock：返回 JSON 数组，含多个 id 与启发式 confidence。"""
         user_text = next((m.content for m in reversed(messages) if m.role == "user"), "")
         if not isinstance(user_text, str):
             user_text = str(user_text)
