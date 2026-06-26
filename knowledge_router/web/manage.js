@@ -258,7 +258,7 @@ function promptCreateItem() {
     for (let i = 0; i < blockCount; i++) {
       html += `<div class="multiItemBlock" data-idx="${i}">
         <label class="fieldLabel">标准问题<textarea class="multiQ" rows="2"></textarea></label>
-        <label class="fieldLabel">变体问法（每行一条）<textarea class="multiV" rows="2"></textarea></label>
+        <label class="fieldLabel">其他问法（每行一条）<textarea class="multiV" rows="2"></textarea></label>
         <label class="fieldLabel">回答 Markdown<textarea class="multiA" rows="4"></textarea></label>
       </div>`;
     }
@@ -298,7 +298,7 @@ function promptCreateItem() {
       const div = document.createElement("div");
       div.className = "multiItemBlock";
       div.innerHTML = `<label class="fieldLabel">标准问题<textarea class="multiQ" rows="2"></textarea></label>
-        <label class="fieldLabel">变体问法<textarea class="multiV" rows="2"></textarea></label>
+        <label class="fieldLabel">其他问法<textarea class="multiV" rows="2"></textarea></label>
         <label class="fieldLabel">回答<textarea class="multiA" rows="4"></textarea></label>`;
       container?.appendChild(div);
     });
@@ -331,7 +331,7 @@ const BATCH_ADD_EXAMPLE = `[
   {
     "id": "q999",
     "question": "示例标准问题（id 可省略，将自动分配）",
-    "variants": ["变体问法一", "变体问法二"],
+    "variants": ["其他问法一", "其他问法二"],
     "answer": "Markdown 格式的回答内容",
     "enabled": true
   },

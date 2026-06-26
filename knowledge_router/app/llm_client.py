@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 from openai import OpenAI
@@ -72,8 +74,174 @@ class LLMClient:
         else:
             self._api_key = (settings.api_key or "").strip()
         self._client: Optional[OpenAI] = None
-        if not self._settings.mock_llm and not self._api_key:
+        if not self._settings.mock_llm and not self._api_key and not self._is_ollama():
             raise LLMError("未配置 API_KEY，且 MOCK_LLM=0，无法调用上游模型。请先配置 .env。")
+
+    def _is_ollama(self) -> bool:
+        url = (self._api_base_url or "").lower()
+        return ":11434" in url or url.rstrip("/").endswith("/11434")
+
+    def _ollama_root_url(self) -> str:
+        url = self._api_base_url.rstrip("/")
+        if url.endswith("/v1"):
+            return url[:-3]
+        return url
+
+    def _ollama_think_enabled(self) -> bool | None:
+        return self._settings.enable_thinking
+
+    def _use_ollama_native(self) -> bool:
+        """Ollama OpenAI 兼容层无法可靠关闭 thinking；关闭时走 /api/chat。"""
+        return self._is_ollama() and self._ollama_think_enabled() is False
+
+    @staticmethod
+    def _ollama_messages(messages: List[ChatMessage]) -> List[Dict[str, str]]:
+        out: List[Dict[str, str]] = []
+        for m in messages:
+            if isinstance(m.content, list):
+                parts = []
+                for part in m.content:
+                    if isinstance(part, dict) and part.get("type") == "text":
+                        parts.append(str(part.get("text", "")))
+                content = "\n".join(p for p in parts if p)
+            else:
+                content = str(m.content or "")
+            out.append({"role": m.role, "content": content})
+        return out
+
+    def _ollama_chat_native(
+        self,
+        *,
+        model: str,
+        messages: List[ChatMessage],
+        token_limit: int,
+        temperature: float,
+    ) -> tuple[str, TokenUsageResult]:
+        payload = {
+            "model": model,
+            "messages": self._ollama_messages(messages),
+            "stream": False,
+            "think": False,
+            "options": {"num_predict": token_limit, "temperature": temperature},
+        }
+        data = self._ollama_post("/api/chat", payload)
+        msg = data.get("message") or {}
+        text = str(msg.get("content") or "").strip()
+        pt = int(data.get("prompt_eval_count") or 0)
+        ct = int(data.get("eval_count") or 0)
+        usage = TokenUsageResult(
+            prompt_tokens=pt,
+            completion_tokens=ct,
+            total_tokens=pt + ct if (pt or ct) else max(1, len(text.split()) if text else 0),
+        )
+        return text, usage
+
+    def _ollama_chat_native_stream(
+        self,
+        *,
+        model: str,
+        messages: List[ChatMessage],
+        token_limit: int,
+        temperature: float,
+        early_stop_check=None,
+        usage_out: Optional[List[TokenUsageResult]] = None,
+    ) -> Iterator[str]:
+        payload = {
+            "model": model,
+            "messages": self._ollama_messages(messages),
+            "stream": True,
+            "think": False,
+            "options": {"num_predict": token_limit, "temperature": temperature},
+        }
+        buffer = ""
+        last_usage = TokenUsageResult()
+        for data in self._ollama_stream("/api/chat", payload):
+            msg = data.get("message") or {}
+            content = msg.get("content") or ""
+            if content:
+                buffer += content
+                yield content
+                if early_stop_check and early_stop_check(buffer):
+                    break
+            if data.get("done"):
+                pt = int(data.get("prompt_eval_count") or 0)
+                ct = int(data.get("eval_count") or 0)
+                last_usage = TokenUsageResult(
+                    prompt_tokens=pt,
+                    completion_tokens=ct,
+                    total_tokens=pt + ct if (pt or ct) else max(1, len(buffer.split()) if buffer else 0),
+                )
+        if usage_out is not None:
+            if not last_usage.total_tokens and buffer:
+                last_usage = TokenUsageResult(completion_tokens=max(1, len(buffer.split())), total_tokens=max(1, len(buffer.split())))
+            usage_out.append(last_usage)
+
+    def _ollama_post(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        url = f"{self._ollama_root_url()}{path}"
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=600) as resp:
+                raw = resp.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", errors="replace")
+            raise LLMError(f"Ollama 请求失败（{e.code}）：{detail}") from e
+        except urllib.error.URLError as e:
+            raise LLMError(f"无法连接 Ollama（{url}）：{e.reason}") from e
+        try:
+            obj = json.loads(raw)
+        except json.JSONDecodeError as e:
+            raise LLMError(f"Ollama 响应解析失败：{raw[:200]}") from e
+        if not isinstance(obj, dict):
+            raise LLMError("Ollama 响应格式异常")
+        return obj
+
+    def _ollama_stream(self, path: str, payload: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+        url = f"{self._ollama_root_url()}{path}"
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            resp = urllib.request.urlopen(req, timeout=600)
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", errors="replace")
+            raise LLMError(f"Ollama 流式请求失败（{e.code}）：{detail}") from e
+        except urllib.error.URLError as e:
+            raise LLMError(f"无法连接 Ollama（{url}）：{e.reason}") from e
+        try:
+            for line in resp:
+                line = line.decode("utf-8").strip()
+                if not line:
+                    continue
+                obj = json.loads(line)
+                if isinstance(obj, dict):
+                    yield obj
+        finally:
+            resp.close()
+
+    def _model_supports_enable_thinking(self, model: str) -> bool:
+        name = (model or "").lower()
+        return not (name.startswith("gpt-") or "gpt-" in name)
+
+    def _is_volc_ark(self) -> bool:
+        return "volces.com" in (self._api_base_url or "").lower()
+
+    def _is_gemini(self) -> bool:
+        return "generativelanguage.googleapis.com" in (self._api_base_url or "").lower()
+
+    def _build_extra_body(self, *, model: str) -> Dict[str, Any]:
+        extra: Dict[str, Any] = {}
+        if self._is_volc_ark() and self._settings.enable_thinking is not None:
+            extra["thinking"] = {
+                "type": "enabled" if self._settings.enable_thinking else "disabled",
+            }
+        elif self._is_gemini():
+            if self._settings.enable_thinking is False:
+                extra["reasoning_effort"] = "none"
+        elif self._settings.enable_thinking is not None and self._model_supports_enable_thinking(model):
+            extra["chat_template_kwargs"] = {"enable_thinking": self._settings.enable_thinking}
+        if self._settings.reasoning_effort and not self._is_gemini():
+            extra["reasoning_effort"] = self._settings.reasoning_effort
+        return extra
 
     def with_credentials(self, *, api_base_url: str, api_key: str) -> "LLMClient":
         """返回使用指定端点/密钥的客户端副本。"""
@@ -101,6 +269,18 @@ class LLMClient:
             return text, usage
         token_limit = max_tokens or self._settings.max_tokens
         temp = self._settings.match_temperature if temperature is None else temperature
+        if self._use_ollama_native():
+            try:
+                return self._ollama_chat_native(
+                    model=model,
+                    messages=messages,
+                    token_limit=token_limit,
+                    temperature=temp,
+                )
+            except LLMError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                _raise_friendly_llm_error(e)
         try:
             resp = self._create_completion(
                 model=model,
@@ -158,6 +338,21 @@ class LLMClient:
 
         token_limit = max_tokens or self._settings.max_tokens
         temp = self._settings.match_temperature if temperature is None else temperature
+        if self._use_ollama_native():
+            try:
+                yield from self._ollama_chat_native_stream(
+                    model=model,
+                    messages=messages,
+                    token_limit=token_limit,
+                    temperature=temp,
+                    early_stop_check=early_stop_check,
+                    usage_out=usage_out,
+                )
+                return
+            except LLMError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                _raise_friendly_llm_error(e)
         try:
             yield from self._create_completion_stream(
                 model=model,
@@ -217,6 +412,9 @@ class LLMClient:
             kwargs["max_completion_tokens"] = token_limit
         else:
             kwargs["max_tokens"] = token_limit
+        extra_body = self._build_extra_body(model=model)
+        if extra_body:
+            kwargs["extra_body"] = extra_body
         return kwargs
 
     def _create_completion(

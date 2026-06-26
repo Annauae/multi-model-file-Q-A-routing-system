@@ -13,14 +13,14 @@ from .schemas import MatchResult, QAItem
 # 单 id 匹配默认规则（kb 未配置 match_prompt 时使用）
 DEFAULT_MATCH_PROMPT_ZH = """你是问题匹配器，不是回答器。
 根据用户问题，从【标准问题列表】中选出语义最接近的一项。
-列表中同一 id 可能出现多行（标准问题 + 变体问法），命中任意一行都输出该 id。
+列表中同一 id 可能出现多行（标准问题 + 其他问法），命中任意一行都输出该 id。
 只输出该项的 id（如 q001）；无法匹配则只输出 NONE。
 不要输出任何其他字符、标点、换行或解释。"""
 
 # 置信度匹配默认规则；{top_k} 在 build 时 format
 DEFAULT_CONFIDENCE_MATCH_PROMPT_ZH = """你是问题匹配器，不是回答器。
 根据用户问题，从【标准问题列表】中找出语义最接近的若干项（最多 {top_k} 项）。
-列表中同一 id 可能出现多行（标准问题 + 变体问法），命中任意一行都计入该 id。
+列表中同一 id 可能出现多行（标准问题 + 其他问法），命中任意一行都计入该 id。
 
 只输出 JSON 数组，按 confidence 从高到低排列，每项格式：{{"id":"q001","confidence":0.95}}
 confidence 为 0~1 之间的小数，表示匹配置信度；同一 id 只出现一次。

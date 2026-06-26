@@ -13,7 +13,7 @@ class QAItem(BaseModel):
 
     id: str  # 唯一标识，如 q001
     question: str  # 标准问题文本
-    variants: List[str] = Field(default_factory=list)  # 变体问法，用于扩充匹配 prompt
+    variants: List[str] = Field(default_factory=list)  # 其他问法，用于扩充匹配 prompt
     answer: str  # Markdown 格式预存回答
     enabled: bool = True  # False 时不进入匹配 prompt
     updated_at: str = ""  # ISO8601 更新时间

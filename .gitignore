@@ -3,6 +3,10 @@
 **/.env
 !.env.example
 
+# Local API config (contains api_key)
+knowledge_router/config/match_profiles.json
+knowledge_router/config/models.json
+
 # Python
 __pycache__/
 *.py[cod]

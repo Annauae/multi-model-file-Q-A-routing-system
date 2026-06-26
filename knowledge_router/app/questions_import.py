@@ -97,7 +97,7 @@ DEFAULT_FAQ_QUESTIONS_PROMPT_ZH = """你是 FAQ 知识库生成器。根据给�
 
 要求：
 1. question：一句标准用户问法，像真实用户会问的话，不要只抄标题。
-2. variants：1 到 3 条口语/模糊变体问法，互不重复。
+2. variants：1 到 3 条口语/模糊其他问法，互不重复。
 3. 不要修改或输出 answer，只生成问法。
 
 输出严格 JSON，不要 Markdown 代码块：
@@ -112,7 +112,7 @@ SECTION_FAQ_PROMPT_ZH = """你是 FAQ 知识库生成器。根据给定的 Markd
 
 要求：
 1. question：一句标准用户问法，像真实用户会问的话。
-2. variants：1 到 3 条口语/模糊变体问法，互不重复。
+2. variants：1 到 3 条口语/模糊其他问法，互不重复。
 3. answer：保留原文 Markdown（表格、列表、图片路径原样），开头保留章节标题行。
 4. 跳过无实质内容的占位段落。
 

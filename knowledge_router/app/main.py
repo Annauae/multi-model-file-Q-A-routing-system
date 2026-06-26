@@ -1101,7 +1101,7 @@ def create_app() -> FastAPI:
 
     @app.post("/knowledge-bases/{kb_id}/import/generate-questions")
     def import_generate_questions(kb_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
-        """根据 answer 正文生成标准问题与变体问法。"""
+        """根据 answer 正文生成标准问题与其他问法。"""
         _validate_kb_id(kb_store, kb_id)
         answer_md = str(body.get("answer_md", "") or "").strip()
         if not answer_md:
