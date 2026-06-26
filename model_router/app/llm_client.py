@@ -59,14 +59,21 @@ class LLMClient:
         return self._client
 
     def chat(self, *, model: str, messages: List[ChatMessage], max_tokens: Optional[int] = None) -> str:
+        text, _usage = self.chat_with_usage(model=model, messages=messages, max_tokens=max_tokens)
+        return text
+
+    def chat_with_usage(
+        self, *, model: str, messages: List[ChatMessage], max_tokens: Optional[int] = None
+    ) -> tuple[str, Dict[str, int]]:
         if self._settings.mock_llm:
-            return self._mock_chat(model=model, messages=messages)
+            text = self._mock_chat(model=model, messages=messages)
+            return text, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
         token_limit = max_tokens or self._settings.max_tokens
         try:
             resp = self._create_completion(model=model, messages=messages, token_limit=token_limit)
             content = (resp.choices[0].message.content or "").strip()
-            return content
+            return content, self._usage_dict(resp)
         except Exception as e:  # noqa: BLE001 - return readable API error
             msg = str(e)
             if "Unsupported parameter: 'max_tokens'" in msg or "max_completion_tokens" in msg:
@@ -78,10 +85,20 @@ class LLMClient:
                         force_max_completion_tokens=True,
                     )
                     content = (resp.choices[0].message.content or "").strip()
-                    return content
+                    return content, self._usage_dict(resp)
                 except Exception as e2:  # noqa: BLE001
                     _raise_friendly_llm_error(e2)
             _raise_friendly_llm_error(e)
+
+    @staticmethod
+    def _usage_dict(resp: Any) -> Dict[str, int]:
+        usage = getattr(resp, "usage", None)
+        if usage is None:
+            return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        pt = int(getattr(usage, "prompt_tokens", 0) or 0)
+        ct = int(getattr(usage, "completion_tokens", 0) or 0)
+        tt = int(getattr(usage, "total_tokens", 0) or 0) or (pt + ct)
+        return {"prompt_tokens": pt, "completion_tokens": ct, "total_tokens": tt}
 
     def chat_stream(self, *, model: str, messages: List[ChatMessage], max_tokens: Optional[int] = None) -> Iterator[str]:
         if self._settings.mock_llm:

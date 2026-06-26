@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 
-from .llm_client import ChatMessage, LLMClient, LLMError
+from .llm_client import ChatMessage, LLMClient, LLMError, TokenUsageResult
 
 # 导入用 system prompt：要求按标题拆分 md 并输出 JSON items
 IMPORT_SYSTEM_PROMPT_ZH = """你是 FAQ 知识库生成器。根据 Markdown 知识文档拆分为多条问答条目，供后续语义匹配使用。
@@ -21,7 +21,7 @@ IMPORT_SYSTEM_PROMPT_ZH = """你是 FAQ 知识库生成器。根据 Markdown 知
 3. 跳过「本页插图」等无实质内容的占位标题。
 4. answer 必须保留原文 Markdown：表格、列表、加粗、图片 `![...](assets/xxx.png)` 路径原样保留，不要删图。
 5. answer 开头必须保留该条对应的章节标题行（拆分用的 `#` 或 `##` 标题，如 `## M（手动）`），作为 answer 第一行，不要省略标题只写正文。
-6. 每条输出：question（一句标准问法）、variants（恰好 3 条用户口语/模糊问法，互不重复）。
+6. 每条输出：question（一句标准问法）、variants（恰好 2 条用户口语/模糊问法，互不重复）。
 7. question 应像真实用户会问的话，不要只抄标题。
 
 输出严格 JSON，不要 Markdown 代码块，不要额外说明：
@@ -30,7 +30,7 @@ IMPORT_SYSTEM_PROMPT_ZH = """你是 FAQ 知识库生成器。根据 Markdown 知
   "items": [
     {{
       "question": "标准问题？",
-      "variants": ["变体1", "变体2", "变体3"],
+      "variants": ["变体1", "变体2"],
       "answer": "Markdown 回答正文"
     }}
   ]
@@ -66,7 +66,7 @@ def strip_md_frontmatter(text: str) -> str:
 
 
 def normalize_import_items(raw_items: Any) -> List[Dict[str, str]]:
-    """校验 LLM 返回的 items，补齐 3 条 variants，过滤无效行。"""
+    """校验 LLM 返回的 items，补齐 2 条 variants，过滤无效行。"""
     if not isinstance(raw_items, list):
         raise LLMError("模型输出 items 必须是数组")
     out: List[Dict[str, str]] = []
@@ -84,13 +84,147 @@ def normalize_import_items(raw_items: Any) -> List[Dict[str, str]]:
                 s = str(v).strip()
                 if s and s not in variants:
                     variants.append(s)
-        while len(variants) < 3:
-            variants.append(question)  # 不足 3 条用标准问题填充
-        variants = variants[:3]
+        while len(variants) < 2:
+            variants.append(question)  # 不足 2 条用标准问题填充
+        variants = variants[:2]
         out.append({"question": question, "variants": variants, "answer": answer})
     if not out:
         raise LLMError("模型未生成有效 FAQ 条目")
     return out
+
+
+DEFAULT_FAQ_QUESTIONS_PROMPT_ZH = """你是 FAQ 知识库生成器。根据给定的 Markdown 回答正文，生成标准问题与用户问法变体。
+
+要求：
+1. question：一句标准用户问法，像真实用户会问的话，不要只抄标题。
+2. variants：1 到 3 条口语/模糊变体问法，互不重复。
+3. 不要修改或输出 answer，只生成问法。
+
+输出严格 JSON，不要 Markdown 代码块：
+
+{
+  "question": "标准问题？",
+  "variants": ["变体1", "变体2"]
+}"""
+
+
+SECTION_FAQ_PROMPT_ZH = """你是 FAQ 知识库生成器。根据给定的 Markdown 章节片段，生成一条问答条目。
+
+要求：
+1. question：一句标准用户问法，像真实用户会问的话。
+2. variants：1 到 3 条口语/模糊变体问法，互不重复。
+3. answer：保留原文 Markdown（表格、列表、图片路径原样），开头保留章节标题行。
+4. 跳过无实质内容的占位段落。
+
+输出严格 JSON，不要 Markdown 代码块：
+
+{
+  "question": "标准问题？",
+  "variants": ["变体1", "变体2"],
+  "answer": "Markdown 回答正文"
+}"""
+
+
+def normalize_section_item(row: Any) -> Dict[str, str] | None:
+    if not isinstance(row, dict):
+        return None
+    question = str(row.get("question", "")).strip()
+    answer = str(row.get("answer", "")).strip()
+    if not question or not answer:
+        return None
+    variants: List[str] = []
+    variants_raw = row.get("variants", [])
+    if isinstance(variants_raw, list):
+        for v in variants_raw:
+            s = str(v).strip()
+            if s and s not in variants:
+                variants.append(s)
+    variants = variants[:3]
+    if not variants:
+        variants = [question]
+    return {"question": question, "variants": variants, "answer": answer}
+
+
+def normalize_questions_only(row: Any) -> Dict[str, Any] | None:
+    if not isinstance(row, dict):
+        return None
+    question = str(row.get("question", "")).strip()
+    if not question:
+        return None
+    variants: List[str] = []
+    variants_raw = row.get("variants", [])
+    if isinstance(variants_raw, list):
+        for v in variants_raw:
+            s = str(v).strip()
+            if s and s not in variants:
+                variants.append(s)
+    variants = variants[:3]
+    if not variants:
+        variants = [question]
+    return {"question": question, "variants": variants}
+
+
+def generate_faq_questions_only(
+    *,
+    answer_md: str,
+    llm: LLMClient,
+    import_model: str,
+    system_prompt: str = "",
+) -> tuple[Dict[str, Any], TokenUsageResult]:
+    """根据 answer 正文仅生成 question + variants，不修改 answer。"""
+    body = strip_md_frontmatter(answer_md)
+    if not body.strip():
+        raise LLMError("回答内容为空")
+    prompt = (system_prompt or "").strip() or DEFAULT_FAQ_QUESTIONS_PROMPT_ZH
+    payload = {"markdown": body}
+    raw, usage = llm.chat(
+        model=import_model,
+        messages=[
+            ChatMessage(role="system", content=prompt),
+            ChatMessage(role="user", content=json.dumps(payload, ensure_ascii=False)),
+        ],
+        max_tokens=4096,
+        temperature=0.2,
+    )
+    try:
+        obj = json.loads(_extract_first_json_object(raw))
+    except Exception as e:  # noqa: BLE001
+        raise LLMError(f"问法生成解析失败：{e}") from e
+    item = normalize_questions_only(obj)
+    if not item:
+        raise LLMError("未生成有效问法")
+    return item, usage
+
+
+def generate_faq_from_section(
+    *,
+    section_md: str,
+    section_title: str,
+    llm: LLMClient,
+    import_model: str,
+) -> tuple[Dict[str, str], TokenUsageResult]:
+    """单章节 Markdown → 一条 FAQ（标准问 + 1-3 变体）。"""
+    body = strip_md_frontmatter(section_md)
+    if not body.strip():
+        raise LLMError(f"章节 {section_title} 内容为空")
+    payload = {"title": section_title, "markdown": body}
+    raw, usage = llm.chat(
+        model=import_model,
+        messages=[
+            ChatMessage(role="system", content=SECTION_FAQ_PROMPT_ZH),
+            ChatMessage(role="user", content=json.dumps(payload, ensure_ascii=False)),
+        ],
+        max_tokens=8192,
+        temperature=0.2,
+    )
+    try:
+        obj = json.loads(_extract_first_json_object(raw))
+    except Exception as e:  # noqa: BLE001
+        raise LLMError(f"{section_title} 解析失败：{e}") from e
+    item = normalize_section_item(obj)
+    if not item:
+        raise LLMError(f"{section_title} 未生成有效 FAQ")
+    return item, usage
 
 
 def generate_faq_items_from_markdown(
@@ -105,7 +239,7 @@ def generate_faq_items_from_markdown(
     if not body:
         raise LLMError(f"{source_label} 内容为空")
     payload = {"source": source_label, "markdown": body}
-    raw = llm.chat(
+    raw, _usage = llm.chat(
         model=import_model,
         messages=[
             ChatMessage(role="system", content=IMPORT_SYSTEM_PROMPT_ZH),

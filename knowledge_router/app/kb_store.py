@@ -106,17 +106,33 @@ class KbStore:
             self._save()
             return dict(cfg)
 
-    def set_match_prompt(self, *, kb_id: str, match_prompt: str) -> Dict[str, Any]:
+    def set_match_prompt(
+        self,
+        *,
+        kb_id: str,
+        match_prompt: str,
+        confidence_match_prompt: str | None = None,
+    ) -> Dict[str, Any]:
         """更新匹配规则文本；保存后需 QuestionsCache.reload_kb 重建 prompt。"""
         with self._lock:
             cfg = self._cache.get(kb_id)
             if not isinstance(cfg, dict):
                 raise KeyError("kb_id 不存在")
             cfg["match_prompt"] = match_prompt or ""
+            if confidence_match_prompt is not None:
+                cfg["confidence_match_prompt"] = confidence_match_prompt or ""
             cfg["updated_at"] = _now_iso()
             self._cache[kb_id] = cfg
             self._save()
             return dict(cfg)
+
+    def set_confidence_match_prompt(self, *, kb_id: str, confidence_match_prompt: str) -> Dict[str, Any]:
+        """仅更新置信度匹配规则。"""
+        return self.set_match_prompt(
+            kb_id=kb_id,
+            match_prompt=str(self._cache.get(kb_id, {}).get("match_prompt", "")),
+            confidence_match_prompt=confidence_match_prompt,
+        )
 
     def delete_kb_files(self, *, kb_id: str, files_root: Path) -> None:
         """递归删除 files/kb_{id} 整个目录（questions.json + assets）。"""

@@ -18,4 +18,4 @@ def test_normalize_import_items() -> None:
     )
     assert len(items) == 1
     assert items[0]["question"] == "怎么调 ISO？"
-    assert len(items[0]["variants"]) == 3
+    assert len(items[0]["variants"]) == 2

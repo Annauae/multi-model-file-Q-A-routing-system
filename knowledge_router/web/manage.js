@@ -7,11 +7,16 @@ let editorTab = "item";
 function setEditorTab(name) {
   editorTab = name;
   $$("[data-editor-tab]").forEach((b) => b.classList.toggle("active", b.dataset.editorTab === name));
-  $$("#editorTabItem,#editorTabJson,#editorTabPrompt").forEach((p) => p.classList.remove("active"));
+  $$("#editorTabItem,#editorTabJson").forEach((p) => p.classList.remove("active"));
   const pane = $(`#editorTab${name.charAt(0).toUpperCase()}${name.slice(1)}`);
   pane?.classList.add("active");
-  if (name === "prompt") refreshPromptPreview();
   if (name === "json") syncJsonEditorFromItem();
+}
+
+function refreshAnswerPreview() {
+  const preview = $("#editAnswerPreviewPane");
+  if (!preview || preview.classList.contains("hidden")) return;
+  preview.innerHTML = renderMarkdownPreview($("#editAnswer")?.value || "", selectedKbId);
 }
 
 function itemFromEditorFields() {
@@ -68,7 +73,6 @@ async function selectKb(kbId) {
   await loadItems();
   clearItemEditor();
   syncJsonEditorFromItem();
-  await loadMatchPrompt();
 }
 
 async function loadItems() {
@@ -125,6 +129,7 @@ function selectItem(itemId) {
   $("#editAnswer").value = item.answer || "";
   $("#editEnabled").checked = item.enabled !== false;
   if (editorTab === "json") syncJsonEditorFromItem();
+  refreshAnswerPreview();
 }
 
 function clearItemEditor() {
@@ -138,19 +143,7 @@ function clearItemEditor() {
 }
 
 async function loadMatchPrompt() {
-  if (!selectedKbId) return;
-  const cfg = await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}`);
-  $("#editMatchPrompt").value = cfg.match_prompt || "";
-  await refreshPromptPreview();
-}
-
-async function refreshPromptPreview() {
-  if (!selectedKbId) {
-    $("#editSystemPreview").value = "";
-    return;
-  }
-  const data = await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}/match-prompt-preview`);
-  $("#editSystemPreview").value = data.system_prompt || "";
+  /* 提示词已迁至设置模块 */
 }
 
 async function saveEditor() {
@@ -176,12 +169,7 @@ async function saveEditor() {
       });
       selectedItemId = item.id;
     } else if (editorTab === "prompt") {
-      await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}/prompt`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ match_prompt: $("#editMatchPrompt").value || "" }),
-      });
-      await refreshPromptPreview();
+      return showToast("匹配提示词请在「设置」栏目编辑", "error");
     } else {
       const payload = itemFromEditorFields();
       if (!payload?.id) return showToast("请选择或新建条目", "error");
@@ -203,22 +191,10 @@ async function saveEditor() {
   }
 }
 
-function promptCreateKb() {
-  showModal(
-    "新增知识库",
-    `<label class="fieldLabel">名称<input id="modalKbName" type="text" placeholder="知识库名称" /></label>`,
-    async () => {
-      const name = ($("#modalKbName")?.value || "").trim();
-      if (!name) throw new Error("名称不能为空");
-      const data = await apiJson("/knowledge-bases", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      await selectKb(data.kb_id);
-      showToast("知识库已创建");
-    }
-  );
+function promptCreateKbForManage() {
+  promptCreateKb(async (kbId) => {
+    await selectKb(kbId);
+  });
 }
 
 function promptRenameKb() {
@@ -276,36 +252,57 @@ async function reloadKbIndex() {
 
 function promptCreateItem() {
   if (!selectedKbId) return showToast("请先选择知识库", "error");
-  showModal(
-    "新增标准问题",
-    `<p style="margin:0 0 10px;color:var(--text-secondary);font-size:13px">必填：标准问题、回答。其余选填。</p>
-     <label class="fieldLabel">ID（选填，留空自动分配）<input id="modalItemId" type="text" placeholder="如 q004；留空则 q001、q002…" /></label>
-     <label class="fieldLabel">标准问题（必填）<textarea id="modalItemQ" rows="2"></textarea></label>
-     <label class="fieldLabel">变体问法（选填，每行一条）<textarea id="modalItemVariants" rows="3" placeholder="用户可能的其他问法"></textarea></label>
-     <label class="fieldLabel">回答 Markdown（必填）<textarea id="modalItemAnswer" rows="6"></textarea></label>
-     <label class="fieldCheck"><input id="modalItemEnabled" type="checkbox" checked /> 启用匹配（选填，默认启用）</label>`,
-    async () => {
-      const question = ($("#modalItemQ")?.value || "").trim();
-      const answer = ($("#modalItemAnswer")?.value || "").trim();
-      const variants = ($("#modalItemVariants")?.value || "")
+  let blockCount = 1;
+  const renderBlocks = () => {
+    let html = `<p style="margin:0 0 10px;color:var(--text-secondary);font-size:13px">可添加多组问题，一次批量提交。</p><div id="multiItemBlocks">`;
+    for (let i = 0; i < blockCount; i++) {
+      html += `<div class="multiItemBlock" data-idx="${i}">
+        <label class="fieldLabel">标准问题<textarea class="multiQ" rows="2"></textarea></label>
+        <label class="fieldLabel">变体问法（每行一条）<textarea class="multiV" rows="2"></textarea></label>
+        <label class="fieldLabel">回答 Markdown<textarea class="multiA" rows="4"></textarea></label>
+      </div>`;
+    }
+    html += `</div><button type="button" id="multiItemAddBtn" class="btn btnXs ghost">+ 添加一组</button>`;
+    return html;
+  };
+  showModal("新增标准问题", renderBlocks(), async () => {
+    const blocks = $$("#multiItemBlocks .multiItemBlock");
+    const occupied = new Set();
+    let count = 0;
+    for (const block of blocks) {
+      const question = (block.querySelector(".multiQ")?.value || "").trim();
+      const answer = (block.querySelector(".multiA")?.value || "").trim();
+      const variants = (block.querySelector(".multiV")?.value || "")
         .split("\n")
         .map((s) => s.trim())
         .filter(Boolean);
-      const enabled = $("#modalItemEnabled")?.checked !== false;
+      if (!question && !answer) continue;
       if (!question) throw new Error("标准问题不能为空");
       if (!answer) throw new Error("回答不能为空");
-      let id = ($("#modalItemId")?.value || "").trim();
-      if (!id) id = allocateQuestionId(new Set());
+      const id = allocateQuestionId(occupied);
       await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}/questions/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, question, variants, answer, enabled }),
+        body: JSON.stringify({ id, question, variants, answer, enabled: true }),
       });
-      await loadItems();
-      selectItem(id);
-      showToast(`问题已新增（${id}）`);
+      count += 1;
     }
-  );
+    if (!count) throw new Error("请至少填写一组问题");
+    await loadItems();
+    showToast(`已新增 ${count} 条问题`);
+  }, true);
+  setTimeout(() => {
+    $("#multiItemAddBtn")?.addEventListener("click", () => {
+      blockCount += 1;
+      const container = $("#multiItemBlocks");
+      const div = document.createElement("div");
+      div.className = "multiItemBlock";
+      div.innerHTML = `<label class="fieldLabel">标准问题<textarea class="multiQ" rows="2"></textarea></label>
+        <label class="fieldLabel">变体问法<textarea class="multiV" rows="2"></textarea></label>
+        <label class="fieldLabel">回答<textarea class="multiA" rows="4"></textarea></label>`;
+      container?.appendChild(div);
+    });
+  }, 0);
 }
 
 function parseQuestionNum(id) {
@@ -480,9 +477,17 @@ async function manageViewEnter() {
   }
 }
 
+function bindManageNav() {
+  $$("#manageSubNav .manageNavItem").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchModule("manage", btn.dataset.manageSub || "items");
+    });
+  });
+}
+
 function handleKbAction(action) {
   closeAllDropdowns();
-  if (action === "add") promptCreateKb();
+  if (action === "add") promptCreateKbForManage();
   else if (action === "refresh") refreshKbList().then(() => showToast("刷新成功"));
   else if (action === "rename") promptRenameKb();
   else if (action === "reload") reloadKbIndex();
@@ -503,12 +508,28 @@ function handleItemAction(action) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  bindManageNav();
   $$("[data-editor-tab]").forEach((btn) => {
     btn.addEventListener("click", () => setEditorTab(btn.dataset.editorTab));
   });
-  $("#editorSaveBtn")?.addEventListener("click", saveEditor);
+  $("#editorSaveBtn")?.addEventListener("click", () =>
+    withButtonRunning($("#editorSaveBtn"), "运行中…", () => saveEditor())
+  );
   $("#itemSearch")?.addEventListener("input", renderItemList);
-  $("#editMatchPrompt")?.addEventListener("blur", refreshPromptPreview);
+  $("#editAnswer")?.addEventListener("input", refreshAnswerPreview);
+  $("#editAnswerTabEdit")?.addEventListener("click", () => {
+    $("#editAnswerEditPane")?.classList.remove("hidden");
+    $("#editAnswerPreviewPane")?.classList.add("hidden");
+    $("#editAnswerTabEdit").classList.add("active");
+    $("#editAnswerTabPreview").classList.remove("active");
+  });
+  $("#editAnswerTabPreview")?.addEventListener("click", () => {
+    $("#editAnswerEditPane")?.classList.add("hidden");
+    $("#editAnswerPreviewPane")?.classList.remove("hidden");
+    $("#editAnswerTabPreview").classList.add("active");
+    $("#editAnswerTabEdit").classList.remove("active");
+    refreshAnswerPreview();
+  });
   $$("[data-kb-action]").forEach((btn) => {
     btn.addEventListener("click", () => handleKbAction(btn.dataset.kbAction));
   });
@@ -516,7 +537,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => handleItemAction(btn.dataset.itemAction));
   });
   document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.key === "s" && !$("#viewManage").classList.contains("hidden")) {
+    if (e.ctrlKey && e.key === "s" && currentModule === "manage") {
       e.preventDefault();
       saveEditor();
     }

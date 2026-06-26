@@ -96,7 +96,7 @@ def test_cache_reload_after_upsert(kb_env) -> None:
     )
     item = cache.resolve_item("1", "q002")
     assert item is not None
-    assert "q002|" in cache.get_match_system_prompt("1")
+    assert "q002|" in cache.get_confidence_system_prompt("1")
 
 
 def test_cache_evict(kb_env) -> None:

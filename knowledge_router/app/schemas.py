@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field
 
 
 class QAItem(BaseModel):
-    """单条标准问答（questions.json 中 items 元素）。"""
 
     id: str  # 唯一标识，如 q001
     question: str  # 标准问题文本
@@ -44,6 +43,21 @@ class MatchResult(BaseModel):
     clarification_question: str = ""  # 返回给用户的澄清话术
 
 
+class TokenUsage(BaseModel):
+    """LLM token 用量。"""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
+class PhaseTokens(BaseModel):
+    """单阶段 token 细分。"""
+
+    phase: str
+    usage: TokenUsage = Field(default_factory=TokenUsage)
+
+
 class AskTimings(BaseModel):
     """问答链路各阶段耗时（毫秒），用于前端展示与日志。"""
 
@@ -52,7 +66,9 @@ class AskTimings(BaseModel):
     match_ms: float = 0.0  # LLM 匹配调用
     match_first_token_ms: float = 0.0  # 流式首 token 延迟
     lookup_ms: float = 0.0  # 内存查表取 answer
-    match_output_tokens: int = 0  # 匹配输出近似 token 数
+    match_output_tokens: int = 0  # 兼容旧字段；优先用 tokens.completion_tokens
+    tokens: TokenUsage = Field(default_factory=TokenUsage)
+    token_breakdown: List[PhaseTokens] = Field(default_factory=list)
 
 
 class AskResponse(BaseModel):
@@ -81,6 +97,15 @@ class ConfidenceMatchResult(BaseModel):
     candidates: List[ConfidenceCandidate] = Field(default_factory=list)
 
 
+class CandidateAnswer(BaseModel):
+    """置信度匹配下单个候选的完整回答。"""
+
+    id: str
+    confidence: float
+    question: str = ""
+    answer: str = ""
+
+
 class ConfidenceAskResponse(BaseModel):
     """POST /ask/confidence 完整响应。"""
 
@@ -88,6 +113,7 @@ class ConfidenceAskResponse(BaseModel):
     kb_id: str
     match: ConfidenceMatchResult
     answer: str = ""  # 默认取 Top1 候选的预存回答
+    answers: List[CandidateAnswer] = Field(default_factory=list)
     timings: AskTimings = Field(default_factory=AskTimings)
     cache_hit: bool = True
 
@@ -97,7 +123,8 @@ class ConfidenceAskRequest(BaseModel):
 
     question: str = Field(..., min_length=1)
     kb_id: str = Field(..., min_length=1)
-    top_k: int = Field(default=5, ge=1, le=20)  # 最多返回几个候选
+    top_k: int = Field(default=5, ge=1, le=20)
+    match_profile_id: str = ""  # 空则用默认 profile
 
 
 class HealthResponse(BaseModel):
@@ -123,6 +150,43 @@ class MatchPromptUpdateRequest(BaseModel):
     """PUT /knowledge-bases/{kb_id}/prompt 更新匹配规则（不含问题列表）。"""
 
     match_prompt: str = ""
+    confidence_match_prompt: str | None = None
+
+
+class ConfidencePromptPreviewResponse(BaseModel):
+    """置信度 system prompt 预览。"""
+
+    kb_id: str
+    confidence_match_prompt: str
+    system_prompt: str
+    enabled_count: int
+
+
+class RecallTestRow(BaseModel):
+    """召回度测试单行。"""
+
+    id: str
+    question: str
+    run_at: str = ""
+    candidates: List[ConfidenceCandidate] = Field(default_factory=list)
+    answers: List[CandidateAnswer] = Field(default_factory=list)
+    recalled: str | None = None  # yes | no | null
+    notes: str = ""
+    match_profile_id: str = ""
+    model_label: str = ""
+    timings: AskTimings | None = None
+
+
+class RecallTestDocument(BaseModel):
+    items: List[RecallTestRow] = Field(default_factory=list)
+
+
+class ModelsConfigUpdateRequest(BaseModel):
+    match: Dict[str, Any] | None = None
+    import_: Dict[str, Any] | None = Field(default=None, alias="import")
+    pdf_vlm: Dict[str, Any] | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class QAItemUpsertRequest(BaseModel):

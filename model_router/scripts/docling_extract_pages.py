@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import sys
@@ -31,6 +32,7 @@ from docling_vlm_refine import (
     refine_batch_markdown,
     render_pdf_page_png,
     rewrite_images_by_order,
+    strip_book_footers,
     strip_footers_in_merged,
     validate_page_markers,
 )
@@ -64,6 +66,12 @@ def _parse_args() -> argparse.Namespace:
         "--skip-vlm",
         action="store_true",
         help="跳过 VLM 精修（仅 Docling 粗提取，调试用）",
+    )
+    parser.add_argument(
+        "--vlm-system-prompt-file",
+        type=str,
+        default="",
+        help="VLM system prompt 文件路径（UTF-8 文本，可选）",
     )
     parser.add_argument(
         "--fail-fast",
@@ -159,6 +167,11 @@ def main() -> None:
 
     settings = Settings.load()
     model = (args.model or settings.answer_model).strip()
+    vlm_system_prompt = ""
+    if args.vlm_system_prompt_file:
+        prompt_path = _resolve_path(ROOT, args.vlm_system_prompt_file)
+        if prompt_path.is_file():
+            vlm_system_prompt = prompt_path.read_text(encoding="utf-8").strip()
     if not args.skip_vlm and not settings.mock_llm and not settings.api_key:
         raise SystemExit("未配置 API_KEY，无法调用 VLM。请在 .env 设置或加 --skip-vlm。")
 
@@ -216,13 +229,14 @@ def main() -> None:
     print(f"\nCoarse merged MD: {len(coarse_body)} chars, {len(all_assets)} images")
 
     # Phase C: batch VLM (once for entire range)
+    vlm_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     if args.skip_vlm:
         refined_body = coarse_body
         print("VLM skipped (--skip-vlm)")
     else:
         print(f"\n--- batch VLM ({len(page_numbers)} pages, 1 call) ---")
         page_pngs = [render_pdf_page_png(pdf, n) for n in page_numbers]
-        refined_body = refine_batch_markdown(
+        refined_body, vlm_usage = refine_batch_markdown(
             llm=llm,
             model=model,
             page_numbers=page_numbers,
@@ -231,6 +245,7 @@ def main() -> None:
             page_pngs=page_pngs,
             page_assets=page_assets,
             fail_on_missing_markers=args.fail_fast,
+            system_prompt=vlm_system_prompt,
         )
         missing = validate_page_markers(refined_body, page_numbers)
         if missing:
@@ -248,6 +263,12 @@ def main() -> None:
     )
     md_path = out_dir / f"{file_stem}.md"
     md_path.write_text(front + "\n" + refined_body, encoding="utf-8")
+
+    metrics_path = out_dir / "extract_metrics.json"
+    metrics_path.write_text(
+        json.dumps({"tokens": vlm_usage, "model": model, "skip_vlm": bool(args.skip_vlm)}, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     imgs = sorted(assets_dir.glob("*"))
     print("\n=== summary ===")

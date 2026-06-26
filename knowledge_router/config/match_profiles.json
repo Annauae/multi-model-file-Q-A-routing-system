@@ -1,0 +1,14 @@
+{
+  "default_id": "default",
+  "profiles": [
+    {
+      "id": "default",
+      "name": "nex-agi/Nex-N2-Pro",
+      "api_base_url": "https://api.siliconflow.cn/v1",
+      "api_key": "",
+      "model": "nex-agi/Nex-N2-Pro",
+      "max_tokens": 512,
+      "temperature": 0.0
+    }
+  ]
+}

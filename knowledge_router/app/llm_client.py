@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 from openai import OpenAI
@@ -30,7 +30,21 @@ def _raise_friendly_llm_error(e: Exception) -> None:
     raise LLMError(f"调用上游模型失败：{type(e).__name__}: {e}") from e
 
 
-@dataclass(frozen=True)
+@dataclass
+class TokenUsageResult:
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+    def to_dict(self) -> Dict[str, int]:
+        return {
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "total_tokens": self.total_tokens or (self.prompt_tokens + self.completion_tokens),
+        }
+
+
+@dataclass
 class ChatMessage:
     """单条对话消息。"""
 
@@ -50,17 +64,26 @@ class ChatMessage:
 class LLMClient:
     """封装 chat.completions 同步/流式调用。"""
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, *, api_base_url: str | None = None, api_key: str | None = None):
         self._settings = settings
+        self._api_base_url = (api_base_url or settings.api_base_url).strip()
+        if api_key is not None:
+            self._api_key = str(api_key).strip()
+        else:
+            self._api_key = (settings.api_key or "").strip()
         self._client: Optional[OpenAI] = None
-        if not self._settings.mock_llm and not self._settings.api_key:
+        if not self._settings.mock_llm and not self._api_key:
             raise LLMError("未配置 API_KEY，且 MOCK_LLM=0，无法调用上游模型。请先配置 .env。")
+
+    def with_credentials(self, *, api_base_url: str, api_key: str) -> "LLMClient":
+        """返回使用指定端点/密钥的客户端副本。"""
+        return LLMClient(self._settings, api_base_url=api_base_url, api_key=api_key)
 
     @property
     def client(self) -> OpenAI:
         """懒初始化 OpenAI 客户端。"""
         if self._client is None:
-            self._client = OpenAI(base_url=self._settings.api_base_url, api_key=self._settings.api_key)
+            self._client = OpenAI(base_url=self._api_base_url, api_key=self._api_key)
         return self._client
 
     def chat(
@@ -70,10 +93,12 @@ class LLMClient:
         messages: List[ChatMessage],
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
-    ) -> str:
-        """非流式 completion，返回完整 assistant 文本（用于导入等场景）。"""
+    ) -> tuple[str, TokenUsageResult]:
+        """非流式 completion，返回 (assistant 文本, token 用量)。"""
         if self._settings.mock_llm:
-            return self._mock_match(messages=messages)
+            text = self._mock_match(messages=messages)
+            usage = TokenUsageResult(completion_tokens=max(1, len(text.split())), total_tokens=max(1, len(text.split())))
+            return text, usage
         token_limit = max_tokens or self._settings.max_tokens
         temp = self._settings.match_temperature if temperature is None else temperature
         try:
@@ -83,10 +108,11 @@ class LLMClient:
                 token_limit=token_limit,
                 temperature=temp,
             )
-            return (resp.choices[0].message.content or "").strip()
+            text = (resp.choices[0].message.content or "").strip()
+            usage = self._usage_from_response(resp, fallback_text=text)
+            return text, usage
         except Exception as e:  # noqa: BLE001
             msg = str(e)
-            # 兼容只支持 max_completion_tokens 的端点
             if "Unsupported parameter: 'max_tokens'" in msg or "max_completion_tokens" in msg:
                 try:
                     resp = self._create_completion(
@@ -96,7 +122,9 @@ class LLMClient:
                         temperature=temp,
                         force_max_completion_tokens=True,
                     )
-                    return (resp.choices[0].message.content or "").strip()
+                    text = (resp.choices[0].message.content or "").strip()
+                    usage = self._usage_from_response(resp, fallback_text=text)
+                    return text, usage
                 except Exception as e2:  # noqa: BLE001
                     _raise_friendly_llm_error(e2)
             _raise_friendly_llm_error(e)
@@ -110,6 +138,7 @@ class LLMClient:
         temperature: Optional[float] = None,
         early_stop_check=None,
         mock_mode: str = "match",
+        usage_out: Optional[List[TokenUsageResult]] = None,
     ) -> Iterator[str]:
         """流式 yield 文本片段。
 
@@ -119,6 +148,9 @@ class LLMClient:
         """
         if self._settings.mock_llm:
             text = self._mock_match(messages=messages) if mock_mode != "confidence" else self._mock_confidence(messages=messages)
+            usage = TokenUsageResult(completion_tokens=max(1, len(text.split())), total_tokens=max(1, len(text.split())))
+            if usage_out is not None:
+                usage_out.append(usage)
             step = 2
             for i in range(0, len(text), step):
                 yield text[i : i + step]
@@ -133,6 +165,7 @@ class LLMClient:
                 token_limit=token_limit,
                 temperature=temp,
                 early_stop_check=early_stop_check,
+                usage_out=usage_out,
             )
         except Exception as e:  # noqa: BLE001
             msg = str(e)
@@ -145,11 +178,23 @@ class LLMClient:
                         temperature=temp,
                         force_max_completion_tokens=True,
                         early_stop_check=early_stop_check,
+                        usage_out=usage_out,
                     )
                     return
                 except Exception as e2:  # noqa: BLE001
                     _raise_friendly_llm_error(e2)
             _raise_friendly_llm_error(e)
+
+    @staticmethod
+    def _usage_from_response(resp: Any, *, fallback_text: str = "") -> TokenUsageResult:
+        usage = getattr(resp, "usage", None)
+        if usage is not None:
+            pt = int(getattr(usage, "prompt_tokens", 0) or 0)
+            ct = int(getattr(usage, "completion_tokens", 0) or 0)
+            tt = int(getattr(usage, "total_tokens", 0) or 0) or (pt + ct)
+            return TokenUsageResult(prompt_tokens=pt, completion_tokens=ct, total_tokens=tt)
+        ct = max(1, len((fallback_text or "").split())) if fallback_text else 0
+        return TokenUsageResult(completion_tokens=ct, total_tokens=ct)
 
     def _build_completion_kwargs(
         self,
@@ -202,6 +247,7 @@ class LLMClient:
         temperature: float,
         force_max_completion_tokens: bool = False,
         early_stop_check=None,
+        usage_out: Optional[List[TokenUsageResult]] = None,
     ) -> Iterator[str]:
         """消费 SSE chunk，逐段 yield content；支持 early_stop_check。"""
         kwargs = self._build_completion_kwargs(
@@ -214,7 +260,10 @@ class LLMClient:
         )
         stream = self.client.chat.completions.create(**kwargs)
         buffer = ""
+        last_usage: TokenUsageResult | None = None
         for chunk in stream:
+            if getattr(chunk, "usage", None) is not None:
+                last_usage = self._usage_from_response(chunk)
             if not chunk.choices:
                 continue
             delta = chunk.choices[0].delta
@@ -225,6 +274,10 @@ class LLMClient:
             yield content
             if early_stop_check and early_stop_check(buffer):
                 break
+        if usage_out is not None:
+            if last_usage is None:
+                last_usage = TokenUsageResult(completion_tokens=max(1, len(buffer.split()) if buffer else 0))
+            usage_out.append(last_usage)
 
     def _mock_match(self, *, messages: List[ChatMessage]) -> str:
         """本地 mock：在 system 问题列表中做简单子串匹配，返回 id 或 NONE。"""

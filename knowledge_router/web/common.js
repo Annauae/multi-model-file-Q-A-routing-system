@@ -1,9 +1,35 @@
 const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 let kbCache = {};
-let lastHealthOk = null;
 let modalOkHandler = null;
+let currentModule = "debug";
+let currentSub = "single";
+let currentManageSub = "items";
+
+const MODULE_LABELS = {
+  debug: "调试",
+  manage: "管理",
+  logs: "日志",
+  settings: "设置",
+};
+const SUB_LABELS = { single: "问答", recall: "召回度测试" };
+const MANAGE_SUB_LABELS = { items: "问题管理", files: "文件管理", generate: "问题生成" };
+
+async function withButtonRunning(btn, label, fn) {
+  if (!btn || btn.disabled) return;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.classList.add("btnRunning");
+  btn.textContent = label || "运行中…";
+  try {
+    return await fn();
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("btnRunning");
+    btn.textContent = orig;
+  }
+}
 
 function escapeHtml(s) {
   return (s ?? "")
@@ -19,6 +45,16 @@ function fmtMs(ms) {
   if (!Number.isFinite(n) || n < 0) return "—";
   if (n < 1000) return `${Math.round(n)} ms`;
   return `${(n / 1000).toFixed(2)} s`;
+}
+
+function sumTokenUsage(a, b) {
+  const x = a || {};
+  const y = b || {};
+  return {
+    prompt_tokens: (x.prompt_tokens || 0) + (y.prompt_tokens || 0),
+    completion_tokens: (x.completion_tokens || 0) + (y.completion_tokens || 0),
+    total_tokens: (x.total_tokens || 0) + (y.total_tokens || 0),
+  };
 }
 
 function fmtLogTime(d = new Date()) {
@@ -38,8 +74,37 @@ function parseSseBlock(block) {
   return { event, data: JSON.parse(data) };
 }
 
+async function consumeSseStream(resp, onEvent) {
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (value) buffer += decoder.decode(value, { stream: true });
+    let sep;
+    while ((sep = buffer.indexOf("\n\n")) !== -1) {
+      const block = buffer.slice(0, sep);
+      buffer = buffer.slice(sep + 2);
+      const evt = parseSseBlock(block);
+      if (evt) onEvent(evt);
+    }
+    if (done) {
+      if (buffer.trim()) {
+        const evt = parseSseBlock(buffer);
+        if (evt) onEvent(evt);
+      }
+      break;
+    }
+  }
+}
+
 async function apiJson(url, options = {}) {
-  const r = await fetch(url, options);
+  let r;
+  try {
+    r = await fetch(url, options);
+  } catch {
+    throw new Error("无法连接服务器，请确认 knowledge server 已启动（./start-knowledge-server.ps1，端口 8001）");
+  }
   const txt = await r.text();
   let data = null;
   try {
@@ -55,9 +120,7 @@ async function apiJson(url, options = {}) {
 async function loadKbCache() {
   const data = await apiJson("/knowledge-bases");
   kbCache = {};
-  for (const item of data.items || []) {
-    kbCache[item.kb_id] = item;
-  }
+  for (const item of data.items || []) kbCache[item.kb_id] = item;
   return Object.keys(kbCache).length;
 }
 
@@ -66,55 +129,308 @@ function kbDisplayName(kbId) {
   return (cfg.name || "").trim() || `kb_${kbId}`;
 }
 
-function getSelectedKbId(fromEl) {
-  const el = fromEl || $("#kbSelect");
-  return (el?.value || "").trim();
+let matchProfilesCache = { default_id: "", profiles: [] };
+
+async function refreshMatchProfileSelects() {
+  const data = await apiJson("/settings/match-profiles");
+  matchProfilesCache = data;
+  for (const selId of ["#debugMatchProfileSelect", "#recallMatchProfileSelect"]) {
+    const el = $(selId);
+    if (!el) continue;
+    const cur = el.value;
+    const profiles = data.profiles || [];
+    el.innerHTML = profiles.length
+      ? profiles.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name || p.id)}</option>`).join("")
+      : `<option value="">无配置</option>`;
+    const def = data.default_id || profiles[0]?.id;
+    if (cur && profiles.some((p) => p.id === cur)) el.value = cur;
+    else if (def) el.value = def;
+  }
 }
 
-async function populateKbSelect(selectEl) {
-  const el = selectEl || $("#kbSelect");
+function selectedMatchProfileId(selectEl) {
+  const el = selectEl || $("#debugMatchProfileSelect");
+  return (el?.value || matchProfilesCache.default_id || "").trim();
+}
+
+function matchProfileLabel(profileId) {
+  const p = (matchProfilesCache.profiles || []).find((x) => x.id === profileId);
+  return p ? `${p.name || p.id} (${p.model || ""})` : profileId || "—";
+}
+
+async function populateKbSelect(selectEl, opts = {}) {
+  const el = selectEl || $("#debugKbSelect");
   if (!el) return;
   await loadKbCache();
   const ids = Object.keys(kbCache).sort((a, b) => Number(a) - Number(b));
+  const cur = el.value;
+  const emptyOpt = opts.emptyLabel
+    ? `<option value="">${escapeHtml(opts.emptyLabel)}</option>`
+    : "";
   el.innerHTML = ids.length
-    ? ids.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(kbDisplayName(id))}</option>`).join("")
+    ? emptyOpt + ids.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(kbDisplayName(id))}</option>`).join("")
     : `<option value="">无知识库</option>`;
+  if (cur && ids.includes(cur)) el.value = cur;
 }
 
 async function pollHealth() {
   try {
     await apiJson("/health");
-    lastHealthOk = true;
     $("#healthDot")?.classList.add("ok");
     $("#healthDot")?.classList.remove("err");
     if ($("#healthText")) $("#healthText").textContent = "已连接";
   } catch {
-    lastHealthOk = false;
     $("#healthDot")?.classList.add("err");
     $("#healthDot")?.classList.remove("ok");
     if ($("#healthText")) $("#healthText").textContent = "连接失败";
   }
 }
 
-function switchAppView(name) {
-  $$(".viewPane").forEach((p) => p.classList.add("hidden"));
-  $$(".viewPane").forEach((p) => p.classList.remove("active"));
-  const pane = $(`#view${name.charAt(0).toUpperCase()}${name.slice(1)}`);
-  if (pane) {
-    pane.classList.remove("hidden");
-    pane.classList.add("active");
+function updateBreadcrumb() {
+  const bc = $("#breadcrumb");
+  if (!bc) return;
+  let text = `首页 / <strong>${MODULE_LABELS[currentModule] || currentModule}</strong>`;
+  if (currentModule === "debug" && currentSub) {
+    text += ` / ${SUB_LABELS[currentSub] || currentSub}`;
   }
-  $$(".appNavBtn").forEach((b) => b.classList.toggle("active", b.dataset.appView === name));
-  if (name === "test" && typeof testViewEnter === "function") testViewEnter();
-  if (name === "manage" && typeof manageViewEnter === "function") manageViewEnter();
-  if (name === "confidence" && typeof confidenceViewEnter === "function") confidenceViewEnter();
+  if (currentModule === "manage" && currentManageSub) {
+    text += ` / ${MANAGE_SUB_LABELS[currentManageSub] || currentManageSub}`;
+  }
+  bc.innerHTML = text;
 }
 
-function showModal(title, bodyHtml, onOk) {
+function switchRightTab(tab) {
+  $$("#rightTabs [data-right-tab]").forEach((b) => b.classList.toggle("active", b.dataset.rightTab === tab));
+  $$("#rightTabAsk,#rightTabCandidates,#rightTabFiles,#rightTabTiming,#rightTabTokens").forEach((p) =>
+    p.classList.remove("active")
+  );
+  const pane = $(`#rightTab${tab.charAt(0).toUpperCase()}${tab.slice(1)}`);
+  pane?.classList.add("active");
+}
+
+function renderTimingsPanel(el, timings, emptyText = "提问后显示", mode = "ask") {
+  if (!el) return;
+  if (!timings) {
+    el.innerHTML = `<div class="empty">${escapeHtml(emptyText)}</div>`;
+    return;
+  }
+  const chips =
+    mode === "import"
+      ? [
+          ["总耗时", timings.total_ms],
+          ["PDF/VLM 提取", timings.prepare_ms],
+          ["LLM 生成", timings.match_ms],
+        ]
+      : [
+          ["总耗时", timings.total_ms],
+          ["准备(索引+prompt)", timings.prepare_ms],
+          ["匹配(LLM)", timings.match_ms],
+          ["首 token", timings.match_first_token_ms],
+          ["查表(取 answer)", timings.lookup_ms],
+        ];
+  el.innerHTML = chips
+    .map(([label, val]) => {
+      const n = Number(val);
+      const display = Number.isFinite(n) && n >= 0 ? fmtMs(n) : "—";
+      return `<div class="timingChip"><span>${escapeHtml(label)}</span><strong>${display}</strong></div>`;
+    })
+    .join("");
+}
+
+function renderTokenPanel(el, timings, emptyText = "提问后显示") {
+  if (!el) return;
+  if (!timings?.tokens) {
+    el.innerHTML = `<div class="empty">${escapeHtml(emptyText)}</div>`;
+    return;
+  }
+  const t = timings.tokens;
+  const chips = [
+    ["总 Token", t.total_tokens],
+    ["输入 Token", t.prompt_tokens],
+    ["输出 Token", t.completion_tokens],
+  ];
+  let html = chips
+    .map(([label, val]) => `<div class="tokenChip"><span>${escapeHtml(label)}</span><strong>${val ?? 0}</strong></div>`)
+    .join("");
+  if (timings.token_breakdown?.length) {
+    html += `<div class="muted tokenBreakdownHead">细分（各阶段）</div>`;
+    html += timings.token_breakdown
+      .map((row) => {
+        const u = row.usage || {};
+        return `<div class="tokenBreakdownRow">
+          <div class="tokenBreakdownPhase">${escapeHtml(row.phase)}</div>
+          <div class="tokenBreakdownStats">
+            <div class="tokenChip"><span>输入 Token</span><strong>${u.prompt_tokens ?? 0}</strong></div>
+            <div class="tokenChip"><span>输出 Token</span><strong>${u.completion_tokens ?? 0}</strong></div>
+          </div>
+        </div>`;
+      })
+      .join("");
+  }
+  el.innerHTML = html;
+}
+
+function fmtConfidence(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "—";
+  return `${(v * 100).toFixed(1)}%`;
+}
+
+function updateModuleMetricsVisibility() {
+  const isDebugAsk = currentModule === "debug" && currentSub === "single";
+  const isRecall = currentModule === "debug" && currentSub === "recall";
+  const isImport = currentModule === "manage" && (currentManageSub === "files" || currentManageSub === "generate");
+  $$(".moduleMetrics.debug").forEach((el) => el.classList.toggle("hidden", !(isDebugAsk || isRecall)));
+  $$(".moduleMetrics.import").forEach((el) => el.classList.toggle("hidden", !isImport));
+}
+
+function updateRightSidePanels() {
+  const isDebugAsk = currentModule === "debug" && currentSub === "single";
+  const isRecall = currentModule === "debug" && currentSub === "recall";
+  const isFiles = currentModule === "manage" && currentManageSub === "files";
+  $$(".moduleSide.debug.single").forEach((el) => el.classList.toggle("hidden", !isDebugAsk));
+  $$(".moduleSide.recall").forEach((el) => el.classList.toggle("hidden", !isRecall));
+  const askTab = $(`#rightTabs [data-right-tab="ask"]`);
+  if (askTab) askTab.textContent = isRecall ? "操作" : "提问";
+  $$("#rightTabs [data-right-tab='files']").forEach((el) => el.classList.toggle("hidden", !isFiles));
+  const filesPane = $("#rightTabFiles");
+  filesPane?.classList.toggle("hidden", !isFiles);
+  if (!isFiles) filesPane?.classList.remove("active");
+}
+
+function applyManageImportRightTabs(isFiles, isGenerate) {
+  $$("#rightTabs [data-right-tab]").forEach((btn) => {
+    const t = btn.dataset.rightTab;
+    if (isFiles) {
+      btn.classList.toggle("hidden", t === "ask" || t === "candidates");
+    } else if (isGenerate) {
+      btn.classList.toggle("hidden", t === "ask" || t === "candidates" || t === "files");
+    } else {
+      btn.classList.toggle("hidden", false);
+    }
+  });
+}
+
+function promptCreateKb(onCreated) {
+  showModal(
+    "新增知识库",
+    `<label class="fieldLabel">名称<input id="modalKbName" type="text" placeholder="知识库名称" /></label>`,
+    async () => {
+      const name = ($("#modalKbName")?.value || "").trim();
+      if (!name) throw new Error("名称不能为空");
+      const data = await apiJson("/knowledge-bases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      await loadKbCache();
+      if (onCreated) await onCreated(data.kb_id);
+      showToast("知识库已创建");
+    }
+  );
+}
+
+function switchManageSub(sub, opts = {}) {
+  const { skipEnter = false } = opts;
+  currentManageSub = sub || "items";
+  $$("#manageSubNav .manageNavItem").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.manageSub === currentManageSub);
+  });
+  $$(".manageSubPane").forEach((pane) => pane.classList.remove("active"));
+  const paneMap = { items: "manageSubPaneItems", files: "manageSubPaneFiles", generate: "manageSubPaneGenerate" };
+  $(`#${paneMap[currentManageSub] || paneMap.items}`)?.classList.add("active");
+
+  const appBody = $("#appBody");
+  const rightPanel = $("#rightPanel");
+  const isFiles = currentManageSub === "files";
+  const isGenerate = currentManageSub === "generate";
+  const showRight = isFiles || isGenerate;
+  appBody?.classList.toggle("withRight", showRight);
+  appBody?.classList.toggle("withRightNarrow", isGenerate);
+  rightPanel?.classList.toggle("visible", showRight);
+
+  applyManageImportRightTabs(isFiles, isGenerate);
+  if (showRight) {
+    switchRightTab(isFiles ? "files" : "timing");
+    if (typeof restoreImportMetrics === "function") restoreImportMetrics();
+    else clearImportMetrics();
+    if (isFiles && typeof filesViewEnter === "function" && !skipEnter) filesViewEnter();
+    if (isGenerate && typeof generateViewEnter === "function" && !skipEnter) generateViewEnter();
+  }
+
+  updateRightSidePanels();
+  updateModuleMetricsVisibility();
+  updateBreadcrumb();
+}
+
+function switchModule(module, sub) {
+  currentModule = module;
+  if (module === "debug" && sub !== undefined) currentSub = sub;
+  if (module === "manage" && sub !== undefined) currentManageSub = sub;
+
+  $$(".viewPane").forEach((p) => p.classList.remove("active"));
+  $$(".navItem").forEach((n) => n.classList.remove("active"));
+  $$(".navGroupHead").forEach((h) => h.classList.remove("active"));
+
+  const appBody = $("#appBody");
+  const rightPanel = $("#rightPanel");
+  const isDebugAsk = module === "debug" && currentSub === "single";
+  const isRecall = module === "debug" && currentSub === "recall";
+  const isManageFiles = module === "manage" && currentManageSub === "files";
+  const isManageGenerate = module === "manage" && currentManageSub === "generate";
+  const isManageImport = isManageFiles || isManageGenerate;
+  const showRight = isDebugAsk || isRecall || isManageImport;
+  appBody?.classList.toggle("withRight", showRight);
+  appBody?.classList.toggle("withRightNarrow", isManageGenerate);
+  rightPanel?.classList.toggle("visible", showRight);
+
+  applyManageImportRightTabs(isManageFiles, isManageGenerate);
+  if (module !== "manage") {
+    if (isManageFiles) switchRightTab("files");
+    else if (isManageGenerate) switchRightTab("timing");
+    else if (isRecall) switchRightTab("ask");
+    else if (isDebugAsk) switchRightTab("ask");
+  }
+
+  updateRightSidePanels();
+  updateModuleMetricsVisibility();
+  if (isManageImport && module !== "manage") {
+    if (typeof restoreImportMetrics === "function") restoreImportMetrics();
+    else clearImportMetrics();
+  }
+
+  if (module === "debug") {
+    if (currentSub === "recall") {
+      $("#viewDebugRecall")?.classList.add("active");
+      $(`.navItem[data-sub="recall"]`)?.classList.add("active");
+      if (typeof recallViewEnter === "function") recallViewEnter();
+    } else {
+      $("#viewDebugSingle")?.classList.add("active");
+      $(`.navItem[data-sub="single"]`)?.classList.add("active");
+      if (typeof debugViewEnter === "function") debugViewEnter();
+    }
+    $(`.navGroupHead[data-nav="debug"]`)?.classList.add("active");
+  } else {
+    $(`#view${module.charAt(0).toUpperCase()}${module.slice(1)}`)?.classList.add("active");
+    $(`.navGroupHead[data-nav="${module}"]`)?.classList.add("active");
+    if (module === "manage") {
+      switchManageSub(currentManageSub, { skipEnter: true });
+      if (currentManageSub === "items" && typeof manageViewEnter === "function") manageViewEnter();
+      else if (currentManageSub === "files" && typeof filesViewEnter === "function") filesViewEnter();
+      else if (currentManageSub === "generate" && typeof generateViewEnter === "function") generateViewEnter();
+    }
+    if (module === "logs" && typeof logsViewEnter === "function") logsViewEnter();
+    if (module === "settings" && typeof settingsViewEnter === "function") settingsViewEnter();
+  }
+
+  updateBreadcrumb();
+}
+
+function showModal(title, bodyHtml, onOk, wide) {
   $("#modalTitle").textContent = title;
   $("#modalBody").innerHTML = bodyHtml;
   const modal = document.querySelector("#modalOverlay .modal");
-  modal?.classList.toggle("modalWide", /modalItem/.test(bodyHtml));
+  modal?.classList.toggle("modalWide", !!wide);
   modalOkHandler = onOk;
   $("#modalOverlay").classList.remove("hidden");
 }
@@ -132,10 +448,7 @@ function showToast(message, type = "success", durationMs = 2600) {
   el.className = `toast ${type}`;
   el.textContent = message;
   container.appendChild(el);
-  setTimeout(() => {
-    el.classList.add("fadeOut");
-    el.addEventListener("animationend", () => el.remove(), { once: true });
-  }, durationMs);
+  setTimeout(() => el.remove(), durationMs);
 }
 
 function closeAllDropdowns(except) {
@@ -158,13 +471,35 @@ function bindDropdown(dropdownEl) {
   menu.addEventListener("click", (e) => e.stopPropagation());
 }
 
+function bindSidebar() {
+  $$(".navGroupHead").forEach((head) => {
+    head.addEventListener("click", () => {
+      const nav = head.dataset.nav;
+      const group = head.closest(".navGroup");
+      if (nav === "debug") {
+        group?.classList.toggle("collapsed");
+        switchModule("debug", currentSub || "single");
+        return;
+      }
+      switchModule(nav);
+    });
+  });
+  $$(".navItem[data-module]").forEach((item) => {
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      switchModule(item.dataset.module, item.dataset.sub);
+    });
+  });
+}
+
 document.addEventListener("click", () => closeAllDropdowns());
 
 document.addEventListener("DOMContentLoaded", () => {
-  $$(".appNavBtn").forEach((btn) => {
-    btn.addEventListener("click", () => switchAppView(btn.dataset.appView));
-  });
+  bindSidebar();
   $$(".dropdown").forEach(bindDropdown);
+  $$("#rightTabs [data-right-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => switchRightTab(btn.dataset.rightTab));
+  });
   $("#modalCancelBtn")?.addEventListener("click", hideModal);
   $("#modalOkBtn")?.addEventListener("click", async () => {
     if (!modalOkHandler) {
@@ -180,5 +515,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   pollHealth();
   setInterval(pollHealth, 7000);
-  switchAppView("test");
+  switchModule("debug", "single");
 });

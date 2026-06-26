@@ -387,6 +387,7 @@ def refine_page_markdown(
     asset_paths: List[str],
     page_png: bytes,
     max_tokens: int = 4096,
+    system_prompt: str = "",
 ) -> str:
     asset_list = "\n".join(f"- {p}" for p in asset_paths) if asset_paths else "（本页无提取图片）"
     user_text = (
@@ -395,7 +396,7 @@ def refine_page_markdown(
         f"## 本页可用图片路径（仅可使用这些相对路径）\n\n{asset_list}"
     )
     messages = [
-        ChatMessage(role="system", content=VLM_SYSTEM_PROMPT),
+        ChatMessage(role="system", content=(system_prompt or "").strip() or VLM_SYSTEM_PROMPT),
         ChatMessage(
             role="user",
             content=[
@@ -424,7 +425,8 @@ def refine_batch_markdown(
     page_pngs: List[bytes],
     page_assets: dict[int, List[str]] | None = None,
     fail_on_missing_markers: bool = False,
-) -> str:
+    system_prompt: str = "",
+) -> tuple[str, Dict[str, int]]:
     if not page_numbers:
         raise LLMError("page_numbers 为空，无法批量 VLM 精修")
 
@@ -435,11 +437,11 @@ def refine_batch_markdown(
         page_pngs=page_pngs,
     )
     messages = [
-        ChatMessage(role="system", content=VLM_BATCH_SYSTEM_PROMPT),
+        ChatMessage(role="system", content=(system_prompt or "").strip() or VLM_BATCH_SYSTEM_PROMPT),
         ChatMessage(role="user", content=user_content),
     ]
     max_tokens = batch_max_tokens(len(page_numbers))
-    raw = llm.chat(model=model, messages=messages, max_tokens=max_tokens)
+    raw, usage = llm.chat_with_usage(model=model, messages=messages, max_tokens=max_tokens)
     refined = strip_code_fence(raw)
     refined = ensure_relative_asset_paths(refined)
     refined = append_missing_images_batch(refined, asset_paths, page_assets=page_assets)
@@ -453,7 +455,7 @@ def refine_batch_markdown(
 
     if not refined.strip():
         raise LLMError("批量 VLM 输出为空")
-    return refined.strip() + ("\n" if not refined.endswith("\n") else "")
+    return refined.strip() + ("\n" if not refined.endswith("\n") else ""), usage
 
 
 def build_front_matter(

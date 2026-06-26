@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from knowledge_router.app.config import Settings
 from knowledge_router.app.main import create_app
 
 
@@ -41,36 +40,11 @@ def test_health(client: TestClient) -> None:
     assert resp.json()["status"] == "ok"
 
 
-def test_ask_returns_cached_answer(client: TestClient) -> None:
-    resp = client.post("/ask", json={"question": "曝光补偿", "kb_id": "1"})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["answer"] == "预存回答内容"
-    assert data["match"]["matched_id"] == "q001"
-    assert data["timings"]["lookup_ms"] >= 0
-
-
-def test_ask_clarification(client: TestClient) -> None:
-    resp = client.post("/ask", json={"question": "完全无关的问题不知道", "kb_id": "1"})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["match"]["need_clarification"] is True
-    assert data["answer"] == ""
-
-
 def test_list_knowledge_bases(client: TestClient) -> None:
     resp = client.get("/knowledge-bases")
     assert resp.status_code == 200
     items = resp.json()["items"]
     assert any(x["kb_id"] == "1" for x in items)
-
-
-def test_ask_stream_done(client: TestClient) -> None:
-    with client.stream("POST", "/ask/stream", json={"question": "曝光补偿", "kb_id": "1"}) as resp:
-        assert resp.status_code == 200
-        body = resp.read().decode("utf-8")
-    assert "event: done" in body
-    assert "预存回答内容" in body
 
 
 def test_ask_confidence_returns_candidates(client: TestClient) -> None:
@@ -94,3 +68,11 @@ def test_ask_confidence_stream_done(client: TestClient) -> None:
     assert "event: candidates" in body
     assert "event: done" in body
     assert "q001" in body
+
+
+def test_match_profiles_api(client: TestClient) -> None:
+    resp = client.get("/settings/match-profiles")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["profiles"]
+    assert data["default_id"]

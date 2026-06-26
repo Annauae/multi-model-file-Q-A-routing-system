@@ -1,10 +1,14 @@
 function assetPreviewUrl(kbId, ref) {
-  const kid = String(kbId || "").trim();
   let r = String(ref || "").trim();
-  if (!kid || !r) return r;
+  if (!r) return r;
   if (r.startsWith("http://") || r.startsWith("https://")) return r;
   if (r.startsWith("../")) r = r.slice(3);
-  return `/preview-asset?kb_id=${encodeURIComponent(kid)}&ref=${encodeURIComponent(r)}`;
+  const scope = String(kbId || "").trim();
+  if (scope === "documents") {
+    return `/documents/preview-asset?ref=${encodeURIComponent(r)}`;
+  }
+  if (!scope) return r;
+  return `/preview-asset?kb_id=${encodeURIComponent(scope)}&ref=${encodeURIComponent(r)}`;
 }
 
 function stripCitationLines(text) {

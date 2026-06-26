@@ -1,0 +1,755 @@
+{
+  "items": [
+    {
+      "id": "r_1782437835954_f3i4z",
+      "question": "怎么调光圈？",
+      "run_at": "2026-06-26T01:38:24.806Z",
+      "candidates": [
+        {
+          "id": "q143",
+          "confidence": 0.94,
+          "question": "光圈优先自动模式（A）如何调整光圈？"
+        },
+        {
+          "id": "q145",
+          "confidence": 0.72,
+          "question": "手动模式（M）如何调整快门速度和光圈？"
+        },
+        {
+          "id": "q144",
+          "confidence": 0.55,
+          "question": "视频模式下的曝光设定有哪些区别？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q143",
+          "confidence": 0.94,
+          "question": "光圈优先自动模式（A）如何调整光圈？",
+          "answer": "## A（光圈优先自动）\n- 在光圈优先自动模式下，由您选择光圈，而照相机会自动调整快门速度以获得良好曝光。\n\n![A模式显示屏与拨盘图示](assets/knowledge_p119-124_006.png)\n\n- 旋转副指令拨盘可调整光圈。\n- 光圈的最小值和最大值根据镜头的不同而异。"
+        },
+        {
+          "id": "q145",
+          "confidence": 0.72,
+          "question": "手动模式（M）如何调整快门速度和光圈？",
+          "answer": "## M（手动）\n- 快门速度和光圈都由您控制。选择此模式可对烟花或夜空等拍摄对象进行长时间曝光（“B门”或“遥控B门”拍摄，🗋158）。\n- 您可根据曝光指示（①）调整快门速度（②）和光圈（③）。\n\n![M模式显示屏与拨盘图示](assets/knowledge_p119-124_007.png) ![M模式拨盘图示](assets/knowledge_p119-124_008.png)\n\n### 快门速度\n- 旋转快门速度拨盘可设定快门速度。\n- 若要选择[X]或[T]，或者要从[1/3STEP]、[X]、[T]或[B]开始进行更改，请在按住快门速度拨盘锁定解除时旋转拨盘。\n- 若将快门速度拨盘设为[1/3STEP]，您可以使用主指令拨盘更改快门速度。快门速度也可设为15秒或30秒（🗋154）。\n\n![M模式快门速度拨盘图示](assets/knowledge_p119-124_009.png)\n\n| 编号 | 说明 | 编号 | 说明 |\n| --- | --- | --- | --- |\n| 1 | 1/4000秒–1/2秒 | 4 | T（遥控B门）（🗋158） |\n| 2 | 1-4秒（红色文字） | 5 | X（闪光同步）（🗋411） |\n| 3 | B（B门）（🗋158） | 6 | 1/3STEP（1/3步长）（🗋154） |\n\n### 光圈\n- 旋转副指令拨盘可调整光圈。\n- 光圈的最小值和最大值根据镜头的不同而异。"
+        },
+        {
+          "id": "q144",
+          "confidence": 0.55,
+          "question": "视频模式下的曝光设定有哪些区别？",
+          "answer": "🖋️ **视频模式曝光设定**\n以下视频设定可在视频录制过程中进行调整：\n\n| 模式 | 光圈 | 速度 | ISO感光度 |\n| --- | --- | --- | --- |\n| P、S¹ | — | — | —² |\n| A | ✓ | — | —² |\n| M | ✓ | ✓ | ✓³ |\n\n1. 拍摄模式S中的曝光控制与模式P中的相同。\n2. 使用视频拍摄菜单中的[ISO感光度设定]>[最大感光度]项目可选择ISO感光度的上限值。\n3. 当视频拍摄菜单中的[ISO感光度设定]>[自动ISO控制(M模式)]选为[开启]时，使用[最大感光度]可选择ISO感光度的上限值。"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 4566.727600000149,
+        "prepare_ms": 2.958900000066933,
+        "match_ms": 4561.39189999999,
+        "match_first_token_ms": 3943.603200000098,
+        "lookup_ms": 0.23970000006556802,
+        "match_output_tokens": 377,
+        "tokens": {
+          "prompt_tokens": 9269,
+          "completion_tokens": 377,
+          "total_tokens": 9646
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9269,
+              "completion_tokens": 377,
+              "total_tokens": 9646
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782437849424_hces2",
+      "question": "我的吊带有点松怎么办？",
+      "run_at": "2026-06-26T02:22:51.085Z",
+      "candidates": [
+        {
+          "id": "q037",
+          "confidence": 0.72,
+          "question": "如何安装相机的挂带？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q037",
+          "confidence": 0.72,
+          "question": "如何安装相机的挂带？",
+          "answer": "## 安装挂带\n安装挂带（附送或另购的挂带）的步骤如下：\n\n![](assets/knowledge_p54-56_004.png) → ![](assets/knowledge_p54-56_005.png)\n↓\n![](assets/knowledge_p54-56_006.png) → ![](assets/knowledge_p54-56_007.png)"
+        }
+      ],
+      "recalled": "no",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 1803.007599999546,
+        "prepare_ms": 3.110999999989872,
+        "match_ms": 1798.5781999996107,
+        "match_first_token_ms": 1685.2226999999402,
+        "lookup_ms": 0.2751000001808279,
+        "match_output_tokens": 137,
+        "tokens": {
+          "prompt_tokens": 9245,
+          "completion_tokens": 137,
+          "total_tokens": 9382
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9245,
+              "completion_tokens": 137,
+              "total_tokens": 9382
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782437858489_o10mo",
+      "question": "怎么选择对焦点？",
+      "run_at": "2026-06-26T01:38:34.308Z",
+      "candidates": [
+        {
+          "id": "q113",
+          "confidence": 0.96,
+          "question": "如何手动选择对焦点？"
+        },
+        {
+          "id": "q112",
+          "confidence": 0.88,
+          "question": "如何快速选择对焦点？"
+        },
+        {
+          "id": "q110",
+          "confidence": 0.78,
+          "question": "如何选择和使用相机的AF区域模式？"
+        },
+        {
+          "id": "q111",
+          "confidence": 0.7,
+          "question": "如何在画面中央显示对焦点？"
+        },
+        {
+          "id": "q107",
+          "confidence": 0.55,
+          "question": "如何选择照相机的对焦模式？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q113",
+          "confidence": 0.96,
+          "question": "如何手动选择对焦点？",
+          "answer": "## 对焦点选择\n当AF区域模式（☞122）选为[自动区域AF]、[自动区域AF(人物)]或[自动区域AF(动物)]以外的选项时，多重选择器可用于选择对焦点。\n\n![操作示意](assets/knowledge_p95-98_001.png)\n![界面示意](assets/knowledge_p95-98_002.png)"
+        },
+        {
+          "id": "q112",
+          "confidence": 0.88,
+          "question": "如何快速选择对焦点？",
+          "answer": "## 快速对焦点选择\n- 若要快速选择对焦点，请在自定义设定a4[使用的对焦点]中选择[间隔对焦点]以仅使用可用对焦点的四分之一。即使选择了[间隔对焦点]，[微点AF]、[宽区域AF(L)]、[宽区域AF(L-人物)]或[宽区域AF(L-动物)]的可用对焦点数量也不会改变。\n- 您可以将自定义设定f2[自定义控制(拍摄)]>[OK按钮]选为[选择中央对焦点]，以允许使用OK按钮快速选择中央对焦点。"
+        },
+        {
+          "id": "q110",
+          "confidence": 0.78,
+          "question": "如何选择和使用相机的AF区域模式？",
+          "answer": "### AF区域模式\n选择照相机如何选择对焦点进行自动对焦。\n- 在[自动区域AF]、[自动区域AF(人物)]和[自动区域AF(动物)]以外的模式下，可以使用多重选择器定位对焦点（❏127）。\n\n#### ■■ 选择AF区域模式\n- AF区域模式可使用 i 菜单、照片拍摄菜单和视频拍摄菜单中的[AF区域模式]项目进行选择（❏200、❏309、❏384）。\n\n![AF区域模式设置界面](assets/knowledge_p88-94_002.png)\n\n| 选项 | | 说明 |\n| ---- | ---- | ---- |\n| <img alt=\"微点AF图标\" style=\"width:20px;vertical-align:middle;\"> | [微点AF] | · 微点AF的对焦区域小于单点AF所使用的对焦区域，可用于精确对焦于画面中的所选点。<br>· 对焦速度可能比单点AF慢。<br>· 推荐用于静止拍摄对象的拍摄（例如建筑物、摄影棚产品拍摄或微距拍摄）。<br>· 该选项仅当选择了照片模式且[对焦模式]选为[单次AF]时可用。 |\n| <img alt=\"单点AF图标\" style=\"width:20px;vertical-align:middle;\"> | [单点AF] | · 照相机对焦于用户所选择的点。<br>· 适用于静止的拍摄对象。 |\n| <img alt=\"动态区域AF图标\" style=\"width:20px;vertical-align:middle;\"> | [动态区域AF] | · 照相机对焦于用户所选择的点。若拍摄对象短暂偏离所选点，照相机将根据来自周围对焦点的信息进行对焦。<br>· 用于拍摄运动员和使用单点AF难以构图的其他动态拍摄对象。<br>· 该选项仅当选择了照片模式且对焦模式选为[AF模式自动开关]或[连续AF]时可用。 |\n| <img alt=\"宽区域AF(S)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(S)] | · 照相机对焦于更宽的区域，除此之外，其他与单点AF相同。 |\n| <img alt=\"宽区域AF(L)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(L)] | · 用于快照、移动中的拍摄对象以及使用单点AF难以拍摄的其他拍摄对象。<br>· 在视频录制过程中，当进行摇摄或倾斜拍摄期间或者拍摄移动中的拍摄对象时，使用宽区域AF可使对焦平稳。<br>· 若所选对焦区域内包含距离照相机不同远近的拍摄对象，照相机将优先为最近位置的拍摄对象对焦。<br>· [宽区域AF(L)]的对焦区域比[宽区域AF(S)]的大。 |\n| <img alt=\"宽区域AF(L-人物)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(L-人物)] | · 若选择[宽区域AF(L-人物)]，照相机会侦测并对焦于人物的脸部或眼部（眼部侦测自动对焦/脸部侦测自动对焦，❏127）。 |\n| <img alt=\"宽区域AF(L-动物)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(L-动物)] | · 若选择[宽区域AF(L-动物)]，照相机会侦测并对焦于狗和猫的脸部或眼部（动物侦测自动对焦，❏129）。 |\n| <img alt=\"自动区域AF图标\" style=\"width:20px;vertical-align:middle;\"> | [自动区域AF] | · 照相机自动侦测拍摄对象并选择对焦区域。 |\n| <img alt=\"自动区域AF(人物)图标\" style=\"width:20px;vertical-align:middle;\"> | [自动区域AF(人物)] | · 在您没有时间自己选择对焦点来拍摄人像、快照以及其他即兴照片的情况下使用。<br>· 若选择[自动区域AF(人物)]，照相机会侦测并对焦于人物的脸部或眼部（眼部侦测自动对焦/脸部侦测自动对焦，❏127）。 |\n| <img alt=\"自动区域AF(动物)图标\" style=\"width:20px;vertical-align:middle;\"> | [自动区域AF(动物)] | · 若选择[自动区域AF(动物)]，照相机会侦测并对焦于狗和猫的脸部或眼部（动物侦测自动对焦，❏129）。<br>· 您可通过按下OK按钮启动对象跟踪（❏131）。自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]可用于配置Fn按钮开始对象跟踪AF（❏418、❏436）。您也可将对象跟踪AF指定给镜头Fn或Fn2按钮。 |"
+        },
+        {
+          "id": "q111",
+          "confidence": 0.7,
+          "question": "如何在画面中央显示对焦点？",
+          "answer": "## ▢：中央对焦点\n当对焦点位于画面中央时，对焦点中会出现一个点。"
+        },
+        {
+          "id": "q107",
+          "confidence": 0.55,
+          "question": "如何选择照相机的对焦模式？",
+          "answer": "### 对焦模式\n选择照相机的对焦方式。\n\n#### ■■ 选择对焦模式\n- 对焦模式可使用 i 菜单、照片拍摄菜单和视频拍摄菜单中的[对焦模式]项目进行选择（❏201、❏309、❏384）。\n\n![对焦模式设置界面](assets/knowledge_p88-94_001.png)\n\n| 选项 | | 说明 |\n| ---- | ---- | ---- |\n| AF-A | [AF模式自动开关] | · 照相机使用**AF-S**拍摄静止的拍摄对象，使用**AF-C**拍摄移动的拍摄对象。<br>· 仅在照片模式下才可用。 |\n| AF-S | [单次AF] | · 适用于静止的拍摄对象。半按快门释放按钮进行对焦时，对焦点将从红色变为绿色，且对焦将锁定。若照相机无法对焦，对焦点将闪烁红色，快门释放将被禁用。<br>· 在默认设定下，仅当照相机可进行对焦时快门才可释放（对焦优先）。 |\n| AF-C | [连续AF] | · 适用于移动的拍摄对象。半按快门释放按钮期间，照相机将根据与拍摄对象之间距离的变化持续调整对焦。<br>· 在默认设定下，无论拍摄对象是否清晰对焦，快门都可释放（快门释放优先）。 |\n| AF-F | [全时AF] | · 照相机根据拍摄对象的移动或构图变化持续调整对焦。<br>· 半按快门释放按钮时，对焦点将从红色变为绿色，且对焦将锁定。<br>· 该选项仅适用于视频模式。 |\n| MF | [手动对焦] | 手动对焦（❏135）。无论拍摄对象是否清晰对焦都可释放快门。 |"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 4129.48879999999,
+        "prepare_ms": 2.5335000000268337,
+        "match_ms": 4118.742399999974,
+        "match_first_token_ms": 3361.9760999999926,
+        "lookup_ms": 1.2901999998575775,
+        "match_output_tokens": 320,
+        "tokens": {
+          "prompt_tokens": 9270,
+          "completion_tokens": 320,
+          "total_tokens": 9590
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9270,
+              "completion_tokens": 320,
+              "total_tokens": 9590
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782438051346_b51ra",
+      "question": "相机有哪些模式？",
+      "run_at": "2026-06-26T01:44:18.335Z",
+      "candidates": [
+        {
+          "id": "q001",
+          "confidence": 0.98,
+          "question": "如何使用模式选择器选择拍摄模式？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q001",
+          "confidence": 0.98,
+          "question": "如何使用模式选择器选择拍摄模式？",
+          "answer": "# 模式选择器\n使用模式选择器可选择一种拍摄模式。\n\n![模式选择器示意图](assets/knowledge_p28-30_001.png)\n\n| 模式 | 说明 |\n|------|------|\n| AUTO 自动 | 一种简单的“即取即拍”模式，由照相机控制设定（❏104、❏109）。 |\n| P 程序自动 | 由照相机设定快门速度和光圈以获得良好曝光。 |\n| S 快门优先自动 | 用于锁定或模糊动作。由您选择快门速度；照相机选择光圈以达到良好效果。 |\n| A 光圈优先自动 | 用于模糊背景，或使前景和背景都清晰对焦。由您选择光圈；照相机选择快门速度以达到良好效果。 |\n| M 手动 | 快门速度和光圈都由您控制。将快门速度设为“B门”或“遥控B门”可实现长时间曝光。 |"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 1999.071400000048,
+        "prepare_ms": 6.312199999911172,
+        "match_ms": 1991.5062000000034,
+        "match_first_token_ms": 1878.5408000001098,
+        "lookup_ms": 0.39680000008956995,
+        "match_output_tokens": 20,
+        "tokens": {
+          "prompt_tokens": 9269,
+          "completion_tokens": 20,
+          "total_tokens": 9289
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9269,
+              "completion_tokens": 20,
+              "total_tokens": 9289
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782438227868_2mnqu",
+      "question": "我怎么才能让我的照片不会被误删？",
+      "run_at": "2026-06-26T01:44:19.093Z",
+      "candidates": [
+        {
+          "id": "q137",
+          "confidence": 0.97,
+          "question": "怎样保护照片防止被误删？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q137",
+          "confidence": 0.97,
+          "question": "怎样保护照片防止被误删？",
+          "answer": "## 2 选择所需照片并按下📌（🔒）按钮。\n# 保护照片不被删除\n您可保护照片以防止照片被意外删除。但是格式化存储卡时，受保护的照片将被删除。\n\n## 1 按下▶按钮开始播放。\n![播放按钮位置示意图](assets/knowledge_p113-118_007.png)\n\n## 2 选择所需照片并按下📌（🔒）按钮。\n![保护按钮位置示意图](assets/knowledge_p113-118_008.png)\n\n- 受保护的照片将用一个🔒图标标记。\n\n![带保护图标的照片显示界面](assets/knowledge_p113-118_009.png)\n\n- 若要取消保护，请显示或加亮显示该照片并再次按下📌（🔒）按钮。"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 749.537299999929,
+        "prepare_ms": 3.1610999999429623,
+        "match_ms": 742.5802000000203,
+        "match_first_token_ms": 596.9457999999577,
+        "lookup_ms": 0.7067000001370616,
+        "match_output_tokens": 20,
+        "tokens": {
+          "prompt_tokens": 9273,
+          "completion_tokens": 20,
+          "total_tokens": 9293
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9273,
+              "completion_tokens": 20,
+              "total_tokens": 9293
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782438404054_gxf5r",
+      "question": "怎么安装吊带？",
+      "run_at": "2026-06-26T01:57:55.423Z",
+      "candidates": [
+        {
+          "id": "q037",
+          "confidence": 0.96,
+          "question": "如何安装相机的挂带？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q037",
+          "confidence": 0.96,
+          "question": "如何安装相机的挂带？",
+          "answer": "## 安装挂带\n安装挂带（附送或另购的挂带）的步骤如下：\n\n![](assets/knowledge_p54-56_004.png) → ![](assets/knowledge_p54-56_005.png)\n↓\n![](assets/knowledge_p54-56_006.png) → ![](assets/knowledge_p54-56_007.png)"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 1495.071199999984,
+        "prepare_ms": 4.078599999957078,
+        "match_ms": 1489.6233999998003,
+        "match_first_token_ms": 1386.1809999998513,
+        "lookup_ms": 0.5559000001085224,
+        "match_output_tokens": 113,
+        "tokens": {
+          "prompt_tokens": 9243,
+          "completion_tokens": 113,
+          "total_tokens": 9356
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9243,
+              "completion_tokens": 113,
+              "total_tokens": 9356
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782438428150_1zxs8",
+      "question": "怎么开启对象跟踪？",
+      "run_at": "2026-06-26T01:57:56.508Z",
+      "candidates": [
+        {
+          "id": "q118",
+          "confidence": 0.95,
+          "question": "如何使用对象跟踪AF功能跟踪拍摄对象？"
+        },
+        {
+          "id": "q119",
+          "confidence": 0.72,
+          "question": "对象跟踪AF有哪些限制和无法跟踪的情况？"
+        },
+        {
+          "id": "q114",
+          "confidence": 0.55,
+          "question": "如何使用脸部和眼部侦测自动对焦？"
+        },
+        {
+          "id": "q107",
+          "confidence": 0.52,
+          "question": "如何选择照相机的对焦模式？"
+        },
+        {
+          "id": "q110",
+          "confidence": 0.5,
+          "question": "如何选择和使用相机的AF区域模式？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q118",
+          "confidence": 0.95,
+          "question": "如何使用对象跟踪AF功能跟踪拍摄对象？",
+          "answer": "## 对象跟踪AF\n当AF区域模式选为[自动区域AF]、[自动区域AF(人物)]或[自动区域AF(动物)]时，照相机可跟踪所选对焦点上的拍摄对象。\n- 按下❾可启用跟踪对焦；对焦点将变为瞄准网格。\n\n![assets/knowledge_p99-102_001.png](assets/knowledge_p99-102_001.png)\n\n- 将瞄准网格置于拍摄对象上，并再次按下❾可启动跟踪；对焦点将跟踪在画面中移动的所选拍摄对象。若要结束跟踪并选择中央对焦点，请再次按下❾。在照片模式下，若通过半按快门释放按钮在对焦模式AF-C或AF-A中启动了对象跟踪，照相机仅将在按下快门释放按钮期间跟踪拍摄对象；松开快门释放按钮将结束跟踪并恢复启动跟踪前所选的对焦点。\n- 若要退出对象跟踪模式，请按下❷（？）按钮。"
+        },
+        {
+          "id": "q119",
+          "confidence": 0.72,
+          "question": "对象跟踪AF有哪些限制和无法跟踪的情况？",
+          "answer": "## 对象跟踪AF\n✅ 对象跟踪\n照相机可能无法跟踪以下情况时的拍摄对象：\n- 色彩或亮度与背景相似，\n- 尺寸、色彩或亮度变化明显，\n- 太大或太小，\n- 太暗或太亮，\n- 移动迅速，\n- 离开画面或被其他物体遮挡。"
+        },
+        {
+          "id": "q114",
+          "confidence": 0.55,
+          "question": "如何使用脸部和眼部侦测自动对焦？",
+          "answer": "## 侦测人物拍摄对象的脸部或眼部（脸部/眼部侦测自动对焦）\n若在照片拍摄菜单或视频拍摄菜单中将[AF区域模式]选为[宽区域AF(L-人物)]或[自动区域AF(人物)]，照相机会侦测人物的脸部和眼部（眼部侦测自动对焦/脸部侦测自动对焦）。\n\n![AF区域模式选择界面](assets/knowledge_p95-98_003.png)\n\n- 照相机侦测到的人物拍摄对象的脸部周围将出现一个表示对焦点的黄色边框。若照相机侦测到拍摄对象的眼部，黄色对焦点则将出现在拍摄对象两只眼睛中的一只上。\n\n![脸部对焦示意](assets/knowledge_p95-98_004.png)\n\n- 若对焦模式选为AF-C或选为AF-A但照相机使用的是AF-C，当侦测到脸部或眼部时对焦点将以黄色点亮。\n- 若对焦模式选为AF-S或选为AF-A但照相机使用的是AF-S，对焦点将在照相机完成对焦时变为绿色。\n- 选择[自动区域AF(人物)]时，如果侦测到多个人物的脸部或眼部，对焦点上将出现◀和▶图标。您可通过按下◀或▶将对焦点定位至其他脸部或眼部。\n- 若拍摄对象被侦测到脸部后将视线移开，对焦点将移动以跟踪其动作。\n\n- 在播放过程中，您可以通过按下OK按钮放大用于对焦的脸部或眼部。"
+        },
+        {
+          "id": "q107",
+          "confidence": 0.52,
+          "question": "如何选择照相机的对焦模式？",
+          "answer": "### 对焦模式\n选择照相机的对焦方式。\n\n#### ■■ 选择对焦模式\n- 对焦模式可使用 i 菜单、照片拍摄菜单和视频拍摄菜单中的[对焦模式]项目进行选择（❏201、❏309、❏384）。\n\n![对焦模式设置界面](assets/knowledge_p88-94_001.png)\n\n| 选项 | | 说明 |\n| ---- | ---- | ---- |\n| AF-A | [AF模式自动开关] | · 照相机使用**AF-S**拍摄静止的拍摄对象，使用**AF-C**拍摄移动的拍摄对象。<br>· 仅在照片模式下才可用。 |\n| AF-S | [单次AF] | · 适用于静止的拍摄对象。半按快门释放按钮进行对焦时，对焦点将从红色变为绿色，且对焦将锁定。若照相机无法对焦，对焦点将闪烁红色，快门释放将被禁用。<br>· 在默认设定下，仅当照相机可进行对焦时快门才可释放（对焦优先）。 |\n| AF-C | [连续AF] | · 适用于移动的拍摄对象。半按快门释放按钮期间，照相机将根据与拍摄对象之间距离的变化持续调整对焦。<br>· 在默认设定下，无论拍摄对象是否清晰对焦，快门都可释放（快门释放优先）。 |\n| AF-F | [全时AF] | · 照相机根据拍摄对象的移动或构图变化持续调整对焦。<br>· 半按快门释放按钮时，对焦点将从红色变为绿色，且对焦将锁定。<br>· 该选项仅适用于视频模式。 |\n| MF | [手动对焦] | 手动对焦（❏135）。无论拍摄对象是否清晰对焦都可释放快门。 |"
+        },
+        {
+          "id": "q110",
+          "confidence": 0.5,
+          "question": "如何选择和使用相机的AF区域模式？",
+          "answer": "### AF区域模式\n选择照相机如何选择对焦点进行自动对焦。\n- 在[自动区域AF]、[自动区域AF(人物)]和[自动区域AF(动物)]以外的模式下，可以使用多重选择器定位对焦点（❏127）。\n\n#### ■■ 选择AF区域模式\n- AF区域模式可使用 i 菜单、照片拍摄菜单和视频拍摄菜单中的[AF区域模式]项目进行选择（❏200、❏309、❏384）。\n\n![AF区域模式设置界面](assets/knowledge_p88-94_002.png)\n\n| 选项 | | 说明 |\n| ---- | ---- | ---- |\n| <img alt=\"微点AF图标\" style=\"width:20px;vertical-align:middle;\"> | [微点AF] | · 微点AF的对焦区域小于单点AF所使用的对焦区域，可用于精确对焦于画面中的所选点。<br>· 对焦速度可能比单点AF慢。<br>· 推荐用于静止拍摄对象的拍摄（例如建筑物、摄影棚产品拍摄或微距拍摄）。<br>· 该选项仅当选择了照片模式且[对焦模式]选为[单次AF]时可用。 |\n| <img alt=\"单点AF图标\" style=\"width:20px;vertical-align:middle;\"> | [单点AF] | · 照相机对焦于用户所选择的点。<br>· 适用于静止的拍摄对象。 |\n| <img alt=\"动态区域AF图标\" style=\"width:20px;vertical-align:middle;\"> | [动态区域AF] | · 照相机对焦于用户所选择的点。若拍摄对象短暂偏离所选点，照相机将根据来自周围对焦点的信息进行对焦。<br>· 用于拍摄运动员和使用单点AF难以构图的其他动态拍摄对象。<br>· 该选项仅当选择了照片模式且对焦模式选为[AF模式自动开关]或[连续AF]时可用。 |\n| <img alt=\"宽区域AF(S)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(S)] | · 照相机对焦于更宽的区域，除此之外，其他与单点AF相同。 |\n| <img alt=\"宽区域AF(L)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(L)] | · 用于快照、移动中的拍摄对象以及使用单点AF难以拍摄的其他拍摄对象。<br>· 在视频录制过程中，当进行摇摄或倾斜拍摄期间或者拍摄移动中的拍摄对象时，使用宽区域AF可使对焦平稳。<br>· 若所选对焦区域内包含距离照相机不同远近的拍摄对象，照相机将优先为最近位置的拍摄对象对焦。<br>· [宽区域AF(L)]的对焦区域比[宽区域AF(S)]的大。 |\n| <img alt=\"宽区域AF(L-人物)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(L-人物)] | · 若选择[宽区域AF(L-人物)]，照相机会侦测并对焦于人物的脸部或眼部（眼部侦测自动对焦/脸部侦测自动对焦，❏127）。 |\n| <img alt=\"宽区域AF(L-动物)图标\" style=\"width:20px;vertical-align:middle;\"> | [宽区域AF(L-动物)] | · 若选择[宽区域AF(L-动物)]，照相机会侦测并对焦于狗和猫的脸部或眼部（动物侦测自动对焦，❏129）。 |\n| <img alt=\"自动区域AF图标\" style=\"width:20px;vertical-align:middle;\"> | [自动区域AF] | · 照相机自动侦测拍摄对象并选择对焦区域。 |\n| <img alt=\"自动区域AF(人物)图标\" style=\"width:20px;vertical-align:middle;\"> | [自动区域AF(人物)] | · 在您没有时间自己选择对焦点来拍摄人像、快照以及其他即兴照片的情况下使用。<br>· 若选择[自动区域AF(人物)]，照相机会侦测并对焦于人物的脸部或眼部（眼部侦测自动对焦/脸部侦测自动对焦，❏127）。 |\n| <img alt=\"自动区域AF(动物)图标\" style=\"width:20px;vertical-align:middle;\"> | [自动区域AF(动物)] | · 若选择[自动区域AF(动物)]，照相机会侦测并对焦于狗和猫的脸部或眼部（动物侦测自动对焦，❏129）。<br>· 您可通过按下OK按钮启动对象跟踪（❏131）。自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]可用于配置Fn按钮开始对象跟踪AF（❏418、❏436）。您也可将对象跟踪AF指定给镜头Fn或Fn2按钮。 |"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 1076.157299999977,
+        "prepare_ms": 4.321899999922607,
+        "match_ms": 1067.620899999838,
+        "match_first_token_ms": 619.6525999998812,
+        "lookup_ms": 0.4887999998572923,
+        "match_output_tokens": 75,
+        "tokens": {
+          "prompt_tokens": 9244,
+          "completion_tokens": 75,
+          "total_tokens": 9319
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9244,
+              "completion_tokens": 75,
+              "total_tokens": 9319
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782439022491_66eha",
+      "question": "怎么调ISO感光度拨盘？",
+      "run_at": "2026-06-26T01:57:57.238Z",
+      "candidates": [
+        {
+          "id": "q004",
+          "confidence": 0.98,
+          "question": "如何使用ISO感光度拨盘调节ISO感光度？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q004",
+          "confidence": 0.98,
+          "question": "如何使用ISO感光度拨盘调节ISO感光度？",
+          "answer": "# ISO感光度拨盘\n照相机对光线的灵敏度（ISO感光度）可根据可用光线量进行调整。一般情况下，选择的值越高，在相同光圈下可使用的快门速度越快。\n\n在按住ISO感光度拨盘锁定解除的同时旋转ISO感光度拨盘，可根据可用的光量调节照相机对光的敏感度（ISO感光度）。\n\n![ISO感光度拨盘示意图](assets/knowledge_p28-30_004.png)\n\n拍摄过程中，当前所选项显示在屏幕中。\n\n![ISO感光度屏幕显示示例](assets/knowledge_p130-135_002.png)"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 717.2719000000143,
+        "prepare_ms": 7.97710000006191,
+        "match_ms": 707.2793000002093,
+        "match_first_token_ms": 574.9458000000232,
+        "lookup_ms": 0.6422999999813328,
+        "match_output_tokens": 20,
+        "tokens": {
+          "prompt_tokens": 9247,
+          "completion_tokens": 20,
+          "total_tokens": 9267
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9247,
+              "completion_tokens": 20,
+              "total_tokens": 9267
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782440133066_t7eny",
+      "question": "怎么增加缩放率？",
+      "run_at": "2026-06-26T02:22:52.092Z",
+      "candidates": [
+        {
+          "id": "q022",
+          "confidence": 0.95,
+          "question": "如何使用🔍和🔍❏（？）按钮在拍摄时放大或缩小画面？"
+        },
+        {
+          "id": "q023",
+          "confidence": 0.88,
+          "question": "播放照片时如何用🔍和🔍❏（？）按钮放大、缩小或切换显示模式？"
+        },
+        {
+          "id": "q065",
+          "confidence": 0.72,
+          "question": "视频模式下如何进行变焦操作？"
+        },
+        {
+          "id": "q059",
+          "confidence": 0.62,
+          "question": "自动模式下如何使用触控快门和变焦功能？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q022",
+          "confidence": 0.95,
+          "question": "如何使用🔍和🔍❏（？）按钮在拍摄时放大或缩小画面？",
+          "answer": "# 🔍和🔍❏（？）按钮\n按下🔍可在拍摄期间放大镜头视野。按下🔍可增加缩放率，按下🔍❏（？）则可减小缩放率。\n\n![放大/缩小按钮示意图](assets/knowledge_p44-45_001.png)"
+        },
+        {
+          "id": "q023",
+          "confidence": 0.88,
+          "question": "播放照片时如何用🔍和🔍❏（？）按钮放大、缩小或切换显示模式？",
+          "answer": "# 🔍和🔍❏（？）按钮\n按下🔍可在全屏播放期间放大照片。按下🔍可增加缩放率，按下🔍❏（？）则可减小缩放率。当照片全屏显示时，按下🔍❏（？）可“缩小”至缩略图列表。当显示72张画面时，按下🔍❏（？）可选择日历播放。\n\n![放大/缩小按钮示意图](assets/knowledge_p44-45_001.png)"
+        },
+        {
+          "id": "q065",
+          "confidence": 0.72,
+          "question": "视频模式下如何进行变焦操作？",
+          "answer": "# 在视频模式下拍摄照片\n📝 **在视频模式下变焦**\n\n在视频模式下按下<img alt=\"放大按钮标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>按钮可放大视野（<img alt=\"页码标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>108）。在视频录制期间按下<img alt=\"放大按钮标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>按钮可以1:1（100%）的倍率进行显示。按下<img alt=\"缩小按钮标识\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/>（？）按钮可取消变焦。"
+        },
+        {
+          "id": "q059",
+          "confidence": 0.62,
+          "question": "自动模式下如何使用触控快门和变焦功能？",
+          "answer": "# 拍摄照片（📷<sup>AUTO</sup>自动）\n✏️ **触控快门**\n\n您也可以通过轻触显示屏来拍摄照片。轻触拍摄对象进行对焦，然后抬起手指即可释放快门。\n\n![触控快门操作示意图](assets/knowledge_p72-76_014.png)\n\n---\n\n✏️ **在照片模式下变焦**\n\n在照片模式下按下🔍<sup>T</sup>按钮可放大视野（最高约31倍）。\n- 每次按下🔍<sup>T</sup>按钮时可增加缩放率，每次按下🔍<sup>W</sup>（？）按钮时则可减小缩放率。\n- 在拍摄期间使用变焦时，显示屏的右下方会显示导航窗口，显示所放大的构图部分。\n- 变焦播放时，使用多重选择器可移动至显示屏中不可视的画面区域。\n\n![变焦操作按钮示意图](assets/knowledge_p72-76_015.png)\n![变焦效果示意图](assets/knowledge_p72-76_016.png)"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 999.3068999992829,
+        "prepare_ms": 6.085799999709707,
+        "match_ms": 989.2713999997795,
+        "match_first_token_ms": 597.1792999998797,
+        "lookup_ms": 0.5214000002524699,
+        "match_output_tokens": 62,
+        "tokens": {
+          "prompt_tokens": 9244,
+          "completion_tokens": 62,
+          "total_tokens": 9306
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9244,
+              "completion_tokens": 62,
+              "total_tokens": 9306
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782440180788_9f3x2",
+      "question": "怎么保持对焦情况下拍摄多张照片？",
+      "run_at": "2026-06-26T02:22:53.477Z",
+      "candidates": [
+        {
+          "id": "q166",
+          "confidence": 0.98,
+          "question": "如何在相同对焦距离下拍摄多张照片并保持对焦锁定？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q166",
+          "confidence": 0.98,
+          "question": "如何在相同对焦距离下拍摄多张照片并保持对焦锁定？",
+          "answer": "### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。\n- 通过按下AE-L/AF-L（on）按钮锁定了对焦时，若按住AE-L/AF-L（on）按钮不放，则可以保持对焦锁定拍摄多张照片。\n- 若您在两次拍摄之间持续半按快门释放按钮，对焦也将保持锁定。\n\nAE-L/AF-L（on）按钮\n170"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 1376.2240000005477,
+        "prepare_ms": 4.402800000207208,
+        "match_ms": 1370.3739000002315,
+        "match_first_token_ms": 1277.5455000000875,
+        "lookup_ms": 0.32559999999648426,
+        "match_output_tokens": 116,
+        "tokens": {
+          "prompt_tokens": 9247,
+          "completion_tokens": 116,
+          "total_tokens": 9363
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9247,
+              "completion_tokens": 116,
+              "total_tokens": 9363
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782440261451_y2evr",
+      "question": "怎么打开i菜单？",
+      "run_at": "2026-06-26T02:22:54.380Z",
+      "candidates": [
+        {
+          "id": "q033",
+          "confidence": 0.98,
+          "question": "如何快速访问常用设置的i菜单？"
+        },
+        {
+          "id": "q016",
+          "confidence": 0.82,
+          "question": "触摸屏上的i菜单怎么使用？"
+        },
+        {
+          "id": "q018",
+          "confidence": 0.35,
+          "question": "菜单操作是怎样进行的？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q033",
+          "confidence": 0.98,
+          "question": "如何快速访问常用设置的i菜单？",
+          "answer": "## **i按钮（i菜单）**\n若要快速访问常用设定，请按下`i`按钮或轻触`<i>`图标查看`i`菜单。\n\n![i按钮位置与i菜单界面](assets/knowledge_p50-53_003.png)\n\n> 照相机控制\n> 82\n\n- 在照片模式和视频模式下显示的菜单不同。\n\n![照片模式i菜单界面](assets/knowledge_p50-53_004.png)\n- 选项可通过在屏幕中轻触项目，或者加亮显示项目并按下`OK`进行查看；随后使用多重选择器即可进行选择。\n- 对于照相机会显示屏幕指南的项目，您可在`i`菜单中加亮显示该项目并旋转指令拨盘对其进行调整。在某些情况下，需要同时使用主指令拨盘和副指令拨盘进行调整。\n\n![调整项目界面](assets/knowledge_p50-53_005.png)\n\n---\n\n✏️ **播放i菜单**\n在播放过程中按下`i`按钮将显示常用播放选项的相应`i`菜单。\n\n![播放模式i菜单界面](assets/knowledge_p50-53_006.png)\n\n> 照相机控制\n> 83"
+        },
+        {
+          "id": "q016",
+          "confidence": 0.82,
+          "question": "触摸屏上的i菜单怎么使用？",
+          "answer": "## i菜单\n- 拍摄期间轻触<svg width=\"12\" height=\"16\" viewBox=\"0 0 12 16\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M6 0C2.68629 0 0 2.68629 0 6C0 9.31371 2.68629 12 6 12C9.31371 12 12 9.31371 12 6C12 2.68629 9.31371 0 6 0ZM6.75 9H5.25V5.5H6.75V9ZM6.75 4.5H5.25V3H6.75V4.5Z\"/></svg>图标可显示i菜单（<svg width=\"16\" height=\"12\" viewBox=\"0 0 16 12\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M1 1H15V7H1V1Z\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M4 11H12\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg> 82、<svg width=\"16\" height=\"12\" viewBox=\"0 0 16 12\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M1 1H15V7H1V1Z\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M4 11H12\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg> 171）。\n\n![i菜单图标位置示意图](assets/knowledge_p36-39_011.png)\n- 轻触项目可查看并更改选项。\n\n![i菜单界面示意图](assets/knowledge_p36-39_012.png)"
+        },
+        {
+          "id": "q018",
+          "confidence": 0.35,
+          "question": "菜单操作是怎样进行的？",
+          "answer": "## 菜单操作方法\n・向上或向下滑动可滚动显示。\n\n![滑动操作示例](assets/knowledge_p40-43_002.png)\n\n・轻触菜单图标可选择菜单。\n\n![选择菜单示例](assets/knowledge_p40-43_003.png)\n\n・轻触菜单项目可显示选项。随后即可通过轻触图标或滑块选择所需选项。\n\n![选择选项示例](assets/knowledge_p40-43_004.png)\n\n・若要退出而不更改设定，请轻触↵。\n\n![退出操作示例](assets/knowledge_p40-43_005.png)"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 896.8917000001966,
+        "prepare_ms": 4.658200000449142,
+        "match_ms": 890.3359999994791,
+        "match_first_token_ms": 592.1275999999125,
+        "lookup_ms": 0.45169999975769315,
+        "match_output_tokens": 48,
+        "tokens": {
+          "prompt_tokens": 9244,
+          "completion_tokens": 48,
+          "total_tokens": 9292
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9244,
+              "completion_tokens": 48,
+              "total_tokens": 9292
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782441488568_ak42g",
+      "question": "充电器充电步骤是什么？",
+      "run_at": "2026-06-26T02:45:10.316Z",
+      "candidates": [
+        {
+          "id": "q038",
+          "confidence": 0.96,
+          "question": "如何为EN-EL25电池使用MH-32充电器充电？"
+        },
+        {
+          "id": "q040",
+          "confidence": 0.9,
+          "question": "如何使用EH-8P电源适配器为电池充电？"
+        },
+        {
+          "id": "q042",
+          "confidence": 0.72,
+          "question": "如何通过USB电力输送功能为照相机供电？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q038",
+          "confidence": 0.96,
+          "question": "如何为EN-EL25电池使用MH-32充电器充电？",
+          "answer": "## 使用充电器充电\n请使用MH-32充电器为电池充电。\n\n![MH-32充电器充电步骤1、2](assets/knowledge_p57-62_001.png)\n\n- 请将充电器插入家用插座进行充电。在某些国家或地区，可能会随附连接有适配器的充电器。充电指示灯在充电时闪烁，并在充电完成时点亮。\n- 电池充满电所需的时间约为2小时40分钟（使用EN-EL25a时）或2小时30分钟（使用EN-EL25时）（针对电量耗尽的电池）。"
+        },
+        {
+          "id": "q040",
+          "confidence": 0.9,
+          "question": "如何使用EH-8P电源适配器为电池充电？",
+          "answer": "### 1 将EN-EL25插入照相机（☞95）。\n在照相机中插有电池时，可将照相机连接至另购的EH-8P电源适配器为电池充电。\n\n### 1 将EN-EL25插入照相机（☞95）。\n![插入EN-EL25电池示意图](assets/knowledge_p57-62_002.png)\n\n### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。\n将电源适配器插入家用电源插座。照相机处于关闭状态时，电池将会充电。请径直插入及拔出连接线或插头。\n\n![电源适配器充电连接步骤](assets/knowledge_p57-62_003.png)\n\n- 充电过程中照相机充电指示灯（②）将以琥珀色点亮。充电完成时指示灯熄灭。\n- 将一块电量耗尽的电池充满电大约需要2小时（使用EN-EL25a时）或1小时40分钟（使用EN-EL25时）。\n- 充电完成后，请断开USB连接线的连接。断开时确保径直拔出连接器。\n- 插头形状因购买的国家或地区而异。"
+        },
+        {
+          "id": "q042",
+          "confidence": 0.72,
+          "question": "如何通过USB电力输送功能为照相机供电？",
+          "answer": "### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。\n✎ 为照相机供电\n- 若在设定菜单中将[USB电力输送]选为[启用]，照相机开启时，EH-8P或EH-7P电源适配器将为照相机供电。有关详细信息，请参阅“‘电力输送’和‘充电’”（☞473）。\n- 仅当插有电池时才会为照相机供电。\n- 照相机通过外部电源供电时，电池将不会充电。"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "default",
+      "model_label": "nex-agi/Nex-N2-Pro (nex-agi/Nex-N2-Pro)",
+      "timings": {
+        "total_ms": 2027.2756000003938,
+        "prepare_ms": 2.981300000101328,
+        "match_ms": 2021.668000000318,
+        "match_first_token_ms": 1038.7138000005507,
+        "lookup_ms": 0.39399999968736665,
+        "match_output_tokens": 47,
+        "tokens": {
+          "prompt_tokens": 9255,
+          "completion_tokens": 47,
+          "total_tokens": 9302
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 9255,
+              "completion_tokens": 47,
+              "total_tokens": 9302
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

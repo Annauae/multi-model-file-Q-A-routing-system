@@ -7,274 +7,456 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/styles.css?v=5" />
+    <link rel="stylesheet" href="/static/styles.css?v=29" />
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
   </head>
   <body>
-    <header class="topbar">
-      <nav class="appNav">
-        <button type="button" class="appNavBtn active" data-app-view="test">单问题测试</button>
-        <button type="button" class="appNavBtn" data-app-view="manage">管理</button>
-        <button type="button" class="appNavBtn" data-app-view="confidence">置信度</button>
-      </nav>
-      <div class="topbarRight">
-        <div class="status">
-          <span class="dot" id="healthDot"></span>
-          <span class="txt" id="healthText">连接中…</span>
+    <div class="appShell">
+      <aside class="sidebar">
+        <div class="sidebarBrand">知识问答控制台</div>
+        <nav class="sidebarNav" id="sidebarNav">
+          <div class="navGroup" data-nav-group="debug">
+            <button type="button" class="navGroupHead" data-nav="debug">
+              <span>调试</span><span class="navChevron">▾</span>
+            </button>
+            <div class="navSub">
+              <button type="button" class="navItem active" data-module="debug" data-sub="single">问答</button>
+              <button type="button" class="navItem" data-module="debug" data-sub="recall">召回度测试</button>
+            </div>
+          </div>
+          <div class="navGroup" data-nav-group="manage">
+            <button type="button" class="navGroupHead" data-nav="manage"><span>管理</span></button>
+          </div>
+          <div class="navGroup" data-nav-group="logs">
+            <button type="button" class="navGroupHead" data-nav="logs"><span>日志</span></button>
+          </div>
+          <div class="navGroup" data-nav-group="settings">
+            <button type="button" class="navGroupHead" data-nav="settings"><span>设置</span></button>
+          </div>
+        </nav>
+      </aside>
+
+      <header class="appHeader">
+        <div class="breadcrumb" id="breadcrumb">首页 / <strong>调试</strong> / 问答</div>
+        <div class="headerRight">
+          <button type="button" id="docsOpenBtn" class="headerDocBtn">文档</button>
+          <div class="status">
+            <span class="dot" id="healthDot"></span>
+            <span class="txt" id="healthText">连接中…</span>
+          </div>
         </div>
+      </header>
+
+      <div class="appBody withRight" id="appBody">
+        <div class="mainContent">
+          <!-- 调试：单次 -->
+          <section id="viewDebugSingle" class="viewPane active">
+            <div class="panel">
+              <div class="stripHead"><span>候选回答</span></div>
+              <div class="answersScroll"><div id="debugAnswersBox" class="answersBody"><div class="empty">在右侧栏输入问题并提问。</div></div></div>
+            </div>
+          </section>
+
+          <!-- 调试：召回度 -->
+          <section id="viewDebugRecall" class="viewPane">
+            <div class="recallPage panel">
+              <div class="stripHead">
+                <span>召回度测试</span>
+                <span id="recallStat" class="recallStat muted"></span>
+              </div>
+              <div class="recallToolbar">
+                <label class="recallPageSizeLabel">
+                  显示条数
+                  <select id="recallPageSizeSelect" class="recallPageSizeSelect">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="0">不限</option>
+                  </select>
+                </label>
+                <label class="recallSelectAllLabel">
+                  <input type="checkbox" id="recallSelectAll" /> 全选
+                </label>
+              </div>
+              <div id="recallListScroll" class="recallListScroll">
+                <div id="recallListBody" class="recallListBody"></div>
+              </div>
+              <div id="recallListInfo" class="recallListInfo muted"></div>
+            </div>
+          </section>
+
+          <!-- 管理 -->
+          <section id="viewManage" class="viewPane">
+            <div class="managePageLayout">
+              <nav class="manageSubNav" id="manageSubNav">
+                <button type="button" class="manageNavItem active" data-manage-sub="items">问题管理</button>
+                <button type="button" class="manageNavItem" data-manage-sub="files">文件管理</button>
+                <button type="button" class="manageNavItem" data-manage-sub="generate">问题生成</button>
+              </nav>
+              <div class="manageMain">
+                <div id="manageSubPaneItems" class="manageSubPane active">
+            <div class="manageLayout">
+              <section class="manageCol">
+                <div class="stripHead">
+                  <span>知识库</span>
+                  <span class="headActions">
+                    <div class="dropdown" id="kbActionsDropdown">
+                      <button type="button" class="btn primary btnXs dropdownToggle">操作 ▾</button>
+                      <div class="dropdownMenu hidden">
+                        <button type="button" class="dropdownItem" data-kb-action="add">新增知识库</button>
+                        <button type="button" class="dropdownItem" data-kb-action="refresh">刷新列表</button>
+                        <div class="dropdownDivider"></div>
+                        <button type="button" class="dropdownItem" data-kb-action="rename">重命名</button>
+                        <button type="button" class="dropdownItem" data-kb-action="reload">重新加载索引</button>
+                        <div class="dropdownDivider"></div>
+                        <button type="button" class="dropdownItem danger" data-kb-action="delete">删除知识库</button>
+                      </div>
+                    </div>
+                  </span>
+                </div>
+                <div id="kbList" class="scrollInner listBody"></div>
+              </section>
+              <section class="manageCol">
+                <div class="stripHead">
+                  <span>标准问题</span>
+                  <span class="headActions">
+                    <div class="dropdown" id="itemActionsDropdown">
+                      <button type="button" class="btn primary btnXs dropdownToggle">操作 ▾</button>
+                      <div class="dropdownMenu hidden">
+                        <button type="button" class="dropdownItem" data-item-action="add">新增问题</button>
+                        <button type="button" class="dropdownItem" data-item-action="batchAdd">批量新增</button>
+                        <button type="button" class="dropdownItem" data-item-action="refresh">刷新列表</button>
+                        <div class="dropdownDivider"></div>
+                        <button type="button" class="dropdownItem" data-item-action="selectAll">全选</button>
+                        <button type="button" class="dropdownItem" data-item-action="selectNone">取消全选</button>
+                        <button type="button" class="dropdownItem" data-item-action="invertSelect">反选</button>
+                        <div class="dropdownDivider"></div>
+                        <button type="button" class="dropdownItem" data-item-action="enableSelected">启用选中</button>
+                        <button type="button" class="dropdownItem" data-item-action="disableSelected">禁用选中</button>
+                        <button type="button" class="dropdownItem danger" data-item-action="deleteSelected">删除选中</button>
+                      </div>
+                    </div>
+                  </span>
+                </div>
+                <div class="manageSearchRow"><input id="itemSearch" type="search" placeholder="搜索问题…" /></div>
+                <div id="itemList" class="scrollInner listBody"></div>
+              </section>
+              <section class="manageEditorCol panel" style="border:none;border-radius:0;box-shadow:none">
+                <div class="stripHead editorTabHead">
+                  <div class="leftTabs">
+                    <button type="button" class="tabBtn active" data-editor-tab="item">问题编辑</button>
+                    <button type="button" class="tabBtn" data-editor-tab="json">JSON 源码</button>
+                  </div>
+                  <span class="headActions"><button type="button" id="editorSaveBtn" class="btn primary btnXs">保存</button></span>
+                </div>
+                <div class="editorBody">
+                  <div id="editorTabItem" class="editorPane active">
+                    <label class="fieldLabel">ID<input id="editId" type="text" readonly /></label>
+                    <label class="fieldLabel">标准问题<textarea id="editQuestion" rows="2"></textarea></label>
+                    <label class="fieldLabel">变体问法（每行一条）<textarea id="editVariants" rows="3"></textarea></label>
+                    <label class="fieldLabel">回答（Markdown）</label>
+                    <div class="mdEditorWrap">
+                      <div class="mdEditorToolbar">
+                        <div class="segmentedControl" id="editAnswerSegment">
+                          <button type="button" class="segmentedBtn active" id="editAnswerTabEdit">编辑</button>
+                          <button type="button" class="segmentedBtn" id="editAnswerTabPreview">预览</button>
+                        </div>
+                      </div>
+                      <div id="editAnswerEditPane"><textarea id="editAnswer" rows="10" spellcheck="false"></textarea></div>
+                      <div id="editAnswerPreviewPane" class="answerPreviewBox mdPreview hidden"></div>
+                    </div>
+                    <label class="fieldCheck"><input id="editEnabled" type="checkbox" checked /> 启用匹配</label>
+                  </div>
+                  <div id="editorTabJson" class="editorPane"><textarea id="jsonEditor" class="jsonEditor" spellcheck="false"></textarea></div>
+                </div>
+              </section>
+            </div>
+                </div>
+                <div id="manageSubPaneFiles" class="manageSubPane">
+                  <div class="filesPage panel">
+                    <div class="filesLayout">
+                      <aside class="filesTreeCol">
+                        <div class="stripHead"><span>文件</span></div>
+                        <div id="filesTree" class="fileTree scrollInner"></div>
+                      </aside>
+                      <section class="filesEditorCol">
+                        <div class="uploadPhaseHead stripHead">
+                          <span class="uploadPhaseTitle" id="filesEditorTitle">Markdown 编辑</span>
+                          <span id="filesEditLineCountLabel" class="muted"></span>
+                          <div class="segmentedControl" id="filesEditSegment">
+                            <button type="button" class="segmentedBtn active" id="filesEditTabSource">编辑</button>
+                            <button type="button" class="segmentedBtn" id="filesEditTabPreview">预览</button>
+                          </div>
+                        </div>
+                        <div id="filesPdfHint" class="filesPdfHint hidden muted">已选 PDF，请在右侧栏提取为 Markdown</div>
+                        <div class="uploadEditBody filesEditBody">
+                          <div id="filesEditSourcePane" class="uploadEditPane active">
+                            <textarea id="filesEditSource" class="uploadEditTextarea" spellcheck="false" placeholder="从左侧选择文件…"></textarea>
+                          </div>
+                          <div id="filesEditPreviewPane" class="uploadEditPane answerPreviewBox mdPreview"></div>
+                        </div>
+                      </section>
+                    </div>
+                    <input id="filesFileInput" type="file" accept=".pdf,.md" hidden />
+                  </div>
+                </div>
+                <div id="manageSubPaneGenerate" class="manageSubPane">
+                  <div class="generatePage panel">
+                    <div class="generateToolbar stripHead">
+                      <label class="kbSelectLabel">导入知识库<select id="generateKbSelect" class="kbSelect"></select></label>
+                      <button type="button" id="generateCreateKbBtn" class="btn btnXs ghost">+ 新建</button>
+                      <button type="button" id="generateRefreshTreeBtn" class="btn btnXs ghost">刷新文件</button>
+                      <span id="generateFileLabel" class="muted generateFileLabel">未选择 Markdown</span>
+                    </div>
+                    <div class="uploadSelectLayout generateLayout">
+                      <aside class="generateTreeCol">
+                        <div class="stripHead"><span>Markdown 文件</span></div>
+                        <div id="generateFileTree" class="fileTree scrollInner"></div>
+                      </aside>
+                      <aside class="uploadSelectLeft">
+                        <div class="uploadPhaseHead stripHead">
+                          <span class="uploadPhaseTitle">选择问题</span>
+                          <span class="headActions">
+                            <button type="button" id="generateCommitBtn" class="btn btnXs primary">导入到知识库</button>
+                          </span>
+                        </div>
+                        <div class="uploadSelectLeftBody">
+                          <div class="uploadRangePicker">
+                            <span class="uploadRangeTitle">从</span>
+                            <input type="number" id="generateSelLineStart" class="pageRangeInput" value="1" min="1" />
+                            <span class="uploadRangeTitle">到</span>
+                            <input type="number" id="generateSelLineEnd" class="pageRangeInput" value="1" min="1" />
+                            <span class="uploadRangeTitle">行</span>
+                            <button type="button" id="generateAddSelectionBtn" class="btn btnXs primary">添加选择</button>
+                          </div>
+                          <div id="generateSelectionsList" class="uploadSelectionsList"></div>
+                        </div>
+                      </aside>
+                      <section class="uploadSelectRight">
+                        <div class="uploadMdToolbar">
+                          <span id="generateLineCountLabel" class="muted"></span>
+                          <div class="segmentedControl" id="generateMdSegment">
+                            <button type="button" class="segmentedBtn active" id="generateMdTabSource">源码</button>
+                            <button type="button" class="segmentedBtn" id="generateMdTabPreview">预览</button>
+                          </div>
+                        </div>
+                        <div id="generateMdViewer" class="mdLineViewer"></div>
+                      </section>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 日志 -->
+          <section id="viewLogs" class="viewPane">
+            <div class="logsLayout">
+              <nav class="logsSubNav" id="logsSubNav">
+                <button type="button" class="logsNavItem active" data-log-module="">全部</button>
+                <button type="button" class="logsNavItem" data-log-module="debug">调试</button>
+                <button type="button" class="logsNavItem" data-log-module="manage">问题管理</button>
+                <button type="button" class="logsNavItem" data-log-module="files">文件管理</button>
+                <button type="button" class="logsNavItem" data-log-module="generate">问题生成</button>
+                <button type="button" class="logsNavItem" data-log-module="settings">设置</button>
+              </nav>
+              <div class="logsMain">
+                <div class="logsToolbar stripHead">
+                  <label class="kbSelectLabel">知识库<select id="logsKbSelect" class="kbSelect"><option value="">全部知识库</option></select></label>
+                  <span class="headActions">
+                    <button type="button" id="logsPauseBtn" class="btn btnXs ghost">暂停</button>
+                    <button type="button" id="logsClearBtn" class="btn btnXs ghost">清空</button>
+                    <button type="button" id="logsRefreshBtn" class="btn btnXs primary">刷新</button>
+                  </span>
+                </div>
+                <div class="logScroll logsScrollMain"><div id="logsBox" class="logBody"></div></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 设置 -->
+          <section id="viewSettings" class="viewPane">
+            <div class="settingsLayout">
+              <nav class="settingsSubNav" id="settingsSubNav">
+                <button type="button" class="settingsNavItem active" data-settings-sec="secMatchProfiles">回答模型</button>
+                <button type="button" class="settingsNavItem" data-settings-sec="secImportModel">FAQ 生成模型</button>
+                <button type="button" class="settingsNavItem" data-settings-sec="secPdfVlmModel">文档提取模型</button>
+                <button type="button" class="settingsNavItem" data-settings-sec="secConfPrompt">回答模型提示词</button>
+                <button type="button" class="settingsNavItem" data-settings-sec="secFaqPrompt">FAQ 生成提示词</button>
+                <button type="button" class="settingsNavItem" data-settings-sec="secVlmPrompt">文档提取提示词</button>
+              </nav>
+              <div class="settingsMain" id="settingsMain">
+                <button type="button" id="settingsSaveAllBtn" class="btn primary btnXs settingsSaveFloat">保存全部</button>
+                <section id="secMatchProfiles" class="settingsSection">
+                  <h3>回答模型配置</h3>
+                  <p class="muted">可添加多套完整配置（API / Model 独立），问答与召回度测试页可选择。</p>
+                  <div id="matchProfilesList"></div>
+                  <button type="button" id="settingsAddProfileBtn" class="btn btnXs ghost" style="margin-top:10px">+ 添加模型</button>
+                </section>
+                <section id="secImportModel" class="settingsSection">
+                  <h3>FAQ 生成模型</h3>
+                  <p class="muted">上传导入时自动生成问法所用 LLM 的 API 配置。</p>
+                  <div class="slotFormInner" data-slot="import"></div>
+                </section>
+                <section id="secPdfVlmModel" class="settingsSection">
+                  <h3>文档提取模型</h3>
+                  <p class="muted">PDF 逐页 Docling 提取后 VLM 精修所用 LLM 的 API 配置。</p>
+                  <div class="slotFormInner" data-slot="pdf_vlm"></div>
+                </section>
+                <section id="secConfPrompt" class="settingsSection">
+                  <h3>回答模型提示词</h3>
+                  <p class="muted">问答与召回度测试中的语义匹配规则；留空则使用内置默认。</p>
+                  <div class="settingsPromptActions">
+                    <button type="button" id="settingsConfResetBtn" class="btn btnXs ghost">恢复默认提示词</button>
+                  </div>
+                  <label class="fieldLabel">回答匹配规则<textarea id="settingsConfPrompt" rows="8" class="settingsTextarea"></textarea></label>
+                  <label class="fieldLabel">System Prompt 预览（只读）<textarea id="settingsConfPreview" rows="8" readonly class="settingsTextarea readonly"></textarea></label>
+                </section>
+                <section id="secFaqPrompt" class="settingsSection">
+                  <h3>FAQ 生成提示词</h3>
+                  <p class="muted">上传导入时根据选中回答正文生成标准问题与其他问法；留空则使用内置默认。</p>
+                  <div class="settingsPromptActions">
+                    <button type="button" id="settingsFaqResetBtn" class="btn btnXs ghost">恢复默认提示词</button>
+                  </div>
+                  <label class="fieldLabel">FAQ 问法生成规则<textarea id="settingsFaqPrompt" rows="12" class="settingsTextarea"></textarea></label>
+                  <label class="fieldLabel">System Prompt 预览（只读）<textarea id="settingsFaqPreview" rows="12" readonly class="settingsTextarea readonly"></textarea></label>
+                </section>
+                <section id="secVlmPrompt" class="settingsSection">
+                  <h3>文档提取提示词</h3>
+                  <p class="muted">PDF 提取时 VLM 精修 Markdown 的 system prompt；留空则使用内置默认。</p>
+                  <div class="settingsPromptActions">
+                    <button type="button" id="settingsVlmResetBtn" class="btn btnXs ghost">恢复默认提示词</button>
+                  </div>
+                  <label class="fieldLabel">VLM 精修规则<textarea id="settingsVlmPrompt" rows="12" class="settingsTextarea"></textarea></label>
+                  <label class="fieldLabel">System Prompt 预览（只读）<textarea id="settingsVlmPreview" rows="12" readonly class="settingsTextarea readonly"></textarea></label>
+                </section>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 右侧栏（调试/上传） -->
+        <aside class="rightPanel visible" id="rightPanel">
+          <div class="stripHead rightTabHead">
+            <div class="rightTabs" id="rightTabs">
+              <button type="button" class="tabBtn active" data-right-tab="ask">提问</button>
+              <button type="button" class="tabBtn" data-right-tab="candidates">候选匹配</button>
+              <button type="button" class="tabBtn hidden" data-right-tab="files">文件操作</button>
+              <button type="button" class="tabBtn" data-right-tab="timing">消耗时间</button>
+              <button type="button" class="tabBtn" data-right-tab="tokens">消耗 Token</button>
+            </div>
+          </div>
+          <div class="rightTabBody">
+            <div id="rightTabAsk" class="rightTabPane active">
+              <div class="moduleSide debug single stripBody qBody">
+                <label class="fieldLabel">问题<textarea id="debugQuestion" rows="4" placeholder="输入问题… Ctrl+Enter 提问"></textarea></label>
+                <div class="qActions">
+                  <label class="kbSelectLabel">知识库<select id="debugKbSelect" class="kbSelect"></select></label>
+                  <label class="kbSelectLabel">回答模型<select id="debugMatchProfileSelect" class="kbSelect"></select></label>
+                  <label class="kbSelectLabel">Top K<input id="debugTopK" type="number" class="topKInput" min="1" max="20" value="5" /></label>
+                </div>
+                <div class="qActions">
+                  <button id="debugAskBtn" class="btn primary btnXs" type="button">提问</button>
+                  <button id="debugClearBtn" class="btn ghost btnXs" type="button">清空</button>
+                  <button id="debugRandomBtn" class="btn ghost btnXs" type="button">随机问题</button>
+                </div>
+              </div>
+              <div class="moduleSide recall hidden stripBody qBody">
+                <label class="kbSelectLabel">知识库<select id="recallKbSelect" class="kbSelect"></select></label>
+                <label class="kbSelectLabel">Top K<input id="recallTopK" type="number" class="topKInput" min="1" max="20" value="5" /></label>
+                <label class="kbSelectLabel">回答模型<select id="recallMatchProfileSelect" class="kbSelect"></select></label>
+                <div class="qActions recallSideActions">
+                  <button type="button" id="recallAddRowBtn" class="btn btnXs">+ 添加行</button>
+                  <button type="button" id="recallDeleteBtn" class="btn btnXs ghost">删除选中</button>
+                </div>
+                <div class="qActions recallSideActions">
+                  <button type="button" id="recallRunBtn" class="btn btnXs primary">批量运行</button>
+                  <button type="button" id="recallSaveBtn" class="btn btnXs primary">保存</button>
+                </div>
+                <div class="qActions recallSideActions">
+                  <button type="button" id="recallImportBtn" class="btn btnXs ghost">批量导入问题</button>
+                  <button type="button" id="recallExportBtn" class="btn btnXs ghost">导出 Markdown</button>
+                </div>
+              </div>
+            </div>
+            <div id="rightTabCandidates" class="rightTabPane">
+              <div class="routeScroll"><div id="debugCandidatesBox" class="routeBody"><div class="empty">提问后显示</div></div></div>
+            </div>
+            <div id="rightTabFiles" class="rightTabPane">
+              <div class="filesSidePanel stripBody">
+                <div id="filesSideSelected" class="filesSideSelected muted">未选择文件</div>
+                <div class="filesSideToolbar">
+                  <button type="button" id="filesUploadBtn" class="btn btnXs primary">上传</button>
+                  <button type="button" id="filesSaveBtn" class="btn btnXs primary">保存</button>
+                  <div class="dropdown" id="filesActionsDropdown">
+                    <button type="button" class="btn btnXs ghost dropdownToggle">操作 ▾</button>
+                    <div class="dropdownMenu hidden">
+                      <button type="button" class="dropdownItem" data-files-action="newMd">新建 MD</button>
+                      <button type="button" class="dropdownItem" data-files-action="refresh">刷新</button>
+                      <button type="button" class="dropdownItem" data-files-action="rename">重命名</button>
+                      <div class="dropdownDivider"></div>
+                      <button type="button" class="dropdownItem danger" data-files-action="delete">删除</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="filesExtractSection" class="filesExtractSection hidden">
+                  <div id="filesPdfRange" class="uploadRangeBlock hidden">
+                    <div class="uploadRangeHead filesPdfRangeHead">
+                      <span class="uploadRangeTitle">PDF 页码范围</span>
+                      <button type="button" id="filesAddPdfRangeBtn" class="btn btnXs ghost">+ 添加范围</button>
+                    </div>
+                    <div id="filesPdfRangeList" class="rangeList"></div>
+                  </div>
+                  <div id="filesMdRange" class="uploadRangeBlock hidden">
+                    <div class="uploadRangeHead">
+                      <span class="uploadRangeTitle">MD 行：从</span>
+                      <input type="number" id="filesLineStart" class="pageRangeInput" value="1" min="1" />
+                      <span class="uploadRangeTitle">到</span>
+                      <input type="number" id="filesLineEnd" class="pageRangeInput" value="100" min="1" />
+                    </div>
+                  </div>
+                  <button type="button" id="filesExtractBtn" class="btn btnXs primary" style="width:100%;margin-top:8px">开始提取</button>
+                </div>
+                <div id="filesProgress" class="importProgress hidden"></div>
+                <p class="uploadFormatHint" style="margin-top:10px">支持 pdf、markdown</p>
+              </div>
+            </div>
+            <div id="rightTabTiming" class="rightTabPane">
+              <div class="moduleMetrics debug">
+                <div id="debugTimingPanel" class="timingPanel"><div class="empty">提问后显示</div></div>
+              </div>
+              <div class="moduleMetrics import hidden">
+                <div id="importTimingPanel" class="timingPanel"><div class="empty">运行后显示</div></div>
+              </div>
+            </div>
+            <div id="rightTabTokens" class="rightTabPane">
+              <div class="moduleMetrics debug">
+                <div id="debugTokenPanel" class="tokenPanel"><div class="empty">提问后显示</div></div>
+              </div>
+              <div class="moduleMetrics import hidden">
+                <div id="importTokenPanel" class="tokenPanel"><div class="empty">运行后显示</div></div>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
-    </header>
+    </div>
 
     <div id="toastContainer" class="toastContainer" aria-live="polite"></div>
 
-    <main id="viewTest" class="viewPane active">
-      <div class="testGrid">
-        <section class="panel testInputPanel">
-          <div class="stripHead">输入问题</div>
-          <div class="stripBody qBody">
-            <textarea id="question" rows="3" placeholder="输入问题… Ctrl+Enter 提问"></textarea>
-            <div class="qActions">
-              <label class="kbSelectLabel">知识库
-                <select id="kbSelect" class="kbSelect"></select>
-              </label>
-              <button id="askBtn" class="btn primary btnXs" type="button">提问</button>
-              <button id="clearBtn" class="btn ghost btnXs" type="button">清空</button>
-              <button id="randomQuestionBtn" class="btn ghost btnXs" type="button">随机问题</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel rightPanel testSidePanel">
-          <div class="stripHead rightTabHead">
-            <div class="rightTabs">
-              <button type="button" class="tabBtn active" data-right-tab="log">日志</button>
-              <button type="button" class="tabBtn" data-right-tab="files">JSON</button>
-            </div>
-            <span class="headActions">
-              <button id="clearLogBtn" class="btn ghost btnXs" type="button">清空</button>
-            </span>
-          </div>
-          <div class="rightTabBody">
-            <div id="rightTabLog" class="rightTabPane active">
-              <div class="logScroll"><div id="logBox" class="logBody"></div></div>
-            </div>
-            <div id="rightTabFiles" class="rightTabPane">
-              <div class="fileTabToolbar">
-                <div class="fileViewToggle">
-                  <button type="button" id="filePreviewBtn" class="btn btnXs primary">格式化</button>
-                  <button type="button" id="fileSourceBtn" class="btn btnXs ghost">源码</button>
-                </div>
-              </div>
-              <pre id="filePreviewBox" class="filePreviewScroll fileSource"></pre>
-              <pre id="fileSourceBox" class="filePreviewScroll fileSource hidden"></pre>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel leftTabPanel testMainPanel">
-          <div class="stripHead leftTabHead">
-            <div class="leftTabs">
-              <button type="button" class="tabBtn active" data-left-tab="answer">回答</button>
-              <button type="button" class="tabBtn" data-left-tab="match">匹配</button>
-            </div>
-          </div>
-          <div class="leftTabBody">
-            <div class="leftContentRow">
-              <div class="leftTabPanesWrap">
-                <div id="leftTabAnswer" class="leftTabPane active">
-                  <div class="answerLayout">
-                    <div class="answerMain">
-                      <div class="answerHeadBar">
-                        <span class="answerStreamLabel">回答</span>
-                        <div class="answerViewToolbar" id="answerViewToolbar">
-                          <button type="button" id="answerPreviewBtn" class="btn btnXs primary">预览</button>
-                          <button type="button" id="answerSourceBtn" class="btn btnXs ghost">源码</button>
-                        </div>
-                      </div>
-                      <div class="answersScroll">
-                        <div id="answersBox" class="answersBody mdPreview"><div class="empty">尚无回答。</div></div>
-                        <pre id="streamAnswerSource" class="answersBody answerSource hidden"></pre>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div id="leftTabMatch" class="leftTabPane">
-                  <div class="routeScroll"><div id="matchBox" class="routeBody"><div class="empty">等待提问…</div></div></div>
-                </div>
-              </div>
-              <aside id="timingAside" class="timingAside">
-                <div class="timingAsideHead">消耗时间</div>
-                <div id="timingPanel" class="timingPanel"><div class="empty">提问后显示</div></div>
-              </aside>
-            </div>
-          </div>
-        </section>
+    <div id="docsOverlay" class="docsOverlay hidden">
+      <div class="docsModal">
+        <div class="docsHead">
+          <span>操作手册</span>
+          <button type="button" id="docsCloseBtn" class="btn btnXs ghost">关闭</button>
+        </div>
+        <div class="docsLayout">
+          <nav id="docsToc" class="docsToc" aria-label="文档目录"></nav>
+          <div id="docsBody" class="docsBody markdownBody"></div>
+        </div>
       </div>
-    </main>
-
-    <main id="viewConfidence" class="viewPane hidden">
-      <div class="testGrid">
-        <section class="panel testInputPanel">
-          <div class="stripHead">输入问题（置信度匹配）</div>
-          <div class="stripBody qBody">
-            <textarea id="confQuestion" rows="3" placeholder="输入问题… Ctrl+Enter 提问"></textarea>
-            <div class="qActions">
-              <label class="kbSelectLabel">知识库
-                <select id="confKbSelect" class="kbSelect"></select>
-              </label>
-              <label class="kbSelectLabel">Top K
-                <input id="confTopK" type="number" class="topKInput" min="1" max="20" value="5" />
-              </label>
-              <button id="confAskBtn" class="btn primary btnXs" type="button">提问</button>
-              <button id="confClearBtn" class="btn ghost btnXs" type="button">清空</button>
-              <button id="confRandomBtn" class="btn ghost btnXs" type="button">随机问题</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel rightPanel testSidePanel">
-          <div class="stripHead rightTabHead">
-            <div class="rightTabs">
-              <button type="button" class="tabBtn active" data-conf-right-tab="log">日志</button>
-              <button type="button" class="tabBtn" data-conf-right-tab="raw">原始输出</button>
-            </div>
-            <span class="headActions">
-              <button id="confClearLogBtn" class="btn ghost btnXs" type="button">清空</button>
-            </span>
-          </div>
-          <div class="rightTabBody">
-            <div id="confRightTabLog" class="rightTabPane active">
-              <div class="logScroll"><div id="confLogBox" class="logBody"></div></div>
-            </div>
-            <div id="confRightTabRaw" class="rightTabPane">
-              <pre id="confRawOutput" class="filePreviewScroll fileSource"><span class="empty">提问后显示模型原始 JSON 输出</span></pre>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel leftTabPanel testMainPanel">
-          <div class="stripHead leftTabHead">
-            <div class="leftTabs">
-              <button type="button" class="tabBtn active" data-conf-left-tab="answer">回答</button>
-              <button type="button" class="tabBtn" data-conf-left-tab="candidates">候选匹配</button>
-            </div>
-          </div>
-          <div class="leftTabBody">
-            <div class="leftContentRow">
-              <div class="leftTabPanesWrap">
-                <div id="confLeftTabAnswer" class="leftTabPane active">
-                  <div class="answerLayout">
-                    <div class="answerMain">
-                      <div class="answerHeadBar">
-                        <span class="answerStreamLabel" id="confAnswerLabel">回答</span>
-                        <div class="answerViewToolbar">
-                          <button type="button" id="confAnswerPreviewBtn" class="btn btnXs primary">预览</button>
-                          <button type="button" id="confAnswerSourceBtn" class="btn btnXs ghost">源码</button>
-                        </div>
-                      </div>
-                      <div class="answersScroll">
-                        <div id="confAnswersBox" class="answersBody mdPreview"><div class="empty">尚无回答。</div></div>
-                        <pre id="confAnswerSource" class="answersBody answerSource hidden"></pre>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div id="confLeftTabCandidates" class="leftTabPane">
-                  <div class="routeScroll"><div id="confCandidatesBox" class="routeBody"><div class="empty">等待提问…</div></div></div>
-                </div>
-              </div>
-              <aside class="timingAside">
-                <div class="timingAsideHead">消耗时间</div>
-                <div id="confTimingPanel" class="timingPanel"><div class="empty">提问后显示</div></div>
-              </aside>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-
-    <main id="viewManage" class="viewPane hidden">
-      <div class="manageGrid">
-        <section class="panel manageCol">
-          <div class="stripHead">
-            <span>知识库</span>
-            <span class="headActions">
-              <div class="dropdown" id="kbActionsDropdown">
-                <button type="button" class="btn primary btnXs dropdownToggle" aria-haspopup="true">操作 ▾</button>
-                <div class="dropdownMenu hidden">
-                  <button type="button" class="dropdownItem" data-kb-action="add">新增知识库</button>
-                  <button type="button" class="dropdownItem" data-kb-action="refresh">刷新列表</button>
-                  <div class="dropdownDivider"></div>
-                  <button type="button" class="dropdownItem" data-kb-action="rename">重命名</button>
-                  <button type="button" class="dropdownItem" data-kb-action="reload">重新加载索引</button>
-                  <div class="dropdownDivider"></div>
-                  <button type="button" class="dropdownItem danger" data-kb-action="delete">删除知识库</button>
-                </div>
-              </div>
-            </span>
-          </div>
-          <div id="kbList" class="scrollInner listBody"></div>
-        </section>
-
-        <section class="panel manageCol">
-          <div class="stripHead">
-            <span>标准问题</span>
-            <span class="headActions">
-              <div class="dropdown" id="itemActionsDropdown">
-                <button type="button" class="btn primary btnXs dropdownToggle" aria-haspopup="true">操作 ▾</button>
-                <div class="dropdownMenu hidden">
-                  <button type="button" class="dropdownItem" data-item-action="add">新增问题</button>
-                  <button type="button" class="dropdownItem" data-item-action="batchAdd">批量新增</button>
-                  <button type="button" class="dropdownItem" data-item-action="refresh">刷新列表</button>
-                  <div class="dropdownDivider"></div>
-                  <button type="button" class="dropdownItem" data-item-action="selectAll">全选</button>
-                  <button type="button" class="dropdownItem" data-item-action="selectNone">取消全选</button>
-                  <button type="button" class="dropdownItem" data-item-action="invertSelect">反选</button>
-                  <div class="dropdownDivider"></div>
-                  <button type="button" class="dropdownItem" data-item-action="enableSelected">启用选中</button>
-                  <button type="button" class="dropdownItem" data-item-action="disableSelected">禁用选中</button>
-                  <button type="button" class="dropdownItem danger" data-item-action="deleteSelected">删除选中</button>
-                </div>
-              </div>
-            </span>
-          </div>
-          <div class="manageSearchRow">
-            <input id="itemSearch" type="search" placeholder="搜索问题…" />
-          </div>
-          <div id="itemList" class="scrollInner listBody"></div>
-        </section>
-
-        <section class="panel manageEditor">
-          <div class="stripHead editorTabHead">
-            <div class="leftTabs">
-              <button type="button" class="tabBtn active" data-editor-tab="item">问答编辑</button>
-              <button type="button" class="tabBtn" data-editor-tab="json">JSON 源码</button>
-              <button type="button" class="tabBtn" data-editor-tab="prompt">匹配提示词</button>
-            </div>
-            <span class="headActions">
-              <button type="button" id="editorSaveBtn" class="btn primary btnXs">保存</button>
-            </span>
-          </div>
-          <div class="editorBody">
-            <div id="editorTabItem" class="editorPane active">
-              <label class="fieldLabel">ID<input id="editId" type="text" readonly /></label>
-              <label class="fieldLabel">标准问题<textarea id="editQuestion" rows="2"></textarea></label>
-              <label class="fieldLabel">变体问法（每行一条）<textarea id="editVariants" rows="3"></textarea></label>
-              <label class="fieldLabel">回答（Markdown）<textarea id="editAnswer" rows="10"></textarea></label>
-              <label class="fieldCheck"><input id="editEnabled" type="checkbox" checked /> 启用匹配</label>
-            </div>
-            <div id="editorTabJson" class="editorPane">
-              <textarea id="jsonEditor" class="jsonEditor" spellcheck="false"></textarea>
-            </div>
-            <div id="editorTabPrompt" class="editorPane">
-              <label class="fieldLabel">匹配规则（不含问题列表）<textarea id="editMatchPrompt" rows="8"></textarea></label>
-              <label class="fieldLabel">完整 System Prompt 预览（只读）<textarea id="editSystemPreview" rows="12" readonly></textarea></label>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
+    </div>
 
     <div id="modalOverlay" class="modalOverlay hidden">
       <div class="modal">
@@ -287,10 +469,16 @@
       </div>
     </div>
 
-    <script src="/static/common.js?v=3"></script>
-    <script src="/static/answerRender.js?v=2"></script>
-    <script src="/static/test.js?v=2"></script>
-    <script src="/static/confidence.js?v=2"></script>
-    <script src="/static/manage.js?v=5"></script>
+    <script src="/static/common.js?v=22"></script>
+    <script src="/static/answerRender.js?v=3"></script>
+    <script src="/static/importShared.js?v=4"></script>
+    <script src="/static/debug.js?v=6"></script>
+    <script src="/static/recallTest.js?v=12"></script>
+    <script src="/static/docs.js?v=2"></script>
+    <script src="/static/manage.js?v=11"></script>
+    <script src="/static/files.js?v=7"></script>
+    <script src="/static/generate.js?v=3"></script>
+    <script src="/static/logs.js?v=4"></script>
+    <script src="/static/settings.js?v=11"></script>
   </body>
 </html>
