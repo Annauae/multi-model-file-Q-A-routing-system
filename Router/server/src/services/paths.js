@@ -19,6 +19,24 @@ export function kbModulesDirPath(filesRoot, kbId) {
 export function recallTestsJsonPath(filesRoot, kbId) {
     return path.join(kbDirPath(filesRoot, kbId), "recall_tests.json");
 }
+export function ragDirPath(filesRoot, kbId) {
+    return path.join(kbDirPath(filesRoot, kbId), "rag");
+}
+export function ragQuestionsJsonPath(filesRoot, kbId) {
+    return path.join(ragDirPath(filesRoot, kbId), "questions.json");
+}
+export function ragRecallTestsJsonPath(filesRoot, kbId) {
+    return path.join(ragDirPath(filesRoot, kbId), "recall_tests.json");
+}
+export function ragRuntimeConfigPath(filesRoot, kbId) {
+    return path.join(ragDirPath(filesRoot, kbId), "runtime_config.json");
+}
+export function ragIndexMetaPath(filesRoot, kbId) {
+    return path.join(ragDirPath(filesRoot, kbId), "index_meta.json");
+}
+export function ragEvalRunsDir(filesRoot, kbId) {
+    return path.join(ragDirPath(filesRoot, kbId), "eval");
+}
 export function documentsDirPath(filesRoot) {
     return path.join(filesRoot, DOCUMENTS_FOLDER);
 }

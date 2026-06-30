@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { apiJson } from "../api/client";
 import { useAppUi } from "../context/AppUiContext";
-import type { MatchProfile } from "../types";
+import { ModeBar } from "../components/ModeBar";
+import type { AskMode, MatchProfile, RagModelSlot } from "../types";
 
 const SLOT_ORDER = ["import", "pdf_vlm"] as const;
 const SLOT_LABELS: Record<string, string> = { import: "FAQ 生成模型", pdf_vlm: "文档提取模型 (PDF/VLM)" };
+const RAG_SLOT_ORDER = ["embedding", "rerank", "llm", "judge"] as const;
+const RAG_SLOT_LABELS: Record<string, string> = {
+  embedding: "Embedding 模型",
+  rerank: "Rerank 模型",
+  llm: "RAG 回答模型",
+  judge: "评测裁判模型",
+};
 const NAV_ITEMS = [
   { id: "secMatchProfiles", label: "回答模型" },
   { id: "secImportModel", label: "FAQ 生成模型" },
@@ -52,32 +60,48 @@ export function SettingsView() {
   const [profiles, setProfiles] = useState<MatchProfile[]>([]);
   const [defaultId, setDefaultId] = useState("default");
   const [slots, setSlots] = useState<Record<string, SlotConfig>>({});
-  const [prompts, setPrompts] = useState({ confidence_match: "", faq_generation: "", pdf_vlm: "" });
-  const [promptDefaults, setPromptDefaults] = useState({ confidence_match: "", faq_generation: "", pdf_vlm: "" });
-  const [promptPreview, setPromptPreview] = useState({ confidence_match: "", faq_generation: "", pdf_vlm: "" });
+  const [prompts, setPrompts] = useState({ confidence_match_prompt: "", faq_generation_prompt: "", pdf_vlm_prompt: "" });
+  const [promptDefaults, setPromptDefaults] = useState({ confidence_match_prompt: "", faq_generation_prompt: "", pdf_vlm_prompt: "" });
+  const [promptPreview, setPromptPreview] = useState({ confidence_match_prompt: "", faq_generation_prompt: "", pdf_vlm_prompt: "" });
+  const [settingsMode, setSettingsMode] = useState<AskMode>("llm");
+  const [ragSlots, setRagSlots] = useState<Record<string, RagModelSlot>>({});
 
   const load = async () => {
-    const [models, mp, pr] = await Promise.all([
+    const [models, mp, pr, ragModels] = await Promise.all([
       apiJson<{ slots: Record<string, SlotConfig> }>("/settings/models"),
       apiJson<{ profiles: MatchProfile[]; default_id: string }>("/settings/match-profiles"),
-      apiJson<{ confidence_match: string; faq_generation: string; pdf_vlm: string; defaults?: typeof prompts; previews?: typeof promptPreview }>("/settings/prompts"),
+      apiJson<{
+        confidence_match_prompt: string;
+        faq_generation_prompt: string;
+        pdf_vlm_prompt: string;
+        defaults?: typeof promptDefaults;
+        confidence_system_preview?: string;
+        faq_system_preview?: string;
+        pdf_vlm_system_preview?: string;
+      }>("/settings/prompts"),
+      apiJson<{ slots: Record<string, RagModelSlot> }>("/settings/rag-models").catch(() => ({ slots: {} })),
     ]);
     setSlots(models.slots || {});
     setProfiles(mp.profiles || []);
     setDefaultId(mp.default_id || "default");
-    setPrompts({ confidence_match: pr.confidence_match || "", faq_generation: pr.faq_generation || "", pdf_vlm: pr.pdf_vlm || "" });
-    if (pr.defaults) setPromptDefaults(pr.defaults);
-    if (pr.previews) setPromptPreview(pr.previews);
-    else {
-      setPromptPreview({
-        confidence_match: pr.confidence_match || promptDefaults.confidence_match,
-        faq_generation: pr.faq_generation || promptDefaults.faq_generation,
-        pdf_vlm: pr.pdf_vlm || promptDefaults.pdf_vlm,
-      });
-    }
+    const defs = pr.defaults || { confidence_match_prompt: "", faq_generation_prompt: "", pdf_vlm_prompt: "" };
+    setPromptDefaults(defs);
+    setPrompts({
+      confidence_match_prompt: pr.confidence_match_prompt || "",
+      faq_generation_prompt: pr.faq_generation_prompt || "",
+      pdf_vlm_prompt: pr.pdf_vlm_prompt || "",
+    });
+    setPromptPreview({
+      confidence_match_prompt: pr.confidence_system_preview || defs.confidence_match_prompt || "",
+      faq_generation_prompt: pr.faq_system_preview || defs.faq_generation_prompt || "",
+      pdf_vlm_prompt: pr.pdf_vlm_system_preview || defs.pdf_vlm_prompt || "",
+    });
+    setRagSlots(ragModels.slots || {});
   };
 
   useEffect(() => { void load(); }, []);
+
+  const navItems = settingsMode === "llm" ? [...NAV_ITEMS] : RAG_SLOT_ORDER.map((slot) => ({ id: `secRag_${slot}`, label: RAG_SLOT_LABELS[slot] }));
 
   useEffect(() => {
     const root = mainRef.current;
@@ -90,17 +114,29 @@ export function SettingsView() {
       },
       { root, rootMargin: "-20% 0px -60% 0px", threshold: 0 },
     );
-    NAV_ITEMS.forEach(({ id }) => {
+    navItems.forEach(({ id }) => {
       const el = document.getElementById(id);
       if (el) obs.observe(el);
     });
     return () => obs.disconnect();
-  }, [profiles.length]);
+  }, [profiles.length, settingsMode]);
 
   const saveAll = async () => {
-    await apiJson("/settings/models", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slots }) });
-    await apiJson("/settings/match-profiles", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profiles, default_id: defaultId }) });
-    await apiJson("/settings/prompts", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(prompts) });
+    if (settingsMode === "llm") {
+      await apiJson("/settings/models", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slots }) });
+      await apiJson("/settings/match-profiles", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profiles, default_id: defaultId }) });
+      await apiJson("/settings/prompts", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confidence_match_prompt: prompts.confidence_match_prompt,
+          faq_generation_prompt: prompts.faq_generation_prompt,
+          pdf_vlm_prompt: prompts.pdf_vlm_prompt,
+        }),
+      });
+    } else {
+      await apiJson("/settings/rag-models", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slots: ragSlots }) });
+    }
     showToast("全部设置已保存");
     void load();
   };
@@ -133,17 +169,24 @@ export function SettingsView() {
     </label>
   );
 
+  const updateRagSlot = (slot: string, field: string, value: string | number | boolean | null) => {
+    setRagSlots({ ...ragSlots, [slot]: { ...ragSlots[slot], [field]: value } });
+  };
+
   return (
     <section className="viewPane active" id="viewSettings">
       <div className="settingsLayout">
         <nav className="settingsSubNav" id="settingsSubNav">
-          {NAV_ITEMS.map(({ id, label }) => (
+          {navItems.map(({ id, label }) => (
             <button key={id} type="button" className={`settingsNavItem ${activeSec === id ? "active" : ""}`} data-settings-sec={id} onClick={() => scrollTo(id)}>{label}</button>
           ))}
         </nav>
         <div className="settingsMain" id="settingsMain" ref={mainRef}>
+          <ModeBar label="设置模式" mode={settingsMode} onChange={(m) => { setSettingsMode(m); setActiveSec(m === "llm" ? "secMatchProfiles" : "secRag_embedding"); }} />
           <button type="button" id="settingsSaveAllBtn" className="btn primary btnXs settingsSaveFloat" onClick={() => void saveAll()}>保存全部</button>
 
+          {settingsMode === "llm" && (
+          <div className="modePanelEnter">
           <section id="secMatchProfiles" className="settingsSection">
             <h3>回答模型配置</h3>
             <p className="muted">可添加多套模型，在问答与召回度测试页切换使用。支持本机 Ollama。</p>
@@ -196,31 +239,51 @@ export function SettingsView() {
             <h3>回答模型提示词</h3>
             <p className="muted">问答与召回度测试中的语义匹配规则；留空则使用内置默认。</p>
             <div className="settingsPromptActions">
-              <button type="button" id="settingsConfResetBtn" className="btn btnXs ghost" onClick={() => setPrompts({ ...prompts, confidence_match: promptDefaults.confidence_match })}>恢复默认提示词</button>
+              <button type="button" id="settingsConfResetBtn" className="btn btnXs ghost" onClick={() => setPrompts({ ...prompts, confidence_match_prompt: promptDefaults.confidence_match_prompt })}>恢复默认提示词</button>
             </div>
-            <label className="fieldLabel">回答匹配规则<textarea id="settingsConfPrompt" rows={8} className="settingsTextarea" value={prompts.confidence_match} onChange={(e) => setPrompts({ ...prompts, confidence_match: e.target.value })} /></label>
-            <label className="fieldLabel">规则预览（只读）<textarea id="settingsConfPreview" rows={8} readOnly className="settingsTextarea readonly" value={promptPreview.confidence_match || prompts.confidence_match || promptDefaults.confidence_match} /></label>
+            <label className="fieldLabel">回答匹配规则<textarea id="settingsConfPrompt" rows={8} className="settingsTextarea" value={prompts.confidence_match_prompt} onChange={(e) => setPrompts({ ...prompts, confidence_match_prompt: e.target.value })} /></label>
+            <label className="fieldLabel">规则预览（只读）<textarea id="settingsConfPreview" rows={8} readOnly className="settingsTextarea readonly" value={promptPreview.confidence_match_prompt} /></label>
           </section>
 
           <section id="secFaqPrompt" className="settingsSection">
             <h3>FAQ 生成提示词</h3>
             <p className="muted">问题生成弹窗中根据选中回答正文生成标准问题与其他问法；留空则使用内置默认。</p>
             <div className="settingsPromptActions">
-              <button type="button" id="settingsFaqResetBtn" className="btn btnXs ghost" onClick={() => setPrompts({ ...prompts, faq_generation: promptDefaults.faq_generation })}>恢复默认提示词</button>
+              <button type="button" id="settingsFaqResetBtn" className="btn btnXs ghost" onClick={() => setPrompts({ ...prompts, faq_generation_prompt: promptDefaults.faq_generation_prompt })}>恢复默认提示词</button>
             </div>
-            <label className="fieldLabel">FAQ 问法生成规则<textarea id="settingsFaqPrompt" rows={12} className="settingsTextarea" value={prompts.faq_generation} onChange={(e) => setPrompts({ ...prompts, faq_generation: e.target.value })} /></label>
-            <label className="fieldLabel">规则预览（只读）<textarea id="settingsFaqPreview" rows={12} readOnly className="settingsTextarea readonly" value={promptPreview.faq_generation || prompts.faq_generation || promptDefaults.faq_generation} /></label>
+            <label className="fieldLabel">FAQ 问法生成规则<textarea id="settingsFaqPrompt" rows={12} className="settingsTextarea" value={prompts.faq_generation_prompt} onChange={(e) => setPrompts({ ...prompts, faq_generation_prompt: e.target.value })} /></label>
+            <label className="fieldLabel">规则预览（只读）<textarea id="settingsFaqPreview" rows={12} readOnly className="settingsTextarea readonly" value={promptPreview.faq_generation_prompt} /></label>
           </section>
 
           <section id="secVlmPrompt" className="settingsSection">
             <h3>文档提取提示词</h3>
             <p className="muted">文件转 Markdown 弹窗中 PDF 整理规则；留空则使用内置默认。</p>
             <div className="settingsPromptActions">
-              <button type="button" id="settingsVlmResetBtn" className="btn btnXs ghost" onClick={() => setPrompts({ ...prompts, pdf_vlm: promptDefaults.pdf_vlm })}>恢复默认提示词</button>
+              <button type="button" id="settingsVlmResetBtn" className="btn btnXs ghost" onClick={() => setPrompts({ ...prompts, pdf_vlm_prompt: promptDefaults.pdf_vlm_prompt })}>恢复默认提示词</button>
             </div>
-            <label className="fieldLabel">文档整理规则<textarea id="settingsVlmPrompt" rows={12} className="settingsTextarea" value={prompts.pdf_vlm} onChange={(e) => setPrompts({ ...prompts, pdf_vlm: e.target.value })} /></label>
-            <label className="fieldLabel">规则预览（只读）<textarea id="settingsVlmPreview" rows={12} readOnly className="settingsTextarea readonly" value={promptPreview.pdf_vlm || prompts.pdf_vlm || promptDefaults.pdf_vlm} /></label>
+            <label className="fieldLabel">文档整理规则<textarea id="settingsVlmPrompt" rows={12} className="settingsTextarea" value={prompts.pdf_vlm_prompt} onChange={(e) => setPrompts({ ...prompts, pdf_vlm_prompt: e.target.value })} /></label>
+            <label className="fieldLabel">规则预览（只读）<textarea id="settingsVlmPreview" rows={12} readOnly className="settingsTextarea readonly" value={promptPreview.pdf_vlm_prompt} /></label>
           </section>
+          </div>
+          )}
+
+          {settingsMode === "rag" && (
+          <div className="modePanelEnter">
+            {RAG_SLOT_ORDER.map((slot) => (
+              <section key={slot} id={`secRag_${slot}`} className="settingsSection">
+                <h3>{RAG_SLOT_LABELS[slot]}</h3>
+                <p className="muted">RAG 模式专用，与回答模型配置互不共享。</p>
+                <div className="slotCard">
+                  <label className="fieldLabel">接口地址<input className="settingsInput" value={ragSlots[slot]?.api_base_url || ""} onChange={(e) => updateRagSlot(slot, "api_base_url", e.target.value)} /></label>
+                  <label className="fieldLabel">密钥 <KeyInput value={ragSlots[slot]?.api_key || ""} onChange={(v) => updateRagSlot(slot, "api_key", v)} /></label>
+                  <label className="fieldLabel">模型名称<input className="settingsInput" value={ragSlots[slot]?.model || ""} onChange={(e) => updateRagSlot(slot, "model", e.target.value)} /></label>
+                  <label className="fieldLabel">Max Tokens<input className="settingsInput" type="number" value={ragSlots[slot]?.max_tokens ?? 0} onChange={(e) => updateRagSlot(slot, "max_tokens", parseInt(e.target.value, 10))} /></label>
+                  <label className="fieldLabel">Temperature<input className="settingsInput" type="number" step={0.1} value={ragSlots[slot]?.temperature ?? 0} onChange={(e) => updateRagSlot(slot, "temperature", parseFloat(e.target.value))} /></label>
+                </div>
+              </section>
+            ))}
+          </div>
+          )}
         </div>
       </div>
     </section>

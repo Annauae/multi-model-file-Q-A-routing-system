@@ -15,8 +15,18 @@ import { Dropdown } from "../components/Dropdown";
 import { useAppUi } from "../context/AppUiContext";
 import { useKnowledgeBases, useMatchProfiles } from "../hooks/useKnowledgeBases";
 import { RecallAnswerModalContent } from "./DebugViews";
+import { ModeBar } from "../components/ModeBar";
+import { IndexStatusPill } from "../components/IndexStatusPill";
+import { RagEvalModal } from "../components/RagEvalModal";
+import type { AskMode, RagSearchResult } from "../types";
 
-type RecallRow = RecallTestRow & { answers?: CandidateAnswer[]; timings?: AskTimings; candidates?: CandidateAnswer[] };
+type RecallRow = RecallTestRow & {
+  answers?: CandidateAnswer[];
+  timings?: AskTimings;
+  candidates?: CandidateAnswer[];
+  rag_sources?: RagSearchResult[];
+  expected_id?: string;
+};
 
 function newRecallRow(partial: Partial<RecallRow> = {}): RecallRow {
   return {
@@ -82,6 +92,7 @@ export function RecallModule() {
     return [10, 20, 50, 0].includes(n) ? n : 10;
   });
   const [running, setRunning] = useState(false);
+  const [recallMode, setRecallMode] = useState<AskMode>("llm");
   const [rightTab, setRightTab] = useState("ask");
   const [batchMetrics, setBatchMetrics] = useState<AskTimings | null>(null);
   const [timedOut, setTimedOut] = useState(false);
@@ -94,13 +105,16 @@ export function RecallModule() {
   const loadTests = useCallback(async (kid: string) => {
     if (!kid) { setRows([]); return; }
     try {
-      const doc = await apiJson<{ items: RecallRow[] }>(`/knowledge-bases/${encodeURIComponent(kid)}/recall-tests`);
+      const path = recallMode === "rag"
+        ? `/rag/knowledge-bases/${encodeURIComponent(kid)}/recall-tests`
+        : `/knowledge-bases/${encodeURIComponent(kid)}/recall-tests`;
+      const doc = await apiJson<{ items: RecallRow[] }>(path);
       setRows((doc.items || []).map((r) => newRecallRow(r)));
     } catch {
       setRows([]);
     }
     setSelected(new Set());
-  }, []);
+  }, [recallMode]);
 
   useEffect(() => { if (effectiveKb) void loadTests(effectiveKb); }, [effectiveKb, loadTests]);
 
@@ -114,6 +128,27 @@ export function RecallModule() {
   const runRow = async (row: RecallRow): Promise<RecallRow> => {
     const q = (row.question || "").trim();
     if (!q || !effectiveKb) return row;
+    if (recallMode === "rag") {
+      const data = await apiJson<{ results: RagSearchResult[]; timing?: AskTimings }>("/rag/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q, kb_id: effectiveKb, top_k: topK }),
+      });
+      const sources = data.results || [];
+      const topId = sources[0]?.id || "";
+      const recalled = row.expected_id ? (topId === row.expected_id ? "yes" : "no") : "";
+      const updated: RecallRow = {
+        ...row,
+        run_at: new Date().toISOString(),
+        rag_sources: sources,
+        timings: data.timing,
+        last_top_id: topId,
+        recalled: recalled || row.recalled,
+        model_label: "RAG",
+      };
+      setRows((prev) => prev.map((r) => (r.id === row.id ? updated : r)));
+      return updated;
+    }
     let doneData: { answers?: CandidateAnswer[]; timings?: AskTimings; match?: { candidates?: CandidateAnswer[] } } | null = null;
     await streamAskConfidence({ question: q, kb_id: effectiveKb, top_k: topK, match_profile_id: effectiveProfile }, (evt) => {
       if (evt.event === "done") doneData = evt.data as typeof doneData;
@@ -170,15 +205,18 @@ export function RecallModule() {
       setRows(rows.filter((r) => !selected.has(r.id)));
       setSelected(new Set());
     } else if (action === "save") {
-      void apiJson(`/knowledge-bases/${encodeURIComponent(effectiveKb)}/recall-tests`, {
+      const path = recallMode === "rag"
+        ? `/rag/knowledge-bases/${encodeURIComponent(effectiveKb)}/recall-tests`
+        : `/knowledge-bases/${encodeURIComponent(effectiveKb)}/recall-tests`;
+      void apiJson(path, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: rows }),
       }).then(() => showToast("召回测试已保存")).catch((e) => showToast(e.message, "error"));
     } else if (action === "import") {
       showModal(
         "批量导入问题",
         <div>
-          <p className="muted">JSON 数组格式，每项含 question 字段：</p>
-          <label className="fieldLabel"><textarea id="recallImportJson" rows={10} className="jsonEditor" placeholder='[{"question":"如何使用曝光补偿？"}]' /></label>
+          <p className="muted">JSON 数组格式，每项含 question 字段{recallMode === "rag" ? "，可选 expected_id 用于自动标注" : ""}：</p>
+          <label className="fieldLabel"><textarea id="recallImportJson" rows={10} className="jsonEditor" placeholder={recallMode === "rag" ? '[{"question":"如何使用曝光补偿？","expected_id":"q001"}]' : '[{"question":"如何使用曝光补偿？"}]'} /></label>
         </div>,
         async () => {
           const raw = (document.getElementById("recallImportJson") as HTMLTextAreaElement)?.value.trim();
@@ -187,19 +225,36 @@ export function RecallModule() {
             if (arr?.items && Array.isArray(arr.items)) arr = arr.items;
             else throw new Error("须为 JSON 数组或 {items:[...]}");
           }
-          setRows([...rows, ...arr.map((x: string | { question?: string }) => newRecallRow(typeof x === "string" ? { question: x } : x))]);
+          setRows([...rows, ...arr.map((x: string | { question?: string; expected_id?: string }) => newRecallRow(typeof x === "string" ? { question: x } : x))]);
         },
         true,
       );
+    } else if (action === "sampleFromFaq" && recallMode === "rag") {
+      void apiJson<{ items: { id: string; question: string; variants?: string[] }[] }>(
+        `/rag/knowledge-bases/${encodeURIComponent(effectiveKb)}/questions`,
+      ).then((doc) => {
+        const items = (doc.items || []).filter((it) => it.question?.trim());
+        if (!items.length) return showToast("RAG FAQ 为空", "error");
+        const sampled = items.sort(() => Math.random() - 0.5).slice(0, Math.min(10, items.length));
+        setRows([...rows, ...sampled.map((it) => newRecallRow({ question: it.question, expected_id: it.id }))]);
+        showToast(`已从 RAG FAQ 采样 ${sampled.length} 条`);
+      }).catch((e) => showToast(e.message, "error"));
+    } else if (action === "runEval" && recallMode === "rag") {
+      showModal("Recall@K 批量评测", <RagEvalModal kbId={effectiveKb} topK={topK} />, async () => {}, true);
     } else if (action === "export") {
       const labeled = rows.filter((r) => r.recalled === "yes" || r.recalled === "no");
       const yes = rows.filter((r) => r.recalled === "yes").length;
       const recallRate = labeled.length ? `${((yes / labeled.length) * 100).toFixed(1)}% (${yes}/${labeled.length})` : "—";
-      let md = `# 召回度测试报告\n\n- 知识库：${kbDisplayName(effectiveKb)} (${effectiveKb})\n- 回答模型：${profileLabel}\n- Top K：${topK}\n\n## 汇总\n\n| 指标 | 值 |\n|------|-----|\n| 召回率 | ${recallRate} |\n\n## 明细\n\n`;
+      const modeLabel = recallMode === "rag" ? "RAG" : profileLabel;
+      let md = `# 召回度测试报告\n\n- 知识库：${kbDisplayName(effectiveKb)} (${effectiveKb})\n- 模式：${modeLabel}\n- Top K：${topK}\n\n## 汇总\n\n| 指标 | 值 |\n|------|-----|\n| 召回率 | ${recallRate} |\n\n## 明细\n\n`;
       rows.forEach((row, i) => {
-        const top = row.answers?.[0];
+        const top = recallMode === "rag" ? row.rag_sources?.[0] : row.answers?.[0];
+        const topId = recallMode === "rag" ? top?.id : top?.id;
+        const score = recallMode === "rag"
+          ? (top as RagSearchResult | undefined)?.rerank_score ?? (top as RagSearchResult | undefined)?.rrf_score
+          : top?.confidence;
         const recalled = row.recalled === "yes" ? "是" : row.recalled === "no" ? "否" : "未标注";
-        md += `${i + 1}. ${row.question} — ${recalled} — ${top?.id || "—"} (${top?.confidence != null ? fmtConfidence(top.confidence) : "—"})\n`;
+        md += `${i + 1}. ${row.question} — ${recalled} — ${topId || "—"} (${score != null ? (recallMode === "rag" ? Number(score).toFixed(3) : fmtConfidence(score as number)) : "—"})\n`;
       });
       const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
       const a = document.createElement("a");
@@ -212,6 +267,7 @@ export function RecallModule() {
   return (
     <>
       <aside className="leftPanel visible" id="rightPanel">
+        <ModeBar mode={recallMode} onChange={(m) => { setRecallMode(m); setRows([]); }} />
         <div className="stripHead rightTabHead">
           <div className="rightTabs" id="rightTabs">
             <button type="button" className={`tabBtn ${rightTab === "ask" ? "active" : ""}`} data-right-tab="ask" onClick={() => setRightTab("ask")}>操作</button>
@@ -224,7 +280,10 @@ export function RecallModule() {
             <div className="moduleSide recall stripBody qBody">
               <label className="kbSelectLabel">知识库<select id="recallKbSelect" className="kbSelect" value={effectiveKb} onChange={(e) => setKbId(e.target.value)}>{kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>)}</select></label>
               <label className="kbSelectLabel">Top K<input id="recallTopK" type="number" className="topKInput" min={1} max={20} value={topK} onChange={(e) => setTopK(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 5)))} /></label>
-              <label className="kbSelectLabel">回答模型<select id="recallMatchProfileSelect" className="kbSelect" value={effectiveProfile} onChange={(e) => setProfileId(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
+              {recallMode === "llm" && (
+                <label className="kbSelectLabel">回答模型<select id="recallMatchProfileSelect" className="kbSelect" value={effectiveProfile} onChange={(e) => setProfileId(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
+              )}
+              {recallMode === "rag" && <IndexStatusPill kbId={effectiveKb} onRebuild={() => void loadTests(effectiveKb)} />}
               <div className="qActions recallSideActions">
                 <button id="recallRunBtn" type="button" className="btn btnXs primary" disabled={running} onClick={() => void batchRun()}>{running ? "运行中…" : "批量运行"}</button>
               </div>
@@ -254,6 +313,7 @@ export function RecallModule() {
               <span>召回度测试</span>
               <span id="recallStat" className="recallStat muted">{statText}</span>
             </div>
+            <ModeBar mode={recallMode} onChange={(m) => { setRecallMode(m); setRows([]); }} />
             <div className="recallToolbar">
               <label className="recallPageSizeLabel">
                 显示条数
@@ -273,8 +333,20 @@ export function RecallModule() {
                   <button type="button" className="dropdownItem" data-recall-action="delete" onClick={() => handleRecallAction("delete")}>删除选中</button>
                   <div className="dropdownDivider" />
                   <button type="button" className="dropdownItem" data-recall-action="save" onClick={() => handleRecallAction("save")}>保存</button>
-                  <div className="dropdownDivider" />
-                  <button type="button" className="dropdownItem" data-recall-action="import" onClick={() => handleRecallAction("import")}>批量导入问题</button>
+                  {recallMode === "llm" && (
+                    <>
+                      <div className="dropdownDivider" />
+                      <button type="button" className="dropdownItem" data-recall-action="import" onClick={() => handleRecallAction("import")}>批量导入问题</button>
+                    </>
+                  )}
+                  {recallMode === "rag" && (
+                    <>
+                      <div className="dropdownDivider" />
+                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("import")}>批量导入问题</button>
+                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("sampleFromFaq")}>从 RAG FAQ 采样</button>
+                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("runEval")}>运行 Recall@K 评测</button>
+                    </>
+                  )}
                   <button type="button" className="dropdownItem" data-recall-action="export" onClick={() => handleRecallAction("export")}>导出 Markdown</button>
                 </Dropdown>
               </span>
@@ -297,8 +369,25 @@ export function RecallModule() {
                         <textarea className="recallQ" data-id={row.id} rows={1} placeholder="输入人工问题…" value={row.question} onChange={(e) => updateRow(row.id, { question: e.target.value })} />
                       </div>
                       <div className="recallField recallFieldView">
-                        <span className="recallFieldLabel">模型回答</span>
-                        <button type="button" className="btn btnXs recallViewBtn" data-id={row.id} disabled={!row.answers?.length} onClick={() => {
+                        <span className="recallFieldLabel">{recallMode === "rag" ? "检索结果" : "模型回答"}</span>
+                        <button type="button" className="btn btnXs recallViewBtn" data-id={row.id} disabled={recallMode === "rag" ? !row.rag_sources?.length : !row.answers?.length} onClick={() => {
+                          if (recallMode === "rag") {
+                            if (!row.rag_sources?.length) return showToast("请先运行该行", "error");
+                            showModal("RAG 检索来源", (
+                              <div className="ragSourceList">
+                                {row.rag_sources.map((s, i) => (
+                                  <div key={i} className="confidenceCard ragSourceCard">
+                                    <div className="confidenceCardHead">
+                                      <span className="pill">{s.id}</span>
+                                      {s.rerank_score != null && <span className="pill muted">rerank {Number(s.rerank_score).toFixed(3)}</span>}
+                                    </div>
+                                    <p className="muted">{s.question}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ), async () => {}, true);
+                            return;
+                          }
                           if (!row.answers?.length) return showToast("请先运行该行", "error");
                           showModal("置信度回答", <RecallAnswerModalContent answers={row.answers} kbId={effectiveKb} question={row.question} />, async () => {}, true);
                         }}>查看</button>

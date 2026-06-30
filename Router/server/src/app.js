@@ -17,6 +17,9 @@ import { extractMarkdownRange, extractPdfToMarkdown, mergeExtractStats, } from "
 import { assignQuestionIds, generateFaqQuestionsOnly } from "./services/questionsImport.js";
 import { allDefaultPrompts } from "./services/promptDefaults.js";
 import { buildQuestionListSection, defaultConfidenceMatchPrompt, } from "./services/matcher.js";
+import { createRagContext } from "./services/ragContext.js";
+import { registerRagRoutes } from "./routes/ragRoutes.js";
+import { rebuildIndex } from "./services/rag/indexer.js";
 function validateKbId(ctx, kbId) {
     const kid = (kbId || "").trim();
     if (!kid)
@@ -80,7 +83,8 @@ export function createAppContext() {
     cache.loadAll();
     const profilesPath = path.join(settings.dataRoot, "config", "match_profiles.json");
     const matchProfilesStore = MatchProfilesStore.open(profilesPath, modelsStore);
-    return { settings, kbStore, cache, modelsStore, matchProfilesStore, promptsStore, opLog };
+    const ragCtx = createRagContext({ settings, kbStore, opLog });
+    return { settings, kbStore, cache, modelsStore, matchProfilesStore, promptsStore, opLog, ragCtx };
 }
 export function createApp(ctx, clientDist) {
     const app = express();
@@ -100,6 +104,7 @@ export function createApp(ctx, clientDist) {
         }
     };
     app.get("/health", (_req, res) => res.json({ status: "ok" }));
+    registerRagRoutes(app, ctx, ctx.ragCtx);
     app.post("/ask/confidence", async (req, res) => {
         try {
             const question = String(req.body.question ?? "").trim();
@@ -604,7 +609,8 @@ export function createApp(ctx, clientDist) {
         res.json(meta);
     });
     app.post("/documents/extract/stream", async (req, res) => {
-        const filename = String(req.body.filename ?? "").trim();
+        const filename = String(req.body.filename ?? "").trim()
+            || path.basename(String(req.body.path ?? "").trim());
         const ranges = normalizeImportRanges(req.body.ranges);
         if (!filename)
             return res.status(400).json({ detail: "filename 必填" });
@@ -685,32 +691,69 @@ export function createApp(ctx, clientDist) {
             res.status(e instanceof LLMError ? 502 : 400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
-    app.post("/knowledge-bases/:kbId/import/commit", (req, res) => {
+    app.post("/knowledge-bases/:kbId/import/commit", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
             const rawItems = Array.isArray(req.body.items) ? req.body.items : [];
             const append = Boolean(req.body.append);
-            const store = ctx.cache.store(kid);
-            const existing = store.getDocument().items;
-            let startId = 1;
-            if (existing.length) {
-                const nums = existing.map((i) => parseInt(i.id.replace(/^q/, ""), 10)).filter((n) => !Number.isNaN(n));
-                startId = nums.length ? Math.max(...nums) + 1 : 1;
+            let targets = req.body.targets;
+            if (!Array.isArray(targets) || !targets.length)
+                targets = ["llm"];
+            targets = targets.filter((t) => t === "llm" || t === "rag");
+            if (!targets.length)
+                throw httpError(400, "targets 须包含 llm 或 rag");
+
+            const results = { llm: 0, rag: 0, kb_id: kid, items: [] };
+
+            const assignAndMerge = (store, existing) => {
+                let startId = 1;
+                if (existing.length) {
+                    const nums = existing.map((i) => parseInt(String(i.id).replace(/^q/, ""), 10)).filter((n) => !Number.isNaN(n));
+                    startId = nums.length ? Math.max(...nums) + 1 : 1;
+                }
+                const withIds = assignQuestionIds(rawItems, startId);
+                if (append) {
+                    for (const item of withIds)
+                        store.upsertItem(item);
+                }
+                else {
+                    store.replaceAll(1, [...existing.map((i) => ({ ...i })), ...withIds]);
+                }
+                return withIds;
+            };
+
+            if (targets.includes("llm")) {
+                const store = ctx.cache.store(kid);
+                const existing = store.getDocument().items;
+                const withIds = assignAndMerge(store, existing);
+                ctx.cache.reloadKb(kid);
+                results.llm = withIds.length;
+                results.items = withIds;
+                ctx.opLog.append({ module: "generate", action: "commit-llm", kb_id: kid, detail: `imported ${withIds.length} items` });
             }
-            const withIds = assignQuestionIds(rawItems, startId);
-            if (append) {
-                for (const item of withIds)
-                    store.upsertItem(item);
+
+            if (targets.includes("rag")) {
+                const ragStore = ctx.ragCtx.getRagQuestionsStore(kid);
+                const existing = ragStore.getDocument().items;
+                const withIds = assignAndMerge(ragStore, existing);
+                results.rag = withIds.length;
+                if (!results.items.length)
+                    results.items = withIds;
+                if (req.body.auto_rebuild_rag !== false) {
+                    try {
+                        await rebuildIndex(kid, ctx.ragCtx);
+                    }
+                    catch (err) {
+                        console.warn(`[import] rag rebuild failed: ${err}`);
+                    }
+                }
+                ctx.opLog.append({ module: "generate", action: "commit-rag", kb_id: kid, detail: `imported ${withIds.length} items` });
             }
-            else {
-                store.replaceAll(1, [...existing.map((i) => ({ ...i })), ...withIds]);
-            }
-            ctx.cache.reloadKb(kid);
-            ctx.opLog.append({ module: "generate", action: "commit", kb_id: kid, detail: `imported ${withIds.length} items` });
-            res.json({ added: withIds.length, kb_id: kid, items: withIds });
+
+            res.json(results);
         }
         catch (e) {
-            res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
+            res.status(e.status || 400).json({ detail: e.detail ?? (e instanceof Error ? e.message : String(e)) });
         }
     });
     // Static: legacy assets (manual.md) + React production build

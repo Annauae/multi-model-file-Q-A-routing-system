@@ -1,0 +1,34 @@
+{
+  "embedding": {
+    "label": "Embedding 模型",
+    "api_base_url": "https://api.siliconflow.cn/v1",
+    "api_key": "test",
+    "model": "BAAI/bge-m3",
+    "max_tokens": 0,
+    "temperature": 0
+  },
+  "rerank": {
+    "label": "Rerank 模型",
+    "api_base_url": "https://api.siliconflow.cn/v1",
+    "api_key": "test",
+    "model": "BAAI/bge-reranker-v2-m3",
+    "max_tokens": 0,
+    "temperature": 0
+  },
+  "llm": {
+    "label": "RAG 回答模型",
+    "api_base_url": "https://api.siliconflow.cn/v1",
+    "api_key": "test",
+    "model": "Qwen/Qwen3-VL-8B-Instruct",
+    "max_tokens": 1200,
+    "temperature": 0.1
+  },
+  "judge": {
+    "label": "评测裁判模型",
+    "api_base_url": "https://api.siliconflow.cn/v1",
+    "api_key": "test",
+    "model": "Qwen/Qwen3-VL-8B-Instruct",
+    "max_tokens": 500,
+    "temperature": 0
+  }
+}

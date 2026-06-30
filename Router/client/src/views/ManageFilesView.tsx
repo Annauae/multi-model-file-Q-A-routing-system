@@ -6,6 +6,7 @@ import { Dropdown } from "../components/Dropdown";
 import { useAppUi } from "../context/AppUiContext";
 import type { AskTimings, FileTreeNode, ImportSelection } from "../types";
 import { MdLineViewer, renderFileTreeNodes, sliceMarkdownLines } from "../utils/importShared";
+import { ImportTargetSwitch } from "../components/ImportTargetSwitch";
 import { useKnowledgeBases } from "../hooks/useKnowledgeBases";
 
 export function ManageFilesView() {
@@ -58,9 +59,10 @@ export function ManageFilesView() {
 
   const runExtract = async () => {
     if (!selected?.path) return;
+    const filename = selected.path.split("/").pop() || selected.name;
     setExtractLog("");
     await streamDocumentExtract(
-      { path: selected.path, ranges: pdfRanges.map((r) => [Math.max(1, r.start), Math.max(r.start, r.end)]) },
+      { filename, ranges: pdfRanges.map((r) => [Math.max(1, r.start), Math.max(r.start, r.end)]) },
       (evt) => {
         if (evt.event === "log") setExtractLog((p) => p + String(evt.data.message || evt.data.detail || "") + "\n");
         if (evt.event === "done") {
@@ -207,6 +209,8 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
   const [lineStart, setLineStart] = useState(1);
   const [lineEnd, setLineEnd] = useState(10);
   const [selections, setSelections] = useState<ImportSelection[]>([]);
+  const [importLlm, setImportLlm] = useState(true);
+  const [importRag, setImportRag] = useState(false);
   const [metrics, setMetrics] = useState<AskTimings | null>(null);
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
 
@@ -242,13 +246,21 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
 
   const commit = async () => {
     if (!kbId) return showToast("请选择知识库", "error");
+    if (!importLlm && !importRag) return showToast("请至少选择一个导入目标", "error");
     const items = selections.filter((s) => s.question.trim());
     if (!items.length) return showToast("请至少添加一条有效选择", "error");
+    const targets: string[] = [];
+    if (importLlm) targets.push("llm");
+    if (importRag) targets.push("rag");
     await apiJson(`/knowledge-bases/${encodeURIComponent(kbId)}/import/commit`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: items.map((s) => ({ question: s.question, variants: s.variants, answer: s.answer, enabled: true })), append: true }),
+      body: JSON.stringify({
+        items: items.map((s) => ({ question: s.question, variants: s.variants, answer: s.answer, enabled: true })),
+        append: true,
+        targets,
+      }),
     });
-    showToast(`已导入 ${items.length} 条`);
+    showToast(`已导入 ${items.length} 条${importLlm && importRag ? "（回答模型 + RAG）" : importRag ? "（RAG）" : "（回答模型）"}`);
     onCommitted();
     onClose();
   };
@@ -263,6 +275,14 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
           <button type="button" id="generateModalCloseBtn" className="btn btnXs ghost" onClick={onClose}>关闭</button>
         </div>
         <div className="modalBody generateModalBody">
+          <div className="modeBar">
+            <span className="modeBarLabel">导入目标</span>
+            <div className="importTargetRow">
+              <ImportTargetSwitch label="导入到回答模型" checked={importLlm} onChange={setImportLlm} />
+              <ImportTargetSwitch label="导入到 RAG" checked={importRag} onChange={setImportRag} />
+            </div>
+          </div>
+          <div className="modeBarDivider" />
           <div className="generateToolbar stripHead" style={{ border: "none", padding: "0 0 10px" }}>
             <label className="kbSelectLabel">导入知识库<select id="generateKbSelect" className="kbSelect" value={kbId} onChange={(e) => setKbId(e.target.value)}>{kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>)}</select></label>
             <button type="button" id="generateRefreshTreeBtn" className="btn btnXs ghost" onClick={() => void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []))}>刷新文件</button>

@@ -1,0 +1,11 @@
+{
+  "data_hash": "a16c8d90d68c47856912b4cab9ce2872bdd8bffc6f7c8f14d070a7ee0b4b82c8",
+  "embedding_model": "BAAI/bge-m3",
+  "embedding_dim": "0",
+  "built_at": "2026-06-30T09:04:01Z",
+  "items": "0",
+  "search_docs": "0",
+  "holdout_docs": "0",
+  "keyword_index": [],
+  "holdout_variants": {}
+}

@@ -1315,4 +1315,102 @@ body {
   .manageLayoutItems { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .itemCardGrid { grid-template-columns: 1fr; }
   .filesLayout { grid-template-columns: 1fr; grid-template-rows: minmax(160px, 240px) 1fr; }
+  .ragQaColumns { grid-template-columns: 1fr; }
 }
+
+/* ── RAG / ModeBar ── */
+.modeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+.modeBarLabel { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.modeBarDivider { border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.modeSwitch { flex-shrink: 0; }
+.modePanelEnter { animation: modePanelEnter 150ms ease-out; }
+@keyframes modePanelEnter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.importTargetRow { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.importTargetSwitch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.importTargetLabel { color: var(--text-secondary); white-space: nowrap; }
+.toggleSwitch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border: none;
+  border-radius: 11px;
+  background: #cbd5e1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+}
+.toggleSwitch.on { background: var(--sidebar-active); }
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15);
+  transition: transform 0.15s;
+}
+.toggleSwitch.on .toggleThumb { transform: translateX(18px); }
+.indexStatusWrap { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.indexStatusPill.ready { background: rgba(109, 175, 120, 0.15); color: #2d6a3e; border: 1px solid rgba(109, 175, 120, 0.35); }
+.indexStatusPill.stale { background: rgba(245, 158, 11, 0.12); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.35); }
+.indexStatusPill.missing { background: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.3); }
+.ragQaColumns {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 220px;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+}
+.ragCol { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.ragColBody { flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.ragSourceCard.active { outline: 2px solid var(--sidebar-active); outline-offset: -1px; }
+.ragScorePills { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.ragSourceSummary { font-size: 12px; margin-top: 4px; }
+.ragTimingChips { font-size: 12px; padding: 8px 0 0; }
+.navItemBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: var(--bg);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.navItemBtn.active { border-color: var(--sidebar-active); background: var(--accent-light); }
+.navItemBtn .id { font-weight: 600; font-size: 11px; }
+.timingRow { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.recallPage .modeBar { padding: 8px 16px; }
+.manageItemsMain .modeBar { border-bottom: none; }
+.settingsMain > .modeBar { position: sticky; top: 0; z-index: 2; background: var(--bg); margin-bottom: 8px; }
+
+.ragEvalModal { display: flex; flex-direction: column; gap: 12px; min-width: 420px; }
+.ragEvalModeHint { font-size: 12px; margin: 0; }
+.ragEvalSizeBtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.ragEvalSummary { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.ragEvalSummaryHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ragEvalMetrics { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; margin-bottom: 8px; }
+.ragEvalMetrics b { font-weight: 600; margin-left: 4px; }
+.ragEvalResultRow { font-size: 12px; padding: 2px 0; }
+.ragEvalHistory { display: flex; flex-direction: column; gap: 4px; }
+.ragEvalHistoryBtn { justify-content: flex-start; text-align: left; }
+.ragSourceList { display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow: auto; }
+.indexStatusWrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

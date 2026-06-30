@@ -3,13 +3,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppUiProvider, ModalOverlay, ToastContainer } from "./context/AppUiContext";
 import { useHealth, useKnowledgeBases, useMatchProfiles } from "./hooks/useKnowledgeBases";
 import { DocsModal } from "./components/DocsModal";
+import { ModeBar } from "./components/ModeBar";
+import { IndexStatusPill } from "./components/IndexStatusPill";
 import { CandidatesPanel, DebugAnswersPanel, useDebugAsk, useDebugQuestions } from "./views/DebugViews";
+import { RagQaMain, RagTimingsPanel, useRagAsk } from "./views/RagDebugViews";
 import { TimingsPanel, TokenPanel } from "./components/MetricsPanels";
 import { ManageView } from "./views/ManageView";
 import { LogsView } from "./views/LogsView";
 import { SettingsView } from "./views/SettingsView";
 import { RecallModule } from "./views/DebugRecallView";
-import type { DebugSub, ManageSub, ModuleName } from "./types";
+import type { AskMode, DebugSub, ManageSub, ModuleName } from "./types";
 import "./styles.css";
 
 const MODULE_LABELS: Record<ModuleName, string> = { debug: "调试", manage: "管理", logs: "日志", settings: "设置" };
@@ -33,6 +36,7 @@ function AppShell() {
   const [rightTab, setRightTab] = useState("ask");
   const [docsOpen, setDocsOpen] = useState(false);
   const [debugNavCollapsed, setDebugNavCollapsed] = useState(false);
+  const [debugMode, setDebugMode] = useState<AskMode>("llm");
 
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
   const [debugKb, setDebugKb] = useState("");
@@ -45,28 +49,32 @@ function AppShell() {
   const effectiveProfile = debugProfile || profilesData?.default_id || profiles[0]?.id || "";
 
   const debugAsk = useDebugAsk(effectiveKb, effectiveProfile, debugTopK);
+  const ragAsk = useRagAsk(effectiveKb, debugTopK);
   const debugQuestions = useDebugQuestions(effectiveKb);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "Enter" && module === "debug" && debugSub === "single") {
-        void debugAsk.ask(question);
+        if (debugMode === "llm") void debugAsk.ask(question);
+        else void ragAsk.chat(question);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [module, debugSub, question, debugAsk]);
+  }, [module, debugSub, question, debugAsk, ragAsk, debugMode]);
 
   const showLeft = module === "debug";
 
   const switchModule = (m: ModuleName, sub?: DebugSub | ManageSub) => {
     setModule(m);
     if (m === "debug" && sub) setDebugSub(sub as DebugSub);
-    if (m === "manage") {
-      setManageSub((sub as ManageSub) || "items");
-    }
+    if (m === "manage") setManageSub((sub as ManageSub) || "items");
     if (m === "debug") setRightTab("ask");
   };
+
+  const llmTabs = ["ask", "candidates", "timing", "tokens"] as const;
+  const ragTabs = ["ask", "timing"] as const;
+  const tabs = debugMode === "llm" ? llmTabs : ragTabs;
 
   return (
     <div className="appShell">
@@ -74,30 +82,22 @@ function AppShell() {
         <div className="sidebarBrand">知识问答控制台</div>
         <nav className="sidebarNav" id="sidebarNav">
           <div className={`navGroup${debugNavCollapsed ? " collapsed" : ""}`} data-nav-group="debug">
-            <button
-              type="button"
-              className={`navGroupHead ${module === "debug" ? "active" : ""}`}
-              data-nav="debug"
-              onClick={() => {
-                setDebugNavCollapsed((c) => !c);
-                switchModule("debug", debugSub);
-              }}
-            >
+            <button type="button" className={`navGroupHead ${module === "debug" ? "active" : ""}`} data-nav="debug" onClick={() => { setDebugNavCollapsed((c) => !c); switchModule("debug", debugSub); }}>
               <span>调试</span><span className="navChevron">▾</span>
             </button>
             <div className="navSub">
-              <button type="button" className={`navItem ${module === "debug" && debugSub === "single" ? "active" : ""}`} data-module="debug" data-sub="single" onClick={(e) => { e.stopPropagation(); switchModule("debug", "single"); }}>问答</button>
-              <button type="button" className={`navItem ${module === "debug" && debugSub === "recall" ? "active" : ""}`} data-module="debug" data-sub="recall" onClick={(e) => { e.stopPropagation(); switchModule("debug", "recall"); }}>召回度测试</button>
+              <button type="button" className={`navItem ${module === "debug" && debugSub === "single" ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); switchModule("debug", "single"); }}>问答</button>
+              <button type="button" className={`navItem ${module === "debug" && debugSub === "recall" ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); switchModule("debug", "recall"); }}>召回度测试</button>
             </div>
           </div>
           <div className="navGroup" data-nav-group="manage">
-            <button type="button" className={`navGroupHead ${module === "manage" ? "active" : ""}`} data-nav="manage" onClick={() => switchModule("manage", manageSub)}><span>管理</span></button>
+            <button type="button" className={`navGroupHead ${module === "manage" ? "active" : ""}`} onClick={() => switchModule("manage", manageSub)}><span>管理</span></button>
           </div>
           <div className="navGroup" data-nav-group="logs">
-            <button type="button" className={`navGroupHead ${module === "logs" ? "active" : ""}`} data-nav="logs" onClick={() => switchModule("logs")}><span>日志</span></button>
+            <button type="button" className={`navGroupHead ${module === "logs" ? "active" : ""}`} onClick={() => switchModule("logs")}><span>日志</span></button>
           </div>
           <div className="navGroup" data-nav-group="settings">
-            <button type="button" className={`navGroupHead ${module === "settings" ? "active" : ""}`} data-nav="settings" onClick={() => switchModule("settings")}><span>设置</span></button>
+            <button type="button" className={`navGroupHead ${module === "settings" ? "active" : ""}`} onClick={() => switchModule("settings")}><span>设置</span></button>
           </div>
         </nav>
       </aside>
@@ -105,10 +105,10 @@ function AppShell() {
       <header className="appHeader">
         <Breadcrumb module={module} debugSub={debugSub} manageSub={manageSub} />
         <div className="headerRight">
-          <button type="button" id="docsOpenBtn" className="headerDocBtn" onClick={() => setDocsOpen(true)}>使用手册</button>
+          <button type="button" className="headerDocBtn" onClick={() => setDocsOpen(true)}>使用手册</button>
           <div className="status">
-            <span className={`dot ${health ? "ok" : "err"}`} id="healthDot" />
-            <span className="txt" id="healthText">{health ? "已连接" : health === undefined ? "连接中…" : "连接失败"}</span>
+            <span className={`dot ${health ? "ok" : "err"}`} />
+            <span className="txt">{health ? "已连接" : health === undefined ? "连接中…" : "连接失败"}</span>
           </div>
         </div>
       </header>
@@ -117,52 +117,74 @@ function AppShell() {
         {module === "debug" && debugSub === "single" && (
           <>
             <aside className="leftPanel visible" id="rightPanel">
+              <ModeBar mode={debugMode} onChange={(m) => { setDebugMode(m); setRightTab("ask"); debugAsk.reset(); ragAsk.reset(); }} />
               <div className="stripHead rightTabHead">
-                <div className="rightTabs" id="rightTabs">
-                  {(["ask", "candidates", "timing", "tokens"] as const).map((tab) => (
-                    <button key={tab} type="button" className={`tabBtn ${rightTab === tab ? "active" : ""}`} data-right-tab={tab} onClick={() => setRightTab(tab)}>
+                <div className="rightTabs">
+                  {tabs.map((tab) => (
+                    <button key={tab} type="button" className={`tabBtn ${rightTab === tab ? "active" : ""}`} onClick={() => setRightTab(tab)}>
                       {tab === "ask" ? "提问" : tab === "candidates" ? "候选匹配" : tab === "timing" ? "消耗时间" : "消耗 Token"}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="rightTabBody">
-                <div id="rightTabAsk" className={`rightTabPane ${rightTab === "ask" ? "active" : ""}`}>
-                  <div className="moduleSide debug single stripBody qBody">
-                    <label className="fieldLabel">问题<textarea id="debugQuestion" rows={4} placeholder="输入问题… Ctrl+Enter 提问" value={question} onChange={(e) => setQuestion(e.target.value)} /></label>
+                <div className={`rightTabPane ${rightTab === "ask" ? "active" : ""}`}>
+                  <div className="moduleSide debug single stripBody qBody modePanelEnter">
+                    <label className="fieldLabel">问题<textarea rows={4} placeholder="输入问题… Ctrl+Enter 提问" value={question} onChange={(e) => setQuestion(e.target.value)} /></label>
                     <div className="qActions qBtnRow">
-                      <button id="debugAskBtn" className="btn primary btnXs" type="button" disabled={debugAsk.loading} onClick={() => void debugAsk.ask(question)}>{debugAsk.loading ? "运行中…" : "提问"}</button>
-                      <button id="debugClearBtn" className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); debugAsk.reset(); }}>清空</button>
-                      <button id="debugRandomBtn" className="btn ghost btnXs" type="button" onClick={() => { void debugQuestions.load().then(() => setQuestion(debugQuestions.randomQuestion())); }}>随机问题</button>
+                      {debugMode === "llm" ? (
+                        <>
+                          <button className="btn primary btnXs" type="button" disabled={debugAsk.loading} onClick={() => void debugAsk.ask(question)}>{debugAsk.loading ? "运行中…" : "提问"}</button>
+                          <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); debugAsk.reset(); }}>清空</button>
+                          <button className="btn ghost btnXs" type="button" onClick={() => { void debugQuestions.load().then(() => setQuestion(debugQuestions.randomQuestion())); }}>随机问题</button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="btn primary btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.chat(question)}>{ragAsk.loading ? "运行中…" : "问答"}</button>
+                          <button className="btn btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.search(question)}>检索</button>
+                          <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); ragAsk.reset(); }}>清空</button>
+                        </>
+                      )}
                     </div>
                     <div className="qActions qConfigRow">
-                      <label className="kbSelectLabel">知识库<select id="debugKbSelect" className="kbSelect" value={effectiveKb} onChange={(e) => setDebugKb(e.target.value)}>{kbIds.length ? kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>) : <option value="">无知识库</option>}</select></label>
-                      <label className="kbSelectLabel">回答模型<select id="debugMatchProfileSelect" className="kbSelect" value={effectiveProfile} onChange={(e) => setDebugProfile(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
-                      <label className="kbSelectLabel">Top K<input id="debugTopK" type="number" className="topKInput" min={1} max={20} value={debugTopK} onChange={(e) => setDebugTopK(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 5)))} /></label>
+                      <label className="kbSelectLabel">知识库<select className="kbSelect" value={effectiveKb} onChange={(e) => setDebugKb(e.target.value)}>{kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>)}</select></label>
+                      {debugMode === "llm" && (
+                        <label className="kbSelectLabel">回答模型<select className="kbSelect" value={effectiveProfile} onChange={(e) => setDebugProfile(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
+                      )}
+                      <label className="kbSelectLabel">Top K<input type="number" className="topKInput" min={1} max={20} value={debugTopK} onChange={(e) => setDebugTopK(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 5)))} /></label>
+                      {debugMode === "rag" && <IndexStatusPill kbId={effectiveKb} />}
                     </div>
                   </div>
                 </div>
-                <div id="rightTabCandidates" className={`rightTabPane ${rightTab === "candidates" ? "active" : ""}`}>
-                  <div className="routeScroll"><div id="debugCandidatesBox" className="routeBody"><CandidatesPanel candidates={debugAsk.candidates} onSelect={(i) => document.getElementById(`debugAnswerCard-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" })} /></div></div>
-                </div>
-                <div id="rightTabTiming" className={`rightTabPane ${rightTab === "timing" ? "active" : ""}`}>
+                {debugMode === "llm" && (
+                  <>
+                    <div className={`rightTabPane ${rightTab === "candidates" ? "active" : ""}`}>
+                      <div className="routeScroll"><div className="routeBody"><CandidatesPanel candidates={debugAsk.candidates} onSelect={(i) => document.getElementById(`debugAnswerCard-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" })} /></div></div>
+                    </div>
+                    <div className={`rightTabPane ${rightTab === "tokens" ? "active" : ""}`}>
+                      <div className="moduleMetrics ask"><div className="tokenPanel"><TokenPanel timings={debugAsk.timings} emptyText="提问后显示" /></div></div>
+                    </div>
+                  </>
+                )}
+                <div className={`rightTabPane ${rightTab === "timing" ? "active" : ""}`}>
                   <div className="moduleMetrics ask">
-                    <div id="askTimingPanel" className="timingPanel"><TimingsPanel timings={debugAsk.timings} emptyText="提问后显示" /></div>
-                  </div>
-                </div>
-                <div id="rightTabTokens" className={`rightTabPane ${rightTab === "tokens" ? "active" : ""}`}>
-                  <div className="moduleMetrics ask">
-                    <div id="askTokenPanel" className="tokenPanel"><TokenPanel timings={debugAsk.timings} emptyText="提问后显示" /></div>
+                    {debugMode === "llm"
+                      ? <div className="timingPanel"><TimingsPanel timings={debugAsk.timings} emptyText="提问后显示" /></div>
+                      : <RagTimingsPanel timing={ragAsk.chatResult?.timing} />}
                   </div>
                 </div>
               </div>
             </aside>
             <div className="mainContent">
-              <section id="viewDebugSingle" className="viewPane active">
-                <div className="panel">
-                  <div className="stripHead"><span>候选回答</span></div>
-                  <div className="answersScroll"><div id="debugAnswersBox" className="answersBody"><DebugAnswersPanel kbId={effectiveKb} loading={debugAsk.loading} answers={debugAsk.answers} /></div></div>
-                </div>
+              <section className="viewPane active">
+                {debugMode === "llm" ? (
+                  <div className="panel">
+                    <div className="stripHead"><span>候选回答</span></div>
+                    <div className="answersScroll"><div className="answersBody"><DebugAnswersPanel kbId={effectiveKb} loading={debugAsk.loading} answers={debugAsk.answers} /></div></div>
+                  </div>
+                ) : (
+                  <RagQaMain kbId={effectiveKb} loading={ragAsk.loading} chatResult={ragAsk.chatResult} searchResults={ragAsk.searchResults} activeNav={ragAsk.activeNav} setActiveNav={ragAsk.setActiveNav} />
+                )}
               </section>
             </div>
           </>

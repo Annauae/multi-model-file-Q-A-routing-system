@@ -38,6 +38,7 @@ beforeAll(() => {
   process.env.FILES_ROOT = filesRoot;
   process.env.KB_CONFIG_PATH = path.join(configPath, "knowledge_bases.json");
   process.env.MOCK_LLM = "1";
+  process.env.MOCK_WEAVIATE = "1";
   process.env.API_KEY = "test";
 
   const ctx = createAppContext();

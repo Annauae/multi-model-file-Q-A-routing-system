@@ -14,6 +14,7 @@ export default defineConfig({
       "/settings": "http://localhost:8002",
       "/logs": "http://localhost:8002",
       "/health": "http://localhost:8002",
+      "/rag": "http://localhost:8002",
       "/static": "http://localhost:8002",
     },
   },

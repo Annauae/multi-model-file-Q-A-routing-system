@@ -6,6 +6,9 @@ import { useKnowledgeBases } from "../hooks/useKnowledgeBases";
 import type { QAItem, QuestionsDocument } from "../types";
 import { Dropdown } from "../components/Dropdown";
 import { ManageFilesView } from "./ManageFilesView";
+import { ModeBar } from "../components/ModeBar";
+import { IndexStatusPill } from "../components/IndexStatusPill";
+import type { AskMode } from "../types";
 
 export function ManageView({ sub, onSubChange }: { sub: "items" | "files"; onSubChange: (s: "items" | "files") => void }) {
   return (
@@ -31,6 +34,7 @@ export function ManageView({ sub, onSubChange }: { sub: "items" | "files"; onSub
 function ManageQuestionsView() {
   const { showToast, showModal } = useAppUi();
   const { kbMap, refresh: refreshKb, kbDisplayName } = useKnowledgeBases();
+  const [manageMode, setManageMode] = useState<AskMode>("llm");
   const [selectedKbId, setSelectedKbId] = useState("");
   const [selectedItemId, setSelectedItemId] = useState("");
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
@@ -43,11 +47,15 @@ function ManageQuestionsView() {
 
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
 
+  const questionsBase = manageMode === "rag"
+    ? (kid: string) => `/rag/knowledge-bases/${encodeURIComponent(kid)}/questions`
+    : (kid: string) => `/knowledge-bases/${encodeURIComponent(kid)}/questions`;
+
   const loadItems = useCallback(async (kid: string) => {
     if (!kid) return;
-    const data = await apiJson<QuestionsDocument>(`/knowledge-bases/${encodeURIComponent(kid)}/questions`);
+    const data = await apiJson<QuestionsDocument>(questionsBase(kid));
     setDoc(data);
-  }, []);
+  }, [manageMode]);
 
   useEffect(() => {
     if (!selectedKbId && kbIds.length) setSelectedKbId(kbIds[0]);
@@ -87,9 +95,10 @@ function ManageQuestionsView() {
       if (!payload.question) return showToast("标准问题不能为空", "error");
     }
     const exists = (doc.items || []).some((x) => x.id === payload.id);
-    const url = `/knowledge-bases/${encodeURIComponent(selectedKbId)}/questions/items${exists ? `/${encodeURIComponent(payload.id)}` : ""}`;
+    const base = questionsBase(selectedKbId);
+    const url = `${base}/items${exists ? `/${encodeURIComponent(payload.id)}` : ""}`;
     await apiJson(url, { method: exists ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    await refreshKb();
+    if (manageMode === "llm") await refreshKb();
     await loadItems(selectedKbId);
     setSelectedItemId(payload.id);
     closeEdit();
@@ -171,7 +180,7 @@ function ManageQuestionsView() {
             if (!answer) throw new Error("回答不能为空");
             const id = allocateId(occupied);
             occupied.add(id);
-            await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}/questions/items`, {
+            await apiJson(`${questionsBase(selectedKbId)}/items`, {
               method: "POST", headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id, question, variants, answer, enabled: true }),
             });
@@ -200,7 +209,7 @@ function ManageQuestionsView() {
       for (const id of checkedIds) {
         const item = (doc.items || []).find((x) => x.id === id);
         if (!item) continue;
-        await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}/questions/items/${encodeURIComponent(id)}`, {
+        await apiJson(`${questionsBase(selectedKbId)}/items/${encodeURIComponent(id)}`, {
           method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...item, enabled }),
         });
@@ -212,10 +221,10 @@ function ManageQuestionsView() {
       if (!checkedIds.size) return showToast("请先勾选条目", "error");
       if (!confirm(`确定删除选中的 ${checkedIds.size} 条？`)) return;
       for (const id of checkedIds) {
-        await apiJson(`/knowledge-bases/${encodeURIComponent(selectedKbId)}/questions/items/${encodeURIComponent(id)}`, { method: "DELETE" });
+        await apiJson(`${questionsBase(selectedKbId)}/items/${encodeURIComponent(id)}`, { method: "DELETE" });
       }
       setCheckedIds(new Set());
-      await refreshKb();
+      if (manageMode === "llm") await refreshKb();
       await loadItems(selectedKbId);
       showToast("已删除");
     }
@@ -251,9 +260,11 @@ function ManageQuestionsView() {
       </section>
 
       <section className="manageCol manageItemsMain">
+        <ModeBar label="FAQ 模式" mode={manageMode} onChange={(m) => { setManageMode(m); setEditItem(null); setCheckedIds(new Set()); }} />
         <div className="stripHead manageItemsHead">
-          <span>标准问题</span>
+          <span>{manageMode === "rag" ? "RAG 标准问题" : "标准问题"}</span>
           <span className="headActions manageItemsHeadActions">
+            {manageMode === "rag" && selectedKbId && <IndexStatusPill kbId={selectedKbId} onRebuild={() => void loadItems(selectedKbId)} />}
             <input id="itemSearch" type="search" className="itemSearchInput" placeholder="搜索问题…" value={search} onChange={(e) => setSearch(e.target.value)} />
             <Dropdown label="操作">
               <button type="button" className="dropdownItem" data-item-action="add" onClick={() => void handleItemAction("add")}>新增问题</button>
