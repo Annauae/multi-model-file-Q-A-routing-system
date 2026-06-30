@@ -1,0 +1,26 @@
+{
+  "match": {
+    "label": "匹配/置信度",
+    "api_base_url": "https://api.example.com/v1",
+    "api_key": "",
+    "model": "example/model",
+    "max_tokens": 512,
+    "temperature": 0.0
+  },
+  "import": {
+    "label": "FAQ 导入生成",
+    "api_base_url": "https://api.example.com/v1",
+    "api_key": "",
+    "model": "example/model",
+    "max_tokens": 4096,
+    "temperature": 0.2
+  },
+  "pdf_vlm": {
+    "label": "PDF VLM 精炼",
+    "api_base_url": "https://api.example.com/v1",
+    "api_key": "",
+    "model": "example/model",
+    "max_tokens": 4096,
+    "temperature": 0.0
+  }
+}

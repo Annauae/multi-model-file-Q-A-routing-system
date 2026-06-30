@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const clientDist = path.join(APP_ROOT, "client", "dist");
 const ctx = createAppContext();
 const app = createApp(ctx, clientDist);
-const port = Number(process.env.PORT ?? 8001);
+const port = Number(process.env.PORT ?? 8002);
 const host = process.env.HOST ?? "0.0.0.0";
 app.listen(port, host, () => {
     console.log(`knowledge_router server listening on http://${host}:${port}`);
