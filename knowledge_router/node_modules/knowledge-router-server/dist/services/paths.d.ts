@@ -1,0 +1,13 @@
+export declare const DOCUMENTS_FOLDER = "documents";
+export declare function kbFolderName(kbId: string): string;
+export declare function kbDirPath(filesRoot: string, kbId: string): string;
+export declare function questionsJsonPath(filesRoot: string, kbId: string): string;
+export declare function kbAssetsDirPath(filesRoot: string, kbId: string): string;
+export declare function kbModulesDirPath(filesRoot: string, kbId: string): string;
+export declare function recallTestsJsonPath(filesRoot: string, kbId: string): string;
+export declare function documentsDirPath(filesRoot: string): string;
+export declare function documentsSourcesDirPath(filesRoot: string): string;
+export declare function documentsModulesDirPath(filesRoot: string): string;
+export declare function documentsAssetsDirPath(filesRoot: string): string;
+export declare const MODEL_ROUTER_ROOT: string;
+export declare const DOCLING_SCRIPT: string;

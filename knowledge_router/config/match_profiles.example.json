@@ -9,6 +9,16 @@
       "model": "example/model",
       "max_tokens": 512,
       "temperature": 0.0
+    },
+    {
+      "id": "ollama_local",
+      "name": "Ollama 本地 qwen3:8b",
+      "api_base_url": "http://127.0.0.1:11434/v1",
+      "api_key": "",
+      "model": "qwen3:8b",
+      "max_tokens": 512,
+      "temperature": 0.0,
+      "enable_thinking": false
     }
   ]
 }

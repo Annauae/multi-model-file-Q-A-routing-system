@@ -3,27 +3,12 @@
     {
       "id": "r_1782437835954_f3i4z",
       "question": "怎么调光圈？",
-      "run_at": "2026-06-26T08:24:30.476Z",
+      "run_at": "2026-06-29T07:49:39.245Z",
       "candidates": [
         {
           "id": "q143",
           "confidence": 0.95,
           "question": "光圈优先自动模式（A）如何调整光圈？"
-        },
-        {
-          "id": "q145",
-          "confidence": 0.85,
-          "question": "手动模式（M）如何调整快门速度和光圈？"
-        },
-        {
-          "id": "q140",
-          "confidence": 0.75,
-          "question": "程序自动模式（P）如何工作？"
-        },
-        {
-          "id": "q144",
-          "confidence": 0.7,
-          "question": "视频模式下的曝光设定有哪些区别？"
         }
       ],
       "answers": [
@@ -32,49 +17,31 @@
           "confidence": 0.95,
           "question": "光圈优先自动模式（A）如何调整光圈？",
           "answer": "## A（光圈优先自动）\n- 在光圈优先自动模式下，由您选择光圈，而照相机会自动调整快门速度以获得良好曝光。\n\n![A模式显示屏与拨盘图示](assets/knowledge_p119-124_006.png)\n\n- 旋转副指令拨盘可调整光圈。\n- 光圈的最小值和最大值根据镜头的不同而异。"
-        },
-        {
-          "id": "q145",
-          "confidence": 0.85,
-          "question": "手动模式（M）如何调整快门速度和光圈？",
-          "answer": "## M（手动）\n- 快门速度和光圈都由您控制。选择此模式可对烟花或夜空等拍摄对象进行长时间曝光（“B门”或“遥控B门”拍摄，🗋158）。\n- 您可根据曝光指示（①）调整快门速度（②）和光圈（③）。\n\n![M模式显示屏与拨盘图示](assets/knowledge_p119-124_007.png) ![M模式拨盘图示](assets/knowledge_p119-124_008.png)\n\n### 快门速度\n- 旋转快门速度拨盘可设定快门速度。\n- 若要选择[X]或[T]，或者要从[1/3STEP]、[X]、[T]或[B]开始进行更改，请在按住快门速度拨盘锁定解除时旋转拨盘。\n- 若将快门速度拨盘设为[1/3STEP]，您可以使用主指令拨盘更改快门速度。快门速度也可设为15秒或30秒（🗋154）。\n\n![M模式快门速度拨盘图示](assets/knowledge_p119-124_009.png)\n\n| 编号 | 说明 | 编号 | 说明 |\n| --- | --- | --- | --- |\n| 1 | 1/4000秒–1/2秒 | 4 | T（遥控B门）（🗋158） |\n| 2 | 1-4秒（红色文字） | 5 | X（闪光同步）（🗋411） |\n| 3 | B（B门）（🗋158） | 6 | 1/3STEP（1/3步长）（🗋154） |\n\n### 光圈\n- 旋转副指令拨盘可调整光圈。\n- 光圈的最小值和最大值根据镜头的不同而异。"
-        },
-        {
-          "id": "q140",
-          "confidence": 0.75,
-          "question": "程序自动模式（P）如何工作？",
-          "answer": "## P（程序自动）\n- 在该模式下，照相机将根据一个内置程序来自动调整快门速度和光圈以确保在大多数情况下都能达到良好曝光。\n- 旋转主指令拨盘可选择将产生相同曝光的不同快门速度和光圈组合（“柔性程序”）。\n  - 当柔性程序有效时，将会显示一个柔性程序指示（✽）。\n\n![P模式显示屏示例](assets/knowledge_p119-124_002.png)\n\n  - 若要恢复默认的快门速度和光圈设定，请旋转主指令拨盘直至指示消失。当模式选择器被旋转至其他设定或照相机关闭时，柔性程序也将结束。"
-        },
-        {
-          "id": "q144",
-          "confidence": 0.7,
-          "question": "视频模式下的曝光设定有哪些区别？",
-          "answer": "🖋️ **视频模式曝光设定**\n以下视频设定可在视频录制过程中进行调整：\n\n| 模式 | 光圈 | 速度 | ISO感光度 |\n| --- | --- | --- | --- |\n| P、S¹ | — | — | —² |\n| A | ✓ | — | —² |\n| M | ✓ | ✓ | ✓³ |\n\n1. 拍摄模式S中的曝光控制与模式P中的相同。\n2. 使用视频拍摄菜单中的[ISO感光度设定]>[最大感光度]项目可选择ISO感光度的上限值。\n3. 当视频拍摄菜单中的[ISO感光度设定]>[自动ISO控制(M模式)]选为[开启]时，使用[最大感光度]可选择ISO感光度的上限值。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1690.2928999988944,
-        "prepare_ms": 4.400800000439631,
-        "match_ms": 1681.8781000001763,
-        "match_first_token_ms": 1569.950000000972,
-        "lookup_ms": 0.5338000009942334,
-        "match_output_tokens": 57,
+        "total_ms": 1235.6658999997308,
+        "prepare_ms": 2.4937000016507227,
+        "match_ms": 1230.5756999994628,
+        "match_first_token_ms": 1026.0963999971864,
+        "lookup_ms": 0.8191000015358441,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9620,
-          "completion_tokens": 57,
-          "total_tokens": 9677
+          "prompt_tokens": 8866,
+          "completion_tokens": 16,
+          "total_tokens": 8882
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9620,
-              "completion_tokens": 57,
-              "total_tokens": 9677
+              "prompt_tokens": 8866,
+              "completion_tokens": 16,
+              "total_tokens": 8882
             }
           }
         ]
@@ -83,45 +50,45 @@
     {
       "id": "r_1782437849424_hces2",
       "question": "吊带怎么安装？",
-      "run_at": "2026-06-26T08:24:31.827Z",
+      "run_at": "2026-06-29T07:49:40.425Z",
       "candidates": [
         {
           "id": "q037",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何安装相机的挂带？"
         }
       ],
       "answers": [
         {
           "id": "q037",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何安装相机的挂带？",
           "answer": "## 安装挂带\n安装挂带（附送或另购的挂带）的步骤如下：\n\n![](assets/knowledge_p54-56_004.png) → ![](assets/knowledge_p54-56_005.png)\n↓\n![](assets/knowledge_p54-56_006.png) → ![](assets/knowledge_p54-56_007.png)"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1336.505399998714,
-        "prepare_ms": 13.247099999716738,
-        "match_ms": 1320.758300000307,
-        "match_first_token_ms": 1307.232799998019,
-        "lookup_ms": 0.6242999988899101,
-        "match_output_tokens": 14,
+        "total_ms": 1167.0928999992611,
+        "prepare_ms": 3.3915999993041623,
+        "match_ms": 1160.7411000004504,
+        "match_first_token_ms": 993.8255000015488,
+        "lookup_ms": 0.6659000027866568,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 14,
-          "total_tokens": 9636
+          "prompt_tokens": 8866,
+          "completion_tokens": 16,
+          "total_tokens": 8882
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 14,
-              "total_tokens": 9636
+              "prompt_tokens": 8866,
+              "completion_tokens": 16,
+              "total_tokens": 8882
             }
           }
         ]
@@ -130,67 +97,67 @@
     {
       "id": "r_1782437858489_o10mo",
       "question": "怎么选择对焦点？",
-      "run_at": "2026-06-26T08:24:38.657Z",
+      "run_at": "2026-06-29T07:49:41.837Z",
       "candidates": [
         {
-          "id": "q112",
+          "id": "q107",
           "confidence": 0.95,
+          "question": "如何选择照相机的对焦模式？"
+        },
+        {
+          "id": "q112",
+          "confidence": 0.85,
           "question": "如何快速选择对焦点？"
         },
         {
           "id": "q113",
-          "confidence": 0.9,
-          "question": "如何手动选择对焦点？"
-        },
-        {
-          "id": "q111",
           "confidence": 0.85,
-          "question": "如何在画面中央显示对焦点？"
+          "question": "如何手动选择对焦点？"
         }
       ],
       "answers": [
         {
-          "id": "q112",
+          "id": "q107",
           "confidence": 0.95,
+          "question": "如何选择照相机的对焦模式？",
+          "answer": "### 对焦模式\n选择照相机的对焦方式。\n\n#### ■■ 选择对焦模式\n- 对焦模式可使用 i 菜单、照片拍摄菜单和视频拍摄菜单中的[对焦模式]项目进行选择（❏201、❏309、❏384）。\n\n![对焦模式设置界面](assets/knowledge_p88-94_001.png)\n\n| 选项 | | 说明 |\n| ---- | ---- | ---- |\n| AF-A | [AF模式自动开关] | · 照相机使用**AF-S**拍摄静止的拍摄对象，使用**AF-C**拍摄移动的拍摄对象。<br>· 仅在照片模式下才可用。 |\n| AF-S | [单次AF] | · 适用于静止的拍摄对象。半按快门释放按钮进行对焦时，对焦点将从红色变为绿色，且对焦将锁定。若照相机无法对焦，对焦点将闪烁红色，快门释放将被禁用。<br>· 在默认设定下，仅当照相机可进行对焦时快门才可释放（对焦优先）。 |\n| AF-C | [连续AF] | · 适用于移动的拍摄对象。半按快门释放按钮期间，照相机将根据与拍摄对象之间距离的变化持续调整对焦。<br>· 在默认设定下，无论拍摄对象是否清晰对焦，快门都可释放（快门释放优先）。 |\n| AF-F | [全时AF] | · 照相机根据拍摄对象的移动或构图变化持续调整对焦。<br>· 半按快门释放按钮时，对焦点将从红色变为绿色，且对焦将锁定。<br>· 该选项仅适用于视频模式。 |\n| MF | [手动对焦] | 手动对焦（❏135）。无论拍摄对象是否清晰对焦都可释放快门。 |"
+        },
+        {
+          "id": "q112",
+          "confidence": 0.85,
           "question": "如何快速选择对焦点？",
           "answer": "## 快速对焦点选择\n- 若要快速选择对焦点，请在自定义设定a4[使用的对焦点]中选择[间隔对焦点]以仅使用可用对焦点的四分之一。即使选择了[间隔对焦点]，[微点AF]、[宽区域AF(L)]、[宽区域AF(L-人物)]或[宽区域AF(L-动物)]的可用对焦点数量也不会改变。\n- 您可以将自定义设定f2[自定义控制(拍摄)]>[OK按钮]选为[选择中央对焦点]，以允许使用OK按钮快速选择中央对焦点。"
         },
         {
           "id": "q113",
-          "confidence": 0.9,
+          "confidence": 0.85,
           "question": "如何手动选择对焦点？",
           "answer": "## 对焦点选择\n当AF区域模式（☞122）选为[自动区域AF]、[自动区域AF(人物)]或[自动区域AF(动物)]以外的选项时，多重选择器可用于选择对焦点。\n\n![操作示意](assets/knowledge_p95-98_001.png)\n![界面示意](assets/knowledge_p95-98_002.png)"
-        },
-        {
-          "id": "q111",
-          "confidence": 0.85,
-          "question": "如何在画面中央显示对焦点？",
-          "answer": "## ▢：中央对焦点\n当对焦点位于画面中央时，对焦点中会出现一个点。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 6814.896299998509,
-        "prepare_ms": 7.421400001476286,
-        "match_ms": 6804.769299997133,
-        "match_first_token_ms": 6773.8582999991195,
-        "lookup_ms": 0.31520000266027637,
-        "match_output_tokens": 23,
+        "total_ms": 1398.624800000107,
+        "prepare_ms": 3.1137000005401205,
+        "match_ms": 1390.0945000023057,
+        "match_first_token_ms": 558.2680000006803,
+        "lookup_ms": 0.3300000025774352,
+        "match_output_tokens": 44,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 23,
-          "total_tokens": 9645
+          "prompt_tokens": 8866,
+          "completion_tokens": 44,
+          "total_tokens": 8910
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 23,
-              "total_tokens": 9645
+              "prompt_tokens": 8866,
+              "completion_tokens": 44,
+              "total_tokens": 8910
             }
           }
         ]
@@ -199,32 +166,12 @@
     {
       "id": "r_1782438051346_b51ra",
       "question": "相机有哪些模式？",
-      "run_at": "2026-06-26T08:24:40.156Z",
+      "run_at": "2026-06-29T07:49:43.760Z",
       "candidates": [
         {
           "id": "q001",
           "confidence": 0.95,
           "question": "如何使用模式选择器选择拍摄模式？"
-        },
-        {
-          "id": "q056",
-          "confidence": 0.85,
-          "question": "如何切换至自动模式拍摄照片？"
-        },
-        {
-          "id": "q140",
-          "confidence": 0.8,
-          "question": "程序自动模式（P）如何工作？"
-        },
-        {
-          "id": "q141",
-          "confidence": 0.8,
-          "question": "快门优先自动模式（S）怎么设置快门速度？"
-        },
-        {
-          "id": "q143",
-          "confidence": 0.8,
-          "question": "光圈优先自动模式（A）如何调整光圈？"
         }
       ],
       "answers": [
@@ -233,55 +180,31 @@
           "confidence": 0.95,
           "question": "如何使用模式选择器选择拍摄模式？",
           "answer": "# 模式选择器\n使用模式选择器可选择一种拍摄模式。\n\n![模式选择器示意图](assets/knowledge_p28-30_001.png)\n\n| 模式 | 说明 |\n|------|------|\n| AUTO 自动 | 一种简单的“即取即拍”模式，由照相机控制设定（❏104、❏109）。 |\n| P 程序自动 | 由照相机设定快门速度和光圈以获得良好曝光。 |\n| S 快门优先自动 | 用于锁定或模糊动作。由您选择快门速度；照相机选择光圈以达到良好效果。 |\n| A 光圈优先自动 | 用于模糊背景，或使前景和背景都清晰对焦。由您选择光圈；照相机选择快门速度以达到良好效果。 |\n| M 手动 | 快门速度和光圈都由您控制。将快门速度设为“B门”或“遥控B门”可实现长时间曝光。 |"
-        },
-        {
-          "id": "q056",
-          "confidence": 0.85,
-          "question": "如何切换至自动模式拍摄照片？",
-          "answer": "# 拍摄照片（📷<sup>AUTO</sup>自动）\n选择📷<sup>AUTO</sup>（自动）模式可进行简单的“即取即拍”型拍摄。\n\n---\n\n✅ **具备可伸缩镜筒的镜头**\n\n具备可伸缩镜筒的镜头在使用前必须先伸出。如图所示旋转变焦环直至镜头卡入伸出的位置发出咔嗒声。\n\n![伸缩镜筒操作示意图](assets/knowledge_p72-76_001.png)\n\n---\n\n1. **通过将照片/视频选择器旋转至📷选择照片模式。**\n\n![照片/视频选择器操作示意图](assets/knowledge_p72-76_002.png)\n\n2. **将模式选择器旋转至AUTO（📷<sup>AUTO</sup>）。**\n\n![模式选择器操作示意图](assets/knowledge_p72-76_003.png)"
-        },
-        {
-          "id": "q140",
-          "confidence": 0.8,
-          "question": "程序自动模式（P）如何工作？",
-          "answer": "## P（程序自动）\n- 在该模式下，照相机将根据一个内置程序来自动调整快门速度和光圈以确保在大多数情况下都能达到良好曝光。\n- 旋转主指令拨盘可选择将产生相同曝光的不同快门速度和光圈组合（“柔性程序”）。\n  - 当柔性程序有效时，将会显示一个柔性程序指示（✽）。\n\n![P模式显示屏示例](assets/knowledge_p119-124_002.png)\n\n  - 若要恢复默认的快门速度和光圈设定，请旋转主指令拨盘直至指示消失。当模式选择器被旋转至其他设定或照相机关闭时，柔性程序也将结束。"
-        },
-        {
-          "id": "q141",
-          "confidence": 0.8,
-          "question": "快门优先自动模式（S）怎么设置快门速度？",
-          "answer": "## S（快门优先自动）\n- 在快门优先自动模式下，由您选择快门速度，而照相机会自动调整光圈以获得良好曝光。选择高速快门可“锁定”动作，选择低速快门则可通过模糊移动的物体表现出动态效果。\n\n![S模式显示屏示例](assets/knowledge_p119-124_003.png)\n\n- 旋转快门速度拨盘可设定快门速度。\n- 若要选择[X]或[T]，或者要从[1/3STEP]、[X]、[T]或[B]开始进行更改，请在按住快门速度拨盘锁定解除时旋转拨盘。\n\n![快门速度拨盘图示](assets/knowledge_p119-124_004.png)\n\n| 编号 | 说明 | 编号 | 说明 |\n| --- | --- | --- | --- |\n| 1 | 1/4000秒–1/2秒 | 3 | X（闪光同步）（🗋411） |\n| 2 | 1-4秒（红色文字） | 4 | 1/3STEP（1/3步长）（🗋154） |\n\n- 在模式S下，即使将快门速度拨盘设为[B]（B门）或[T]（遥控B门），长时间曝光（🗋158）也不可用。若要执行长时间曝光，请选择模式M。"
-        },
-        {
-          "id": "q143",
-          "confidence": 0.8,
-          "question": "光圈优先自动模式（A）如何调整光圈？",
-          "answer": "## A（光圈优先自动）\n- 在光圈优先自动模式下，由您选择光圈，而照相机会自动调整快门速度以获得良好曝光。\n\n![A模式显示屏与拨盘图示](assets/knowledge_p119-124_006.png)\n\n- 旋转副指令拨盘可调整光圈。\n- 光圈的最小值和最大值根据镜头的不同而异。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1485.5549999992945,
-        "prepare_ms": 4.157700001087505,
-        "match_ms": 1477.6949000006425,
-        "match_first_token_ms": 1463.6171999991348,
-        "lookup_ms": 0.503999999637017,
-        "match_output_tokens": 23,
+        "total_ms": 1914.4721999982721,
+        "prepare_ms": 2.8693999993265606,
+        "match_ms": 1907.894199997827,
+        "match_first_token_ms": 1277.4647999976878,
+        "lookup_ms": 0.9737000000313856,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9621,
-          "completion_tokens": 23,
-          "total_tokens": 9644
+          "prompt_tokens": 8865,
+          "completion_tokens": 16,
+          "total_tokens": 8881
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9621,
-              "completion_tokens": 23,
-              "total_tokens": 9644
+              "prompt_tokens": 8865,
+              "completion_tokens": 16,
+              "total_tokens": 8881
             }
           }
         ]
@@ -290,45 +213,45 @@
     {
       "id": "r_1782438227868_2mnqu",
       "question": "我怎么才能让我的照片不会被误删？",
-      "run_at": "2026-06-26T08:24:41.372Z",
+      "run_at": "2026-06-29T07:49:44.935Z",
       "candidates": [
         {
           "id": "q137",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "怎样保护照片防止被误删？"
         }
       ],
       "answers": [
         {
           "id": "q137",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "怎样保护照片防止被误删？",
           "answer": "# 保护照片不被删除\n您可保护照片以防止照片被意外删除。但是格式化存储卡时，受保护的照片将被删除。\n\n## 1 按下▶按钮开始播放。\n![播放按钮位置示意图](assets/knowledge_p113-118_007.png)\n\n## 2 选择所需照片并按下📌（🔒）按钮。\n![保护按钮位置示意图](assets/knowledge_p113-118_008.png)\n\n- 受保护的照片将用一个🔒图标标记。\n\n![带保护图标的照片显示界面](assets/knowledge_p113-118_009.png)\n\n- 若要取消保护，请显示或加亮显示该照片并再次按下📌（🔒）按钮。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1203.9249999979802,
-        "prepare_ms": 4.289500000595581,
-        "match_ms": 1198.1447999969532,
-        "match_first_token_ms": 1188.5208999992756,
-        "lookup_ms": 0.2693999995244667,
-        "match_output_tokens": 13,
+        "total_ms": 1154.8576999994111,
+        "prepare_ms": 2.821999998559477,
+        "match_ms": 1149.2693000000145,
+        "match_first_token_ms": 976.0114000018802,
+        "lookup_ms": 0.779799996962538,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9628,
-          "completion_tokens": 13,
-          "total_tokens": 9641
+          "prompt_tokens": 8872,
+          "completion_tokens": 16,
+          "total_tokens": 8888
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9628,
-              "completion_tokens": 13,
-              "total_tokens": 9641
+              "prompt_tokens": 8872,
+              "completion_tokens": 16,
+              "total_tokens": 8888
             }
           }
         ]
@@ -337,45 +260,32 @@
     {
       "id": "r_1782438404054_gxf5r",
       "question": "怎么安装吊带？",
-      "run_at": "2026-06-26T08:24:42.691Z",
-      "candidates": [
-        {
-          "id": "q037",
-          "confidence": 1.0,
-          "question": "如何安装相机的挂带？"
-        }
-      ],
-      "answers": [
-        {
-          "id": "q037",
-          "confidence": 1.0,
-          "question": "如何安装相机的挂带？",
-          "answer": "## 安装挂带\n安装挂带（附送或另购的挂带）的步骤如下：\n\n![](assets/knowledge_p54-56_004.png) → ![](assets/knowledge_p54-56_005.png)\n↓\n![](assets/knowledge_p54-56_006.png) → ![](assets/knowledge_p54-56_007.png)"
-        }
-      ],
-      "recalled": "yes",
+      "run_at": "2026-06-29T07:49:47.671Z",
+      "candidates": [],
+      "answers": [],
+      "recalled": "no",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1306.2781000007817,
-        "prepare_ms": 3.6417999981495086,
-        "match_ms": 1300.9498000028543,
-        "match_first_token_ms": 1294.2097000013746,
-        "lookup_ms": 0.29910000012023374,
-        "match_output_tokens": 13,
+        "total_ms": 2725.749299999734,
+        "prepare_ms": 2.6311000001442153,
+        "match_ms": 2720.297500000015,
+        "match_first_token_ms": 2651.7074999974284,
+        "lookup_ms": 0.0010000003385357559,
+        "match_output_tokens": 1,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 13,
-          "total_tokens": 9635
+          "prompt_tokens": 8866,
+          "completion_tokens": 1,
+          "total_tokens": 8867
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 13,
-              "total_tokens": 9635
+              "prompt_tokens": 8866,
+              "completion_tokens": 1,
+              "total_tokens": 8867
             }
           }
         ]
@@ -384,45 +294,45 @@
     {
       "id": "r_1782438428150_1zxs8",
       "question": "怎么开启对象跟踪？",
-      "run_at": "2026-06-26T08:24:44.147Z",
+      "run_at": "2026-06-29T07:49:51.464Z",
       "candidates": [
         {
           "id": "q118",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何使用对象跟踪AF功能跟踪拍摄对象？"
         }
       ],
       "answers": [
         {
           "id": "q118",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何使用对象跟踪AF功能跟踪拍摄对象？",
           "answer": "## 对象跟踪AF\n当AF区域模式选为[自动区域AF]、[自动区域AF(人物)]或[自动区域AF(动物)]时，照相机可跟踪所选对焦点上的拍摄对象。\n- 按下❾可启用跟踪对焦；对焦点将变为瞄准网格。\n\n![assets/knowledge_p99-102_001.png](assets/knowledge_p99-102_001.png)\n\n- 将瞄准网格置于拍摄对象上，并再次按下❾可启动跟踪；对焦点将跟踪在画面中移动的所选拍摄对象。若要结束跟踪并选择中央对焦点，请再次按下❾。在照片模式下，若通过半按快门释放按钮在对焦模式AF-C或AF-A中启动了对象跟踪，照相机仅将在按下快门释放按钮期间跟踪拍摄对象；松开快门释放按钮将结束跟踪并恢复启动跟踪前所选的对焦点。\n- 若要退出对象跟踪模式，请按下❷（？）按钮。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1439.329100001487,
-        "prepare_ms": 4.172900000412483,
-        "match_ms": 1432.9739999993762,
-        "match_first_token_ms": 1420.863499999541,
-        "lookup_ms": 0.6085999993956648,
-        "match_output_tokens": 14,
+        "total_ms": 3783.1910000022617,
+        "prepare_ms": 3.4403999998176005,
+        "match_ms": 3778.584600000613,
+        "match_first_token_ms": 1076.4460000027611,
+        "lookup_ms": 0.22790000002714805,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 14,
-          "total_tokens": 9636
+          "prompt_tokens": 8866,
+          "completion_tokens": 16,
+          "total_tokens": 8882
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 14,
-              "total_tokens": 9636
+              "prompt_tokens": 8866,
+              "completion_tokens": 16,
+              "total_tokens": 8882
             }
           }
         ]
@@ -431,45 +341,45 @@
     {
       "id": "r_1782439022491_66eha",
       "question": "怎么调ISO感光度拨盘？",
-      "run_at": "2026-06-26T08:24:45.739Z",
+      "run_at": "2026-06-29T07:49:52.159Z",
       "candidates": [
         {
           "id": "q004",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何使用ISO感光度拨盘调节ISO感光度？"
         }
       ],
       "answers": [
         {
           "id": "q004",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何使用ISO感光度拨盘调节ISO感光度？",
           "answer": "# ISO感光度拨盘\n照相机对光线的灵敏度（ISO感光度）可根据可用光线量进行调整。一般情况下，选择的值越高，在相同光圈下可使用的快门速度越快。\n\n在按住ISO感光度拨盘锁定解除的同时旋转ISO感光度拨盘，可根据可用的光量调节照相机对光的敏感度（ISO感光度）。\n\n![ISO感光度拨盘示意图](assets/knowledge_p28-30_004.png)\n\n拍摄过程中，当前所选项显示在屏幕中。\n\n![ISO感光度屏幕显示示例](assets/knowledge_p130-135_002.png)"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1571.2452000007033,
-        "prepare_ms": 7.455900002241833,
-        "match_ms": 1561.6008999968471,
-        "match_first_token_ms": 1444.053299997904,
-        "lookup_ms": 0.6011000004946254,
-        "match_output_tokens": 14,
+        "total_ms": 685.9599999988859,
+        "prepare_ms": 2.8354999994917307,
+        "match_ms": 680.0359999979264,
+        "match_first_token_ms": 511.53830000112066,
+        "lookup_ms": 0.7903000005171634,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9626,
-          "completion_tokens": 14,
-          "total_tokens": 9640
+          "prompt_tokens": 8870,
+          "completion_tokens": 16,
+          "total_tokens": 8886
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9626,
-              "completion_tokens": 14,
-              "total_tokens": 9640
+              "prompt_tokens": 8870,
+              "completion_tokens": 16,
+              "total_tokens": 8886
             }
           }
         ]
@@ -478,67 +388,32 @@
     {
       "id": "r_1782440133066_t7eny",
       "question": "怎么增加缩放率？",
-      "run_at": "2026-06-26T08:24:47.239Z",
-      "candidates": [
-        {
-          "id": "q022",
-          "confidence": 0.95,
-          "question": "如何使用🔍和🔍❏（？）按钮在拍摄时放大或缩小画面？"
-        },
-        {
-          "id": "q023",
-          "confidence": 0.9,
-          "question": "播放照片时如何用🔍和🔍❏（？）按钮放大、缩小或切换显示模式？"
-        },
-        {
-          "id": "q065",
-          "confidence": 0.85,
-          "question": "视频模式下如何进行变焦操作？"
-        }
-      ],
-      "answers": [
-        {
-          "id": "q022",
-          "confidence": 0.95,
-          "question": "如何使用🔍和🔍❏（？）按钮在拍摄时放大或缩小画面？",
-          "answer": "# 🔍和🔍❏（？）按钮\n按下🔍可在拍摄期间放大镜头视野。按下🔍可增加缩放率，按下🔍❏（？）则可减小缩放率。\n\n![放大/缩小按钮示意图](assets/knowledge_p44-45_001.png)"
-        },
-        {
-          "id": "q023",
-          "confidence": 0.9,
-          "question": "播放照片时如何用🔍和🔍❏（？）按钮放大、缩小或切换显示模式？",
-          "answer": "# 🔍和🔍❏（？）按钮\n按下🔍可在全屏播放期间放大照片。按下🔍可增加缩放率，按下🔍❏（？）则可减小缩放率。当照片全屏显示时，按下🔍❏（？）可“缩小”至缩略图列表。当显示72张画面时，按下🔍❏（？）可选择日历播放。\n\n![放大/缩小按钮示意图](assets/knowledge_p44-45_001.png)"
-        },
-        {
-          "id": "q065",
-          "confidence": 0.85,
-          "question": "视频模式下如何进行变焦操作？",
-          "answer": "# 在视频模式下拍摄照片\n📝 **在视频模式下变焦**\n\n在视频模式下按下<img alt=\"放大按钮标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>按钮可放大视野（<img alt=\"页码标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>108）。在视频录制期间按下<img alt=\"放大按钮标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>按钮可以1:1（100%）的倍率进行显示。按下<img alt=\"缩小按钮标识\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/>（？）按钮可取消变焦。"
-        }
-      ],
+      "run_at": "2026-06-29T07:49:59.986Z",
+      "candidates": [],
+      "answers": [],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1485.911899999337,
-        "prepare_ms": 3.9938999980222434,
-        "match_ms": 1479.1533000025083,
-        "match_first_token_ms": 1468.7709999998333,
-        "lookup_ms": 0.4372000003058929,
-        "match_output_tokens": 21,
+        "total_ms": 7815.593299998,
+        "prepare_ms": 3.4888999980466906,
+        "match_ms": 7809.5590000011725,
+        "match_first_token_ms": 7793.404800002463,
+        "lookup_ms": 0.0009999967005569488,
+        "match_output_tokens": 1,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 21,
-          "total_tokens": 9644
+          "prompt_tokens": 8867,
+          "completion_tokens": 1,
+          "total_tokens": 8868
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 21,
-              "total_tokens": 9644
+              "prompt_tokens": 8867,
+              "completion_tokens": 1,
+              "total_tokens": 8868
             }
           }
         ]
@@ -547,78 +422,45 @@
     {
       "id": "r_1782440180788_9f3x2",
       "question": "怎么保持对焦情况下拍摄多张照片？",
-      "run_at": "2026-06-26T08:24:48.652Z",
+      "run_at": "2026-06-29T07:50:05.690Z",
       "candidates": [
         {
           "id": "q166",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何在相同对焦距离下拍摄多张照片并保持对焦锁定？"
-        },
-        {
-          "id": "q162",
-          "confidence": 0.85,
-          "question": "如何使用对焦锁定功能？"
-        },
-        {
-          "id": "q163",
-          "confidence": 0.82,
-          "question": "如何通过AE-L/AF-L（on）按钮锁定对焦和曝光？"
-        },
-        {
-          "id": "q164",
-          "confidence": 0.75,
-          "question": "在什么情况下对焦会自动锁定？"
         }
       ],
       "answers": [
         {
           "id": "q166",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "如何在相同对焦距离下拍摄多张照片并保持对焦锁定？",
           "answer": "### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。\n- 通过按下AE-L/AF-L（on）按钮锁定了对焦时，若按住AE-L/AF-L（on）按钮不放，则可以保持对焦锁定拍摄多张照片。\n- 若您在两次拍摄之间持续半按快门释放按钮，对焦也将保持锁定。\n\nAE-L/AF-L（on）按钮\n170"
-        },
-        {
-          "id": "q162",
-          "confidence": 0.85,
-          "question": "如何使用对焦锁定功能？",
-          "answer": "## 对焦锁定\n- 当对焦模式选为**AF-C**时，使用对焦锁定可将对焦锁定于当前拍摄对象。\n- 使用对焦锁定时，请选择[自动区域AF]、[自动区域AF(人物)]或[自动区域AF(动物)]以外的AF区域模式。"
-        },
-        {
-          "id": "q163",
-          "confidence": 0.82,
-          "question": "如何通过AE-L/AF-L（on）按钮锁定对焦和曝光？",
-          "answer": "### 2 按AE-L/AF-L（on）按钮。\n### 1 将拍摄对象置于所选对焦点上，并半按快门释放按钮设定对焦和曝光。\n\nAE-L/AF-L（on）按钮\n168\n\n### 2 按AE-L/AF-L（on）按钮。\n\n![assets/knowledge_p136-138_002.png](assets/knowledge_p136-138_002.png)\n- 按下AE-L/AF-L（on）按钮期间，对焦和曝光将锁定。即使构图被更改，曝光也不会改变。\n- 显示屏中将显示**AE-L**图标。\n\n![assets/knowledge_p136-138_003.png](assets/knowledge_p136-138_003.png)\n\nAE-L/AF-L（on）按钮\n169\n\n### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。\n\n![assets/knowledge_p136-138_004.png](assets/knowledge_p136-138_004.png)\n\n请勿改变照相机和拍摄对象之间的距离。若与拍摄对象之间的距离发生变化，请解除锁定并以新的距离重新对焦。\n\n![assets/knowledge_p136-138_005.png](assets/knowledge_p136-138_005.png)"
-        },
-        {
-          "id": "q164",
-          "confidence": 0.75,
-          "question": "在什么情况下对焦会自动锁定？",
-          "answer": "### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。\n✅ **当将对焦模式选为AF-S时，或选为AF-A却使用AF-S拍摄时锁定对焦**\n半按快门释放按钮期间对焦锁定。您也可通过按下AE-L/AF-L（on）按钮锁定对焦。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1400.1913999964017,
-        "prepare_ms": 4.083299998455914,
-        "match_ms": 1392.9577999988396,
-        "match_first_token_ms": 1381.0076999980083,
-        "lookup_ms": 0.4084000029251911,
-        "match_output_tokens": 10,
+        "total_ms": 5693.554399997083,
+        "prepare_ms": 3.759100000024773,
+        "match_ms": 5687.848399997165,
+        "match_first_token_ms": 1264.1879999973753,
+        "lookup_ms": 0.6835999993199948,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9627,
-          "completion_tokens": 10,
-          "total_tokens": 9637
+          "prompt_tokens": 8871,
+          "completion_tokens": 16,
+          "total_tokens": 8887
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9627,
-              "completion_tokens": 10,
-              "total_tokens": 9637
+              "prompt_tokens": 8871,
+              "completion_tokens": 16,
+              "total_tokens": 8887
             }
           }
         ]
@@ -627,7 +469,7 @@
     {
       "id": "r_1782440261451_y2evr",
       "question": "怎么打开i菜单？",
-      "run_at": "2026-06-26T08:24:49.994Z",
+      "run_at": "2026-06-29T07:50:07.524Z",
       "candidates": [
         {
           "id": "q033",
@@ -635,8 +477,13 @@
           "question": "如何快速访问常用设置的i菜单？"
         },
         {
+          "id": "q036",
+          "confidence": 0.85,
+          "question": "如何设置相机的Fn按钮功能？"
+        },
+        {
           "id": "q016",
-          "confidence": 0.9,
+          "confidence": 0.75,
           "question": "触摸屏上的i菜单怎么使用？"
         }
       ],
@@ -648,35 +495,41 @@
           "answer": "## **i按钮（i菜单）**\n若要快速访问常用设定，请按下`i`按钮或轻触`<i>`图标查看`i`菜单。\n\n![i按钮位置与i菜单界面](assets/knowledge_p50-53_003.png)\n\n> 照相机控制\n> 82\n\n- 在照片模式和视频模式下显示的菜单不同。\n\n![照片模式i菜单界面](assets/knowledge_p50-53_004.png)\n- 选项可通过在屏幕中轻触项目，或者加亮显示项目并按下`OK`进行查看；随后使用多重选择器即可进行选择。\n- 对于照相机会显示屏幕指南的项目，您可在`i`菜单中加亮显示该项目并旋转指令拨盘对其进行调整。在某些情况下，需要同时使用主指令拨盘和副指令拨盘进行调整。\n\n![调整项目界面](assets/knowledge_p50-53_005.png)\n\n---\n\n✏️ **播放i菜单**\n在播放过程中按下`i`按钮将显示常用播放选项的相应`i`菜单。\n\n![播放模式i菜单界面](assets/knowledge_p50-53_006.png)\n\n> 照相机控制\n> 83"
         },
         {
+          "id": "q036",
+          "confidence": 0.85,
+          "question": "如何设置相机的Fn按钮功能？",
+          "answer": "## 1 加亮显示自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]并按下<kbd>OK</kbd>。\n可以使用自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]>[Fn按钮]来选择Fn按钮执行的功能。\n\n## 1 加亮显示自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]并按下<kbd>OK</kbd>。\n![f控制菜单界面](assets/knowledge_p54-56_001.png)\n\n有关使用菜单的信息，请参阅“MENU按钮”（<img src=\"\" alt=\"手册图标\" style=\"width:1em; vertical-align:middle;\"/>78）。\n\n## 2 加亮显示<kbd>Fn按钮</kbd>图标并按下<kbd>OK</kbd>。\n![Fn按钮选项界面](assets/knowledge_p54-56_002.png)\n\n屏幕中将显示可用于Fn按钮的项目列表。\n\n## 3 加亮显示所需项目并按下<kbd>OK</kbd>。\n![Fn按钮项目选择界面](assets/knowledge_p54-56_003.png)\n- 该项目将被指定给Fn按钮，并且屏幕中将显示步骤2中出现的选项。\n\n## 4 按下MENU按钮。\n更改将被保存，并且屏幕中将显示自定义设定菜单。"
+        },
+        {
           "id": "q016",
-          "confidence": 0.9,
+          "confidence": 0.75,
           "question": "触摸屏上的i菜单怎么使用？",
           "answer": "## i菜单\n- 拍摄期间轻触<svg width=\"12\" height=\"16\" viewBox=\"0 0 12 16\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M6 0C2.68629 0 0 2.68629 0 6C0 9.31371 2.68629 12 6 12C9.31371 12 12 9.31371 12 6C12 2.68629 9.31371 0 6 0ZM6.75 9H5.25V5.5H6.75V9ZM6.75 4.5H5.25V3H6.75V4.5Z\"/></svg>图标可显示i菜单（<svg width=\"16\" height=\"12\" viewBox=\"0 0 16 12\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M1 1H15V7H1V1Z\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M4 11H12\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg> 82、<svg width=\"16\" height=\"12\" viewBox=\"0 0 16 12\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M1 1H15V7H1V1Z\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M4 11H12\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg> 171）。\n\n![i菜单图标位置示意图](assets/knowledge_p36-39_011.png)\n- 轻触项目可查看并更改选项。\n\n![i菜单界面示意图](assets/knowledge_p36-39_012.png)"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1326.174900001206,
-        "prepare_ms": 4.100800000742311,
-        "match_ms": 1319.9246000003768,
-        "match_first_token_ms": 1312.547400000767,
-        "lookup_ms": 0.3690000012284145,
-        "match_output_tokens": 9,
+        "total_ms": 1824.0925000027346,
+        "prepare_ms": 4.465300000447314,
+        "match_ms": 1815.6248000013875,
+        "match_first_token_ms": 1259.1606999994838,
+        "lookup_ms": 0.42190000021946616,
+        "match_output_tokens": 44,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 9,
-          "total_tokens": 9631
+          "prompt_tokens": 8866,
+          "completion_tokens": 44,
+          "total_tokens": 8910
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 9,
-              "total_tokens": 9631
+              "prompt_tokens": 8866,
+              "completion_tokens": 44,
+              "total_tokens": 8910
             }
           }
         ]
@@ -685,7 +538,7 @@
     {
       "id": "r_1782441488568_ak42g",
       "question": "充电器充电步骤是什么？",
-      "run_at": "2026-06-26T08:24:51.422Z",
+      "run_at": "2026-06-29T07:50:08.418Z",
       "candidates": [
         {
           "id": "q038",
@@ -696,11 +549,6 @@
           "id": "q040",
           "confidence": 0.85,
           "question": "如何使用EH-8P电源适配器为电池充电？"
-        },
-        {
-          "id": "q046",
-          "confidence": 0.6,
-          "question": "如何正确插入电池和存储卡？"
         }
       ],
       "answers": [
@@ -715,37 +563,31 @@
           "confidence": 0.85,
           "question": "如何使用EH-8P电源适配器为电池充电？",
           "answer": "##  将EN-EL25插入照相机（☞95）。\n在照相机中插有电池时，可将照相机连接至另购的EH-8P电源适配器为电池充电。\n\n### 1 将EN-EL25插入照相机（☞95）。\n![插入EN-EL25电池示意图](assets/knowledge_p57-62_002.png)\n\n### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。\n将电源适配器插入家用电源插座。照相机处于关闭状态时，电池将会充电。请径直插入及拔出连接线或插头。\n\n![电源适配器充电连接步骤](assets/knowledge_p57-62_003.png)\n\n- 充电过程中照相机充电指示灯（②）将以琥珀色点亮。充电完成时指示灯熄灭。\n- 将一块电量耗尽的电池充满电大约需要2小时（使用EN-EL25a时）或1小时40分钟（使用EN-EL25时）。\n- 充电完成后，请断开USB连接线的连接。断开时确保径直拔出连接器。\n- 插头形状因购买的国家或地区而异。"
-        },
-        {
-          "id": "q046",
-          "confidence": 0.6,
-          "question": "如何正确插入电池和存储卡？",
-          "answer": "# 插入电池和存储卡\n- 请在插入或取出电池和存储卡前先关闭照相机。\n- 用电池将橙色电池锁闩压向一边，同时将电池滑入电池舱直至锁闩将其锁定到位。\n- 如图示方向持拿存储卡，并将其径直推入插槽直至卡入正确位置发出咔嗒声。\n\n![操作图示](assets/knowledge_p63-66_001.png)"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1413.1177000017487,
-        "prepare_ms": 4.395100000692764,
-        "match_ms": 1404.2308999996749,
-        "match_first_token_ms": 1394.728800001758,
-        "lookup_ms": 0.57080000260612,
-        "match_output_tokens": 21,
+        "total_ms": 885.4319999991276,
+        "prepare_ms": 2.8037000010954216,
+        "match_ms": 879.6216000009736,
+        "match_first_token_ms": 523.2317000009061,
+        "lookup_ms": 0.6088000009185635,
+        "match_output_tokens": 30,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 21,
-          "total_tokens": 9644
+          "prompt_tokens": 8867,
+          "completion_tokens": 30,
+          "total_tokens": 8897
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 21,
-              "total_tokens": 9644
+              "prompt_tokens": 8867,
+              "completion_tokens": 30,
+              "total_tokens": 8897
             }
           }
         ]
@@ -754,45 +596,45 @@
     {
       "id": "r_1782454376147_6k6md",
       "question": "指令拨盘有什么用？",
-      "run_at": "2026-06-26T08:24:52.723Z",
+      "run_at": "2026-06-29T07:50:10.146Z",
       "candidates": [
         {
           "id": "q003",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "指令拨盘有什么功能？"
         }
       ],
       "answers": [
         {
           "id": "q003",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "指令拨盘有什么功能？",
           "answer": "# 指令拨盘\n旋转指令拨盘可选择光圈的设定或者指定给其他照相机控制的功能。\n\n![指令拨盘示意图](assets/knowledge_p28-30_003.png)"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1281.7728000009083,
-        "prepare_ms": 4.721500001323875,
-        "match_ms": 1275.1782999985153,
-        "match_first_token_ms": 1266.3148999999976,
-        "lookup_ms": 0.6958000012673438,
-        "match_output_tokens": 13,
+        "total_ms": 1719.739699998172,
+        "prepare_ms": 2.638999998453073,
+        "match_ms": 1713.1870000011986,
+        "match_first_token_ms": 1233.3467000025848,
+        "lookup_ms": 0.8762000034039374,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 13,
-          "total_tokens": 9636
+          "prompt_tokens": 8867,
+          "completion_tokens": 16,
+          "total_tokens": 8883
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 13,
-              "total_tokens": 9636
+              "prompt_tokens": 8867,
+              "completion_tokens": 16,
+              "total_tokens": 8883
             }
           }
         ]
@@ -801,7 +643,7 @@
     {
       "id": "r_1782454434987_lvhxi",
       "question": "怎么调ISO感光度？",
-      "run_at": "2026-06-26T08:24:54.250Z",
+      "run_at": "2026-06-29T07:50:12.176Z",
       "candidates": [
         {
           "id": "q004",
@@ -814,9 +656,9 @@
           "question": "照片模式下如何调节ISO感光度？"
         },
         {
-          "id": "q006",
-          "confidence": 0.85,
-          "question": "视频模式下如何设置ISO感光度？"
+          "id": "q044",
+          "confidence": 0.75,
+          "question": "通过电脑USB接口给相机充电有哪些注意事项？"
         }
       ],
       "answers": [
@@ -833,35 +675,35 @@
           "answer": "## ❚❚ 照片模式\n通过按住ISO感光度拨盘锁定解除并旋转ISO感光度拨盘，可以调节ISO感光度。\n\n- 从ISO 100至51200的值中进行选择。可以将ISO感光度拨盘设为**[H1]（Hi 1）**或**[H2]（Hi 2）**以分别获得高于ISO 51200约1或2步长的感光度。\n- 在AUTO模式下，设定固定为**ISO-A (AUTO)**，照相机自动设定ISO感光度。\n\n若在照片拍摄菜单中将**[静音拍摄]**设为**[开启]**，则无法使用ISO感光度**[H1]（Hi 1）**和**[H2]（Hi 2）**。若将ISO感光度拨盘设为**[H1]**或**[H2]**，ISO感光度将设为ISO 51200。\n\n---\n\n✏️ **拍摄照片时的ISO感光度自动控制**\n\n若在照片拍摄菜单中将**[ISO感光度设定]**（☞282）> **[ISO感光度自动控制]**设为**[开启]**，当使用在模式P、S、A和M下设定的ISO感光度无法获得正确的曝光时，照相机将自动更改ISO感光度。"
         },
         {
-          "id": "q006",
-          "confidence": 0.85,
-          "question": "视频模式下如何设置ISO感光度？",
-          "answer": "## ❚❚ 视频模式\n您只能在以下设定时设定ISO感光度。在所有其他情况下，照相机都会自动设定ISO感光度。\n- 模式：**M**\n- 视频拍摄菜单中的`[ISO感光度设定]>[自动ISO控制(M模式)]`：`[关闭]`\n\n通过按住ISO感光度拨盘锁定解除并旋转ISO感光度拨盘，可以调节ISO感光度。\n- 从ISO 100至25600的值中进行选择。如果将ISO感光度拨盘设为任意其他值，ISO感光度将设为**ISO 25600**。"
+          "id": "q044",
+          "confidence": 0.75,
+          "question": "通过电脑USB接口给相机充电有哪些注意事项？",
+          "answer": "### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。\n✎ 计算机USB电力输送和电池充电\n通过USB连接的计算机可以为照相机供电或为电池充电。\n- 计算机仅在处于开启状态时才会供电。计算机处于睡眠模式时，充电将暂停。睡眠模式结束时恢复充电。\n- 充电期间，请勿通过USB集线器或键盘连接计算机。将其直接连接至照相机。\n- 根据计算机USB接口类型和规格的不同，实际充电时间可能会更长。\n\n- 根据计算机型号和产品技术规格的不同，某些计算机不会为照相机供电或为电池充电。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1513.510699998733,
-        "prepare_ms": 4.547699998511234,
-        "match_ms": 1506.2046999992162,
-        "match_first_token_ms": 1494.9713999994856,
-        "lookup_ms": 0.37039999733678997,
-        "match_output_tokens": 24,
+        "total_ms": 2021.0445000011532,
+        "prepare_ms": 2.839600001607323,
+        "match_ms": 2016.2354999993113,
+        "match_first_token_ms": 547.5365999991482,
+        "lookup_ms": 0.3353000029164832,
+        "match_output_tokens": 44,
         "tokens": {
-          "prompt_tokens": 9624,
-          "completion_tokens": 24,
-          "total_tokens": 9648
+          "prompt_tokens": 8868,
+          "completion_tokens": 44,
+          "total_tokens": 8912
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9624,
-              "completion_tokens": 24,
-              "total_tokens": 9648
+              "prompt_tokens": 8868,
+              "completion_tokens": 44,
+              "total_tokens": 8912
             }
           }
         ]
@@ -870,78 +712,56 @@
     {
       "id": "r_1782454535628_qma7m",
       "question": "什么时候会ISO感光度自动控制",
-      "run_at": "2026-06-26T08:24:55.766Z",
+      "run_at": "2026-06-29T07:50:20.612Z",
       "candidates": [
         {
-          "id": "q042",
-          "confidence": 0.85,
-          "question": "如何通过USB电力输送功能为照相机供电？"
+          "id": "q049",
+          "confidence": 0.95,
+          "question": "如何查看照相机剩余可拍摄张数？"
         },
         {
           "id": "q149",
-          "confidence": 0.82,
+          "confidence": 0.85,
           "question": "模式M下如何启用ISO感光度自动控制？"
-        },
-        {
-          "id": "q005",
-          "confidence": 0.75,
-          "question": "照片模式下如何调节ISO感光度？"
-        },
-        {
-          "id": "q006",
-          "confidence": 0.75,
-          "question": "视频模式下如何设置ISO感光度？"
         }
       ],
       "answers": [
         {
-          "id": "q042",
-          "confidence": 0.85,
-          "question": "如何通过USB电力输送功能为照相机供电？",
-          "answer": "### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。\n✎ 为照相机供电\n- 若在设定菜单中将[USB电力输送]选为[启用]，照相机开启时，EH-8P或EH-7P电源适配器将为照相机供电。有关详细信息，请参阅“‘电力输送’和‘充电’”（☞473）。\n- 仅当插有电池时才会为照相机供电。\n- 照相机通过外部电源供电时，电池将不会充电。"
+          "id": "q049",
+          "confidence": 0.95,
+          "question": "如何查看照相机剩余可拍摄张数？",
+          "answer": "# 剩余可拍摄张数\n- 当照相机处于开启状态时，拍摄显示中会显示当前设定下可拍摄的照片数量。\n\n- 超过1000的值将以千位和百位数来显示，而十位数以下舍弃。例如，1500和1599之间的值显示为1.5 k。\n\n| 显示屏 | 取景器 |\n| ------ | ------ |\n| ![显示屏剩余张数显示](assets/knowledge_p63-66_006.png) | ![取景器剩余张数显示](assets/knowledge_p63-66_007.png) |"
         },
         {
           "id": "q149",
-          "confidence": 0.82,
+          "confidence": 0.85,
           "question": "模式M下如何启用ISO感光度自动控制？",
           "answer": "✏️ **ISO感光度自动控制（模式M）**\n若启用了ISO感光度自动控制（❏282、❏378），照相机将自动调整ISO感光度以在所选快门速度和光圈下获得良好曝光。"
-        },
-        {
-          "id": "q005",
-          "confidence": 0.75,
-          "question": "照片模式下如何调节ISO感光度？",
-          "answer": "## ❚❚ 照片模式\n通过按住ISO感光度拨盘锁定解除并旋转ISO感光度拨盘，可以调节ISO感光度。\n\n- 从ISO 100至51200的值中进行选择。可以将ISO感光度拨盘设为**[H1]（Hi 1）**或**[H2]（Hi 2）**以分别获得高于ISO 51200约1或2步长的感光度。\n- 在AUTO模式下，设定固定为**ISO-A (AUTO)**，照相机自动设定ISO感光度。\n\n若在照片拍摄菜单中将**[静音拍摄]**设为**[开启]**，则无法使用ISO感光度**[H1]（Hi 1）**和**[H2]（Hi 2）**。若将ISO感光度拨盘设为**[H1]**或**[H2]**，ISO感光度将设为ISO 51200。\n\n---\n\n✏️ **拍摄照片时的ISO感光度自动控制**\n\n若在照片拍摄菜单中将**[ISO感光度设定]**（☞282）> **[ISO感光度自动控制]**设为**[开启]**，当使用在模式P、S、A和M下设定的ISO感光度无法获得正确的曝光时，照相机将自动更改ISO感光度。"
-        },
-        {
-          "id": "q006",
-          "confidence": 0.75,
-          "question": "视频模式下如何设置ISO感光度？",
-          "answer": "## ❚❚ 视频模式\n您只能在以下设定时设定ISO感光度。在所有其他情况下，照相机都会自动设定ISO感光度。\n- 模式：**M**\n- 视频拍摄菜单中的`[ISO感光度设定]>[自动ISO控制(M模式)]`：`[关闭]`\n\n通过按住ISO感光度拨盘锁定解除并旋转ISO感光度拨盘，可以调节ISO感光度。\n- 从ISO 100至25600的值中进行选择。如果将ISO感光度拨盘设为任意其他值，ISO感光度将设为**ISO 25600**。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1500.0848000017868,
-        "prepare_ms": 4.501499999605585,
-        "match_ms": 1492.211300002964,
-        "match_first_token_ms": 1475.3644000011263,
-        "lookup_ms": 0.5380000002332963,
-        "match_output_tokens": 14,
+        "total_ms": 8422.309000001405,
+        "prepare_ms": 2.2052999993320554,
+        "match_ms": 8417.155900002399,
+        "match_first_token_ms": 7214.217800003098,
+        "lookup_ms": 1.1457999971753452,
+        "match_output_tokens": 30,
         "tokens": {
-          "prompt_tokens": 9625,
-          "completion_tokens": 14,
-          "total_tokens": 9639
+          "prompt_tokens": 8869,
+          "completion_tokens": 30,
+          "total_tokens": 8899
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9625,
-              "completion_tokens": 14,
-              "total_tokens": 9639
+              "prompt_tokens": 8869,
+              "completion_tokens": 30,
+              "total_tokens": 8899
             }
           }
         ]
@@ -950,17 +770,12 @@
     {
       "id": "r_1782454569260_eiq2j",
       "question": "怎么切换到人像自拍模式？",
-      "run_at": "2026-06-26T08:24:57.269Z",
+      "run_at": "2026-06-29T07:50:24.486Z",
       "candidates": [
         {
           "id": "q009",
           "confidence": 0.95,
           "question": "如何使用人像自拍模式及显示屏的注意事项有哪些？"
-        },
-        {
-          "id": "q010",
-          "confidence": 0.85,
-          "question": "人像自拍模式有哪些功能和操作方法？"
         }
       ],
       "answers": [
@@ -969,37 +784,31 @@
           "confidence": 0.95,
           "question": "如何使用人像自拍模式及显示屏的注意事项有哪些？",
           "answer": "## ●人像自拍模式\n当显示屏朝向照相机的正面时，照相机将切换为人像自拍模式（☞65）。\n\n![人像自拍模式显示屏状态](assets/knowledge_p31-35_009.png)\n\n✅ **关于显示屏的注意事项**\n- 旋转显示屏时，请在允许的范围内缓慢旋转。用力过度会导致照相机机身和显示屏损坏。\n- 不使用显示屏时，推荐将显示屏的屏幕旋至内侧并置于照相机机身之内，以防损坏和脏污。\n- 请勿通过抓握显示屏的方式携带照相机。否则可能会导致损坏照相机。"
-        },
-        {
-          "id": "q010",
-          "confidence": 0.85,
-          "question": "人像自拍模式有哪些功能和操作方法？",
-          "answer": "# 使用人像自拍模式拍摄\n如果将显示屏置于人像自拍模式位置，其将切换为人像自拍模式。\n显示屏将显示如镜子反射般的图像（倒像），但实际图像则以从照相机看到的视图进行保存。\n\n| | | |\n| :----------------------------------: | :----------------------------------: | :----------------------------------: |\n| ![](assets/knowledge_p31-35_010.png) | ![](assets/knowledge_p31-35_011.png) | ![](assets/knowledge_p31-35_012.png) |\n\n*照相机控制*\n65\n\n- 在人像自拍模式下，可以轻触显示屏来设定自拍。\n- 如果在人像自拍模式下将曝光补偿拨盘设为[C]，则可以轻触显示屏来设定曝光补偿。\n- 如果轻触自拍图标（①），可以设定拍摄时滞和拍摄张数。\n- 如果轻触曝光补偿图标（②），可以更改图像亮度。\n\n![人像自拍模式界面图标](assets/knowledge_p31-35_013.png)\n\n- 半按快门释放按钮进行对焦。完全按下快门释放按钮拍摄照片。\n- 可以使用触控AF和触控快门。\n- 在视频模式下，按视频录制按钮可拍摄视频。\n- 如果显示屏离开人像自拍模式位置，人像自拍模式将结束。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1490.847199998825,
-        "prepare_ms": 4.113799997867318,
-        "match_ms": 1484.3765000005078,
-        "match_first_token_ms": 1481.935900003009,
-        "lookup_ms": 0.6262999995669816,
-        "match_output_tokens": 8,
+        "total_ms": 3861.9709000013245,
+        "prepare_ms": 2.418000000034226,
+        "match_ms": 3856.2141000002157,
+        "match_first_token_ms": 1050.075300001481,
+        "lookup_ms": 1.0001000009651762,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9626,
-          "completion_tokens": 8,
-          "total_tokens": 9634
+          "prompt_tokens": 8870,
+          "completion_tokens": 16,
+          "total_tokens": 8886
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9626,
-              "completion_tokens": 8,
-              "total_tokens": 9634
+              "prompt_tokens": 8870,
+              "completion_tokens": 16,
+              "total_tokens": 8886
             }
           }
         ]
@@ -1008,7 +817,7 @@
     {
       "id": "r_1782454656420_6dfoo",
       "question": "自拍的时候有什么要注意的？",
-      "run_at": "2026-06-26T08:24:58.862Z",
+      "run_at": "2026-06-29T07:50:27.241Z",
       "candidates": [
         {
           "id": "q009",
@@ -1017,13 +826,8 @@
         },
         {
           "id": "q011",
-          "confidence": 0.9,
-          "question": "人像自拍模式下有哪些限制和注意事项？"
-        },
-        {
-          "id": "q010",
           "confidence": 0.85,
-          "question": "人像自拍模式有哪些功能和操作方法？"
+          "question": "人像自拍模式下有哪些限制和注意事项？"
         }
       ],
       "answers": [
@@ -1035,40 +839,34 @@
         },
         {
           "id": "q011",
-          "confidence": 0.9,
+          "confidence": 0.85,
           "question": "人像自拍模式下有哪些限制和注意事项？",
           "answer": "# 使用人像自拍模式拍摄\n✅ **人像自拍模式**\n在人像自拍模式下，请注意以下几点：\n- 人像自拍模式期间，除电源开关、快门释放按钮、视频录制按钮、照片/视频选择器、模式选择器、快门速度拨盘、ISO感光度拨盘和曝光补偿拨盘外的其他控制都将禁用。\n- 如果在将自定义设定c3[电源关闭延迟]>[待机定时器]设为少于1分钟时，约1分钟内没有执行任何操作，或当设为1分钟或以上时，在指定的时间内没有执行任何操作，待机定时器将超过时效。\n- 以下设定将固定。\n  - [释放模式]：[自拍]\n  - 视频拍摄菜单中的[对焦模式]：[全时AF]\n  - [触控控制]>[启用/禁用触控控制]：[启用]\n- 无法使用取景器。\n- 无法使用以下功能。\n  - [长时间曝光降噪]\n  - [自动包围]\n  - [HDR(高动态范围)]\n  - [曝光延迟模式]\n  - [扩展快门速度范围(M)]\n- 将设定菜单中的[人像自拍模式]（☞463）设为[禁用]时，即使将显示屏置于人像自拍模式位置，也不会切换为人像自拍模式。\n\n*照相机控制*\n67"
-        },
-        {
-          "id": "q010",
-          "confidence": 0.85,
-          "question": "人像自拍模式有哪些功能和操作方法？",
-          "answer": "# 使用人像自拍模式拍摄\n如果将显示屏置于人像自拍模式位置，其将切换为人像自拍模式。\n显示屏将显示如镜子反射般的图像（倒像），但实际图像则以从照相机看到的视图进行保存。\n\n| | | |\n| :----------------------------------: | :----------------------------------: | :----------------------------------: |\n| ![](assets/knowledge_p31-35_010.png) | ![](assets/knowledge_p31-35_011.png) | ![](assets/knowledge_p31-35_012.png) |\n\n*照相机控制*\n65\n\n- 在人像自拍模式下，可以轻触显示屏来设定自拍。\n- 如果在人像自拍模式下将曝光补偿拨盘设为[C]，则可以轻触显示屏来设定曝光补偿。\n- 如果轻触自拍图标（①），可以设定拍摄时滞和拍摄张数。\n- 如果轻触曝光补偿图标（②），可以更改图像亮度。\n\n![人像自拍模式界面图标](assets/knowledge_p31-35_013.png)\n\n- 半按快门释放按钮进行对焦。完全按下快门释放按钮拍摄照片。\n- 可以使用触控AF和触控快门。\n- 在视频模式下，按视频录制按钮可拍摄视频。\n- 如果显示屏离开人像自拍模式位置，人像自拍模式将结束。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1574.9304999990272,
-        "prepare_ms": 5.948099998931866,
-        "match_ms": 1566.5246000025945,
-        "match_first_token_ms": 1552.0370000012917,
-        "lookup_ms": 0.3157999999530148,
-        "match_output_tokens": 20,
+        "total_ms": 2745.782899997721,
+        "prepare_ms": 11.253799999394687,
+        "match_ms": 2732.643100000132,
+        "match_first_token_ms": 1919.813399999839,
+        "lookup_ms": 0.39909999759402126,
+        "match_output_tokens": 30,
         "tokens": {
-          "prompt_tokens": 9624,
-          "completion_tokens": 20,
-          "total_tokens": 9644
+          "prompt_tokens": 8868,
+          "completion_tokens": 30,
+          "total_tokens": 8898
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9624,
-              "completion_tokens": 20,
-              "total_tokens": 9644
+              "prompt_tokens": 8868,
+              "completion_tokens": 30,
+              "total_tokens": 8898
             }
           }
         ]
@@ -1077,45 +875,45 @@
     {
       "id": "r_1782454756771_92pau",
       "question": "在设备上怎么文本输入？",
-      "run_at": "2026-06-26T08:25:00.189Z",
+      "run_at": "2026-06-29T07:50:28.177Z",
       "candidates": [
         {
           "id": "q017",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何在设备上输入文本？"
         }
       ],
       "answers": [
         {
           "id": "q017",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何在设备上输入文本？",
           "answer": "## 文本输入\n・显示键盘时，您可通过轻触按键输入文本。\n\n![文本输入键盘示例](assets/knowledge_p40-43_001.png)\n| 编号 | 区域说明 | | 编号 | 区域说明 |\n| ---- | -------- |--| ---- | -------- |\n| 1 | 文本显示区 | | 3 | 键盘选择 |\n| 2 | 键盘区 | | | |\n\n・若要定位光标，请轻触◀或▶或者直接在文本显示区中轻触。\n・若要切换大小写和符号键盘，请轻触键盘选择按钮。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1316.2588999985019,
-        "prepare_ms": 4.59939999927883,
-        "match_ms": 1310.0274999997055,
-        "match_first_token_ms": 1298.1096000003163,
-        "lookup_ms": 0.414699999964796,
-        "match_output_tokens": 13,
+        "total_ms": 927.9256999980134,
+        "prepare_ms": 1.9789999969361816,
+        "match_ms": 924.1114000033122,
+        "match_first_token_ms": 754.7561000028509,
+        "lookup_ms": 0.378400000045076,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9624,
-          "completion_tokens": 13,
-          "total_tokens": 9637
+          "prompt_tokens": 8868,
+          "completion_tokens": 16,
+          "total_tokens": 8884
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9624,
-              "completion_tokens": 13,
-              "total_tokens": 9637
+              "prompt_tokens": 8868,
+              "completion_tokens": 16,
+              "total_tokens": 8884
             }
           }
         ]
@@ -1124,45 +922,45 @@
     {
       "id": "r_1782454880603_xeafy",
       "question": "什么是DISP按钮？",
-      "run_at": "2026-06-26T08:25:01.521Z",
+      "run_at": "2026-06-29T07:50:29.076Z",
       "candidates": [
         {
           "id": "q021",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "DISP按钮有什么功能？"
         }
       ],
       "answers": [
         {
           "id": "q021",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "DISP按钮有什么功能？",
           "answer": "## DISP按钮\n使用DISP按钮可在以下显示中循环：\n\n![DISP按钮位置](assets/knowledge_p40-43_006.png)\n\n## 照片模式\n\n![照片模式显示循环](assets/knowledge_p40-43_007.png)\n\n| 编号 | 显示模式 | | 编号 | 显示模式 |\n| ---- | -------- |--| ---- | -------- |\n| 1 | 指示开启 | | 4 | 虚拟水平 |\n| 2 | 简单显示 | | 5 | 信息显示（➡601） |\n| 3 | 直方图1、2 | | | |\n\n1 将自定义设定d7[将设置应用于即时取景]选为[开启]时显示。\n2 在多重曝光拍摄期间，[重叠拍摄]选为[开启]时不显示。\n\n✏️ **取景器**\nDISP按钮还可用于选择在取景器中显示的信息。但是请注意，信息显示不会出现在取景器中。\n\n✏️ **关闭信息显示**\n在自定义设定f2[自定义控制(拍摄)]中，可以指定[即时取景信息显示关闭]以通过按下某一按钮来关闭信息显示。再按一次该按钮即可开启显示。\n\n## 视频模式\n\n![视频模式显示循环](assets/knowledge_p40-43_008.png)\n\n| 编号 | 显示模式 | | 编号 | 显示模式 |\n| ---- | -------- |--| ---- | -------- |\n| 1 | 指示开启 | | 3 | 直方图 |\n| 2 | 简单显示 | | 4 | 虚拟水平 |"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1321.8100999984017,
-        "prepare_ms": 4.114899998967303,
-        "match_ms": 1315.8915999993042,
-        "match_first_token_ms": 1301.714200002607,
-        "lookup_ms": 0.6078000005800277,
-        "match_output_tokens": 13,
+        "total_ms": 890.6167000022833,
+        "prepare_ms": 3.5344999996596016,
+        "match_ms": 884.9752999994962,
+        "match_first_token_ms": 704.8377999999502,
+        "lookup_ms": 0.5641999996441882,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 13,
-          "total_tokens": 9635
+          "prompt_tokens": 8866,
+          "completion_tokens": 16,
+          "total_tokens": 8882
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 13,
-              "total_tokens": 9635
+              "prompt_tokens": 8866,
+              "completion_tokens": 16,
+              "total_tokens": 8882
             }
           }
         ]
@@ -1171,155 +969,17 @@
     {
       "id": "r_1782455007851_crowo",
       "question": "AE-L/AF-L有什么用？",
-      "run_at": "2026-06-26T08:25:03.040Z",
+      "run_at": "2026-06-29T07:50:30.050Z",
       "candidates": [
         {
-          "id": "q024",
+          "id": "q004",
           "confidence": 0.95,
+          "question": "如何使用ISO感光度拨盘调节ISO感光度？"
+        },
+        {
+          "id": "q024",
+          "confidence": 0.85,
           "question": "AE-L/AF-L按钮在拍摄和播放时有什么作用？"
-        },
-        {
-          "id": "q160",
-          "confidence": 0.9,
-          "question": "AE-L/AF-L（on）按钮有什么作用？"
-        },
-        {
-          "id": "q163",
-          "confidence": 0.85,
-          "question": "如何通过AE-L/AF-L（on）按钮锁定对焦和曝光？"
-        },
-        {
-          "id": "q161",
-          "confidence": 0.8,
-          "question": "曝光锁定功能什么时候使用比较合适？"
-        },
-        {
-          "id": "q162",
-          "confidence": 0.75,
-          "question": "如何使用对焦锁定功能？"
-        }
-      ],
-      "answers": [
-        {
-          "id": "q024",
-          "confidence": 0.95,
-          "question": "AE-L/AF-L按钮在拍摄和播放时有什么作用？",
-          "answer": "# AE-L/AF-L（Om）按钮\n在拍摄时锁定对焦和曝光，或者在播放期间保护图像。\n\n## ■■ 拍摄\n同时锁定对焦和曝光。\n\n## ■■ 播放\n保护当前图像。\n\n![AE-L/AF-L按钮示意图](assets/knowledge_p44-45_002.png)"
-        },
-        {
-          "id": "q160",
-          "confidence": 0.9,
-          "question": "AE-L/AF-L（on）按钮有什么作用？",
-          "answer": "# AE-L/AF-L（on）按钮\n同时锁定对焦和曝光。\n\n![assets/knowledge_p136-138_001.png](assets/knowledge_p136-138_001.png)"
-        },
-        {
-          "id": "q163",
-          "confidence": 0.85,
-          "question": "如何通过AE-L/AF-L（on）按钮锁定对焦和曝光？",
-          "answer": "### 2 按AE-L/AF-L（on）按钮。\n### 1 将拍摄对象置于所选对焦点上，并半按快门释放按钮设定对焦和曝光。\n\nAE-L/AF-L（on）按钮\n168\n\n### 2 按AE-L/AF-L（on）按钮。\n\n![assets/knowledge_p136-138_002.png](assets/knowledge_p136-138_002.png)\n- 按下AE-L/AF-L（on）按钮期间，对焦和曝光将锁定。即使构图被更改，曝光也不会改变。\n- 显示屏中将显示**AE-L**图标。\n\n![assets/knowledge_p136-138_003.png](assets/knowledge_p136-138_003.png)\n\nAE-L/AF-L（on）按钮\n169\n\n### 3 按住AE-L/AF-L（on）按钮，重新构图并拍摄照片。\n\n![assets/knowledge_p136-138_004.png](assets/knowledge_p136-138_004.png)\n\n请勿改变照相机和拍摄对象之间的距离。若与拍摄对象之间的距离发生变化，请解除锁定并以新的距离重新对焦。\n\n![assets/knowledge_p136-138_005.png](assets/knowledge_p136-138_005.png)"
-        },
-        {
-          "id": "q161",
-          "confidence": 0.8,
-          "question": "曝光锁定功能什么时候使用比较合适？",
-          "answer": "## 曝光锁定\n- 对将不在最终构图中所选对焦区域的拍摄对象进行测光后，曝光锁定可用于重新进行构图。\n- 进行点测光或中央重点测光时，曝光锁定尤其有效。"
-        },
-        {
-          "id": "q162",
-          "confidence": 0.75,
-          "question": "如何使用对焦锁定功能？",
-          "answer": "## 对焦锁定\n- 当对焦模式选为**AF-C**时，使用对焦锁定可将对焦锁定于当前拍摄对象。\n- 使用对焦锁定时，请选择[自动区域AF]、[自动区域AF(人物)]或[自动区域AF(动物)]以外的AF区域模式。"
-        }
-      ],
-      "recalled": "yes",
-      "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
-      "timings": {
-        "total_ms": 1507.912999997643,
-        "prepare_ms": 4.984199997124961,
-        "match_ms": 1499.260000000504,
-        "match_first_token_ms": 1486.7516000012984,
-        "lookup_ms": 0.40670000089448877,
-        "match_output_tokens": 23,
-        "tokens": {
-          "prompt_tokens": 9627,
-          "completion_tokens": 23,
-          "total_tokens": 9650
-        },
-        "token_breakdown": [
-          {
-            "phase": "置信度匹配",
-            "usage": {
-              "prompt_tokens": 9627,
-              "completion_tokens": 23,
-              "total_tokens": 9650
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": "r_1782455148411_cpos9",
-      "question": "为什么菜单中的某些项目显示为灰色？",
-      "run_at": "2026-06-26T08:25:09.100Z",
-      "candidates": [
-        {
-          "id": "q030",
-          "confidence": 1.0,
-          "question": "为什么菜单中的某些项目显示为灰色？"
-        }
-      ],
-      "answers": [
-        {
-          "id": "q030",
-          "confidence": 1.0,
-          "question": "为什么菜单中的某些项目显示为灰色？",
-          "answer": "✅ **显示为灰色的项目**\n根据模式和照相机状态的不同，某些项目和菜单选项可能不可用。不可用的项目显示为灰色。"
-        }
-      ],
-      "recalled": "yes",
-      "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
-      "timings": {
-        "total_ms": 6049.7639999994135,
-        "prepare_ms": 3.894199999194825,
-        "match_ms": 6044.15230000086,
-        "match_first_token_ms": 6035.51570000127,
-        "lookup_ms": 0.5024000020057429,
-        "match_output_tokens": 13,
-        "tokens": {
-          "prompt_tokens": 9626,
-          "completion_tokens": 13,
-          "total_tokens": 9639
-        },
-        "token_breakdown": [
-          {
-            "phase": "置信度匹配",
-            "usage": {
-              "prompt_tokens": 9626,
-              "completion_tokens": 13,
-              "total_tokens": 9639
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": "r_1782455190740_qsr5k",
-      "question": "怎么使用自定义i菜单？",
-      "run_at": "2026-06-26T08:25:10.533Z",
-      "candidates": [
-        {
-          "id": "q034",
-          "confidence": 0.98,
-          "question": "如何自定义照片模式下的i菜单？"
-        },
-        {
-          "id": "q033",
-          "confidence": 0.85,
-          "question": "如何快速访问常用设置的i菜单？"
         },
         {
           "id": "q016",
@@ -1329,16 +989,16 @@
       ],
       "answers": [
         {
-          "id": "q034",
-          "confidence": 0.98,
-          "question": "如何自定义照片模式下的i菜单？",
-          "answer": "## 自定义i菜单\n照片模式`i`菜单中所示的项目可使用自定义设定`f1`或`g1`[自定义`i`菜单]进行选择。\n\n### 1 加亮显示自定义设定`f1`或`g1`[自定义`i`菜单]并按下`OK`。\n\n![自定义i菜单设置界面1](assets/knowledge_p50-53_007.png)\n有关使用菜单的信息，请参阅“MENU按钮”（🖹78）。\n\n---\n\n### 2 加亮显示您要改变的位置并按下`OK`。\n\n![自定义i菜单设置界面2](assets/knowledge_p50-53_008.png)\n屏幕中将显示可用于所选位置的项目列表。\n\n> 照相机控制\n> 84\n\n---\n\n### 3 加亮显示所需项目并按下`OK`。\n\n![自定义i菜单设置界面3](assets/knowledge_p50-53_009.png)\n- 该项目将被指定给所选位置，并且屏幕中将显示步骤2中出现的选项。\n- 根据需要重复步骤2和3。\n\n---\n\n### 4 按下`MENU`按钮。\n更改将被保存，并且屏幕中将显示自定义设定菜单。"
+          "id": "q004",
+          "confidence": 0.95,
+          "question": "如何使用ISO感光度拨盘调节ISO感光度？",
+          "answer": "# ISO感光度拨盘\n照相机对光线的灵敏度（ISO感光度）可根据可用光线量进行调整。一般情况下，选择的值越高，在相同光圈下可使用的快门速度越快。\n\n在按住ISO感光度拨盘锁定解除的同时旋转ISO感光度拨盘，可根据可用的光量调节照相机对光的敏感度（ISO感光度）。\n\n![ISO感光度拨盘示意图](assets/knowledge_p28-30_004.png)\n\n拍摄过程中，当前所选项显示在屏幕中。\n\n![ISO感光度屏幕显示示例](assets/knowledge_p130-135_002.png)"
         },
         {
-          "id": "q033",
+          "id": "q024",
           "confidence": 0.85,
-          "question": "如何快速访问常用设置的i菜单？",
-          "answer": "## **i按钮（i菜单）**\n若要快速访问常用设定，请按下`i`按钮或轻触`<i>`图标查看`i`菜单。\n\n![i按钮位置与i菜单界面](assets/knowledge_p50-53_003.png)\n\n> 照相机控制\n> 82\n\n- 在照片模式和视频模式下显示的菜单不同。\n\n![照片模式i菜单界面](assets/knowledge_p50-53_004.png)\n- 选项可通过在屏幕中轻触项目，或者加亮显示项目并按下`OK`进行查看；随后使用多重选择器即可进行选择。\n- 对于照相机会显示屏幕指南的项目，您可在`i`菜单中加亮显示该项目并旋转指令拨盘对其进行调整。在某些情况下，需要同时使用主指令拨盘和副指令拨盘进行调整。\n\n![调整项目界面](assets/knowledge_p50-53_005.png)\n\n---\n\n✏️ **播放i菜单**\n在播放过程中按下`i`按钮将显示常用播放选项的相应`i`菜单。\n\n![播放模式i菜单界面](assets/knowledge_p50-53_006.png)\n\n> 照相机控制\n> 83"
+          "question": "AE-L/AF-L按钮在拍摄和播放时有什么作用？",
+          "answer": "# AE-L/AF-L（Om）按钮\n在拍摄时锁定对焦和曝光，或者在播放期间保护图像。\n\n## ■■ 拍摄\n同时锁定对焦和曝光。\n\n## ■■ 播放\n保护当前图像。\n\n![AE-L/AF-L按钮示意图](assets/knowledge_p44-45_002.png)"
         },
         {
           "id": "q016",
@@ -1349,27 +1009,121 @@
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1422.5681999996596,
-        "prepare_ms": 4.933899999741698,
-        "match_ms": 1415.1570000030915,
-        "match_first_token_ms": 1398.6352000029,
-        "lookup_ms": 0.5504000000655651,
-        "match_output_tokens": 22,
+        "total_ms": 966.2518000004638,
+        "prepare_ms": 4.0287000010721385,
+        "match_ms": 959.067399999185,
+        "match_first_token_ms": 558.1267999987176,
+        "lookup_ms": 0.36410000029718503,
+        "match_output_tokens": 44,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 22,
-          "total_tokens": 9645
+          "prompt_tokens": 8869,
+          "completion_tokens": 44,
+          "total_tokens": 8913
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 22,
-              "total_tokens": 9645
+              "prompt_tokens": 8869,
+              "completion_tokens": 44,
+              "total_tokens": 8913
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782455148411_cpos9",
+      "question": "为什么菜单中的某些项目显示为灰色？",
+      "run_at": "2026-06-29T07:50:31.895Z",
+      "candidates": [
+        {
+          "id": "q030",
+          "confidence": 0.95,
+          "question": "为什么菜单中的某些项目显示为灰色？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q030",
+          "confidence": 0.95,
+          "question": "为什么菜单中的某些项目显示为灰色？",
+          "answer": "✅ **显示为灰色的项目**\n根据模式和照相机状态的不同，某些项目和菜单选项可能不可用。不可用的项目显示为灰色。"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
+      "timings": {
+        "total_ms": 1837.862899999891,
+        "prepare_ms": 2.7038000007451046,
+        "match_ms": 1834.208899999794,
+        "match_first_token_ms": 1384.1568999996525,
+        "lookup_ms": 0.21099999867146835,
+        "match_output_tokens": 16,
+        "tokens": {
+          "prompt_tokens": 8870,
+          "completion_tokens": 16,
+          "total_tokens": 8886
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 8870,
+              "completion_tokens": 16,
+              "total_tokens": 8886
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "r_1782455190740_qsr5k",
+      "question": "怎么使用自定义i菜单？",
+      "run_at": "2026-06-29T07:50:33.023Z",
+      "candidates": [
+        {
+          "id": "q034",
+          "confidence": 0.95,
+          "question": "如何自定义照片模式下的i菜单？"
+        }
+      ],
+      "answers": [
+        {
+          "id": "q034",
+          "confidence": 0.95,
+          "question": "如何自定义照片模式下的i菜单？",
+          "answer": "## 自定义i菜单\n照片模式`i`菜单中所示的项目可使用自定义设定`f1`或`g1`[自定义`i`菜单]进行选择。\n\n### 1 加亮显示自定义设定`f1`或`g1`[自定义`i`菜单]并按下`OK`。\n\n![自定义i菜单设置界面1](assets/knowledge_p50-53_007.png)\n有关使用菜单的信息，请参阅“MENU按钮”（🖹78）。\n\n---\n\n### 2 加亮显示您要改变的位置并按下`OK`。\n\n![自定义i菜单设置界面2](assets/knowledge_p50-53_008.png)\n屏幕中将显示可用于所选位置的项目列表。\n\n> 照相机控制\n> 84\n\n---\n\n### 3 加亮显示所需项目并按下`OK`。\n\n![自定义i菜单设置界面3](assets/knowledge_p50-53_009.png)\n- 该项目将被指定给所选位置，并且屏幕中将显示步骤2中出现的选项。\n- 根据需要重复步骤2和3。\n\n---\n\n### 4 按下`MENU`按钮。\n更改将被保存，并且屏幕中将显示自定义设定菜单。"
+        }
+      ],
+      "recalled": "yes",
+      "notes": "",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
+      "timings": {
+        "total_ms": 1116.4358999994874,
+        "prepare_ms": 3.0531999982486013,
+        "match_ms": 1108.9059000005363,
+        "match_first_token_ms": 639.3238000018755,
+        "lookup_ms": 1.3738000016019214,
+        "match_output_tokens": 16,
+        "tokens": {
+          "prompt_tokens": 8868,
+          "completion_tokens": 16,
+          "total_tokens": 8884
+        },
+        "token_breakdown": [
+          {
+            "phase": "置信度匹配",
+            "usage": {
+              "prompt_tokens": 8868,
+              "completion_tokens": 16,
+              "total_tokens": 8884
             }
           }
         ]
@@ -1378,56 +1132,45 @@
     {
       "id": "r_1782455225397_3zhfe",
       "question": "Fn按钮有什么用？",
-      "run_at": "2026-06-26T08:25:12.046Z",
+      "run_at": "2026-06-29T07:50:34.063Z",
       "candidates": [
         {
           "id": "q035",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "Fn按钮有什么作用，怎么使用？"
-        },
-        {
-          "id": "q036",
-          "confidence": 0.85,
-          "question": "如何设置相机的Fn按钮功能？"
         }
       ],
       "answers": [
         {
           "id": "q035",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "Fn按钮有什么作用，怎么使用？",
           "answer": "## **Fn按钮**\n使用`Fn`按钮可快速访问所选设定。\n\n![Fn按钮位置](assets/knowledge_p50-53_010.png)\n- Fn按钮的默认设定为白平衡（🖹139）。\n- 您可通过按住Fn按钮并旋转指令拨盘调整为相应按钮所指定的设定。在某些情况下，需要同时使用主指令拨盘和副指令拨盘进行调整。"
-        },
-        {
-          "id": "q036",
-          "confidence": 0.85,
-          "question": "如何设置相机的Fn按钮功能？",
-          "answer": "## 1 加亮显示自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]并按下<kbd>OK</kbd>。\n可以使用自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]>[Fn按钮]来选择Fn按钮执行的功能。\n\n## 1 加亮显示自定义设定f2[自定义控制(拍摄)]或g2[自定义控制]并按下<kbd>OK</kbd>。\n![f控制菜单界面](assets/knowledge_p54-56_001.png)\n\n有关使用菜单的信息，请参阅“MENU按钮”（<img src=\"\" alt=\"手册图标\" style=\"width:1em; vertical-align:middle;\"/>78）。\n\n## 2 加亮显示<kbd>Fn按钮</kbd>图标并按下<kbd>OK</kbd>。\n![Fn按钮选项界面](assets/knowledge_p54-56_002.png)\n\n屏幕中将显示可用于Fn按钮的项目列表。\n\n## 3 加亮显示所需项目并按下<kbd>OK</kbd>。\n![Fn按钮项目选择界面](assets/knowledge_p54-56_003.png)\n- 该项目将被指定给Fn按钮，并且屏幕中将显示步骤2中出现的选项。\n\n## 4 按下MENU按钮。\n更改将被保存，并且屏幕中将显示自定义设定菜单。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1501.3331000009202,
-        "prepare_ms": 7.293599999684375,
-        "match_ms": 1491.8830000024172,
-        "match_first_token_ms": 1470.8933000001707,
-        "lookup_ms": 0.5423000002338085,
-        "match_output_tokens": 8,
+        "total_ms": 1031.14270000151,
+        "prepare_ms": 4.194600001937943,
+        "match_ms": 1025.8641000000353,
+        "match_first_token_ms": 552.8465999996115,
+        "lookup_ms": 0.3476000019873027,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 8,
-          "total_tokens": 9630
+          "prompt_tokens": 8866,
+          "completion_tokens": 16,
+          "total_tokens": 8882
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 8,
-              "total_tokens": 9630
+              "prompt_tokens": 8866,
+              "completion_tokens": 16,
+              "total_tokens": 8882
             }
           }
         ]
@@ -1436,7 +1179,7 @@
     {
       "id": "r_1782455274580_k88p0",
       "question": "为什么我的指示灯一直在快速闪烁？",
-      "run_at": "2026-06-26T08:25:13.434Z",
+      "run_at": "2026-06-29T07:50:46.659Z",
       "candidates": [
         {
           "id": "q039",
@@ -1445,13 +1188,8 @@
         },
         {
           "id": "q041",
-          "confidence": 0.95,
+          "confidence": 0.9,
           "question": "使用EH-8P电源适配器充电时出现指示灯快速闪烁怎么办？"
-        },
-        {
-          "id": "q061",
-          "confidence": 0.85,
-          "question": "录制视频时存储卡指示灯和无法录制图标有什么作用？"
         }
       ],
       "answers": [
@@ -1463,40 +1201,34 @@
         },
         {
           "id": "q041",
-          "confidence": 0.95,
+          "confidence": 0.9,
           "question": "使用EH-8P电源适配器充电时出现指示灯快速闪烁怎么办？",
           "answer": "### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。\n若由于电池不兼容或者照相机温度升高等原因，使用电源适配器无法为电池充电，充电指示灯将快速闪烁约30秒，然后熄灭。若充电指示灯熄灭且您未看到电池充电，请开启照相机并检查电池电量。"
-        },
-        {
-          "id": "q061",
-          "confidence": 0.85,
-          "question": "录制视频时存储卡指示灯和无法录制图标有什么作用？",
-          "answer": "## 4 再次按下视频录制按钮结束录制。\n✅ **存储卡存取指示灯**\n\n视频记录过程中，存储卡存取指示灯将点亮。**请勿取出存储卡和电池。**\n\n![存储卡存取指示灯位置示意](assets/knowledge_p77-82_005.png)\n\n---\n\n✅ **<img alt=\"无法录制图标\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/> 图标**\n\n<img alt=\"无法录制图标\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/> 图标表示无法录制视频。\n\n---\n\n✅ **录制视频**\n\n- 若出现以下情况，视频录制将自动结束：\n  - 达到可拍摄时间长度\n  - 选择了其他模式\n  - 照片/视频选择器被旋转至<img alt=\"照片模式标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>\n  - 镜头被取下\n- 在以下情况时录制的视频片段中，您可能会听到照相机发出的声音：\n  - 自动对焦期间\n  - 减震期间\n  - 使用电动光圈时"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1377.7913000012632,
-        "prepare_ms": 4.898400002275594,
-        "match_ms": 1369.8619999995572,
-        "match_first_token_ms": 1362.258400000428,
-        "lookup_ms": 0.5154999998921994,
-        "match_output_tokens": 23,
+        "total_ms": 12587.359599998308,
+        "prepare_ms": 2.018899998802226,
+        "match_ms": 12582.57610000146,
+        "match_first_token_ms": 12206.234799999947,
+        "lookup_ms": 0.6584000002476387,
+        "match_output_tokens": 30,
         "tokens": {
-          "prompt_tokens": 9626,
-          "completion_tokens": 23,
-          "total_tokens": 9649
+          "prompt_tokens": 8869,
+          "completion_tokens": 30,
+          "total_tokens": 8899
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9626,
-              "completion_tokens": 23,
-              "total_tokens": 9649
+              "prompt_tokens": 8869,
+              "completion_tokens": 30,
+              "total_tokens": 8899
             }
           }
         ]
@@ -1505,45 +1237,45 @@
     {
       "id": "r_1782455405316_eyqz4",
       "question": "我可以用便携式充电器来充电吗？",
-      "run_at": "2026-06-26T08:25:14.903Z",
+      "run_at": "2026-06-29T07:50:47.619Z",
       "candidates": [
         {
           "id": "q045",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "便携式充电器可以为相机电池充电吗？"
         }
       ],
       "answers": [
         {
           "id": "q045",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "便携式充电器可以为相机电池充电吗？",
           "answer": "### 2 确认照相机关闭后，使用USB连接线（两端均带C型接口）将照相机连接至另购的EH-8P电源适配器（①）。\n✎ 使用便携式充电器（移动电源）充电\n便携式充电器既可为照相机供电，又可为照相机电池充电。有关已通过测试并验证可以使用的便携式充电器，以及使用各设备可拍摄的大约照片张数和可为照相机电池充电的大约次数的信息，请参阅“便携式充电器（移动电源）”（☞680）。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1457.7792000018235,
-        "prepare_ms": 4.724300000816584,
-        "match_ms": 1451.3302999985171,
-        "match_first_token_ms": 1353.2984999983455,
-        "lookup_ms": 0.3682999995362479,
-        "match_output_tokens": 15,
+        "total_ms": 951.5007000009064,
+        "prepare_ms": 2.0527000015135854,
+        "match_ms": 946.4712000008149,
+        "match_first_token_ms": 505.9264000010444,
+        "lookup_ms": 0.9462000016355887,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9626,
-          "completion_tokens": 15,
-          "total_tokens": 9641
+          "prompt_tokens": 8872,
+          "completion_tokens": 16,
+          "total_tokens": 8888
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9626,
-              "completion_tokens": 15,
-              "total_tokens": 9641
+              "prompt_tokens": 8872,
+              "completion_tokens": 16,
+              "total_tokens": 8888
             }
           }
         ]
@@ -1552,45 +1284,45 @@
     {
       "id": "r_1782455427291_ouaja",
       "question": "怎么看电池电量？",
-      "run_at": "2026-06-26T08:25:16.222Z",
+      "run_at": "2026-06-29T07:50:48.345Z",
       "candidates": [
         {
           "id": "q048",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何查看和理解照相机的电池电量显示？"
         }
       ],
       "answers": [
         {
           "id": "q048",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何查看和理解照相机的电池电量显示？",
           "answer": "# 电池电量\n- 照相机开启期间，拍摄显示中将显示电池电量。\n\n| 显示屏 | 取景器 |\n| ------ | ------ |\n| ![显示屏电池电量显示](assets/knowledge_p63-66_004.png) | ![取景器电池电量显示](assets/knowledge_p63-66_005.png) |\n\n- 随着电池电量的减少，电池电量显示将发生改变，从🟩🟩变为🟩🟨和🟥。当电池电量降低至🟥时，请暂停拍摄并为电池充电或准备一块备用电池。\n- 若屏幕中显示信息**[快门释放按钮已禁用。给电池重新充电。]**，请为电池充电或更换电池。\n\n✅ 待机定时器\n照相机使用待机定时器以帮助减少电池电量消耗。若大约30秒内未执行任何操作，待机定时器将超过时效，且显示屏、取景器和控制面板将会关闭。在关闭的几秒前显示会变暗。半按快门释放按钮可重新激活显示。待机定时器自动超过时效之前的时间长度可使用自定义设定c3[电源关闭延迟]>[待机定时器]进行选择。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1307.8767000006337,
-        "prepare_ms": 3.9995000006456394,
-        "match_ms": 1302.4201999978686,
-        "match_first_token_ms": 1287.0643999995082,
-        "lookup_ms": 0.647599998046644,
-        "match_output_tokens": 13,
+        "total_ms": 714.6624000015436,
+        "prepare_ms": 3.096100001130253,
+        "match_ms": 708.4923000002163,
+        "match_first_token_ms": 529.6186999985366,
+        "lookup_ms": 0.8010999990801793,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 13,
-          "total_tokens": 9636
+          "prompt_tokens": 8865,
+          "completion_tokens": 16,
+          "total_tokens": 8881
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 13,
-              "total_tokens": 9636
+              "prompt_tokens": 8865,
+              "completion_tokens": 16,
+              "total_tokens": 8881
             }
           }
         ]
@@ -1599,45 +1331,45 @@
     {
       "id": "r_1782455461764_wy1ms",
       "question": "怎么取下镜头？",
-      "run_at": "2026-06-26T08:25:17.633Z",
+      "run_at": "2026-06-29T07:50:49.139Z",
       "candidates": [
         {
           "id": "q052",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何安全取下相机镜头？"
         }
       ],
       "answers": [
         {
           "id": "q052",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何安全取下相机镜头？",
           "answer": "# 取下镜头\n- 关闭照相机后，请按住镜头释放按钮（①）并按图示方向转动镜头（②）。\n\n![取下镜头操作图示](assets/knowledge_p67-69_004.png)\n\n- 取下镜头后，请重新盖上镜头盖和照相机机身盖。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1400.9117999994487,
-        "prepare_ms": 4.015300000901334,
-        "match_ms": 1394.7895999990578,
-        "match_first_token_ms": 1369.2688999981328,
-        "lookup_ms": 0.62189999880502,
-        "match_output_tokens": 13,
+        "total_ms": 782.431200001156,
+        "prepare_ms": 2.802200000587618,
+        "match_ms": 777.942400000029,
+        "match_first_token_ms": 608.2821000018157,
+        "lookup_ms": 0.2660999998624902,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 13,
-          "total_tokens": 9635
+          "prompt_tokens": 8866,
+          "completion_tokens": 16,
+          "total_tokens": 8882
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 13,
-              "total_tokens": 9635
+              "prompt_tokens": 8866,
+              "completion_tokens": 16,
+              "total_tokens": 8882
             }
           }
         ]
@@ -1646,7 +1378,7 @@
     {
       "id": "r_1782455486156_actpr",
       "question": "安装镜头的步骤是什么？",
-      "run_at": "2026-06-26T08:25:18.943Z",
+      "run_at": "2026-06-29T07:50:49.853Z",
       "candidates": [
         {
           "id": "q050",
@@ -1664,27 +1396,27 @@
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1299.824500001705,
-        "prepare_ms": 3.8143000019772444,
-        "match_ms": 1293.901499997446,
-        "match_first_token_ms": 1278.5282000004372,
-        "lookup_ms": 0.6816999994043726,
-        "match_output_tokens": 14,
+        "total_ms": 705.1377999996475,
+        "prepare_ms": 2.780200000415789,
+        "match_ms": 701.1825999979919,
+        "match_first_token_ms": 526.848899997276,
+        "lookup_ms": 0.2640999991854187,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 14,
-          "total_tokens": 9637
+          "prompt_tokens": 8867,
+          "completion_tokens": 16,
+          "total_tokens": 8883
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 14,
-              "total_tokens": 9637
+              "prompt_tokens": 8867,
+              "completion_tokens": 16,
+              "total_tokens": 8883
             }
           }
         ]
@@ -1693,45 +1425,32 @@
     {
       "id": "r_1782455624676_9ugxd",
       "question": "怎么正确的手持相机？",
-      "run_at": "2026-06-26T08:25:20.374Z",
-      "candidates": [
-        {
-          "id": "q057",
-          "confidence": 0.98,
-          "question": "自动模式下拍摄时如何正确持握相机和构图？"
-        }
-      ],
-      "answers": [
-        {
-          "id": "q057",
-          "confidence": 0.98,
-          "question": "自动模式下拍摄时如何正确持握相机和构图？",
-          "answer": "# 拍摄照片（📷<sup>AUTO</sup>自动）\n3. **准备照相机。**\n\n用右手握住照相机的操作手柄，用左手托住照相机机身或镜头，并将肘部抵住胸部两侧以作支撑。\n\n![风景横向持机示意图](assets/knowledge_p72-76_004.png)\n![人像竖直持机示意图](assets/knowledge_p72-76_005.png)\n\n风景（横向）方向 人像（竖直）方向\n\n---\n\n4. **进行照片构图。**\n\n![构图界面示意图](assets/knowledge_p72-76_006.png)\n\n将主要拍摄对象置于AF区域框（[ ]）内。\n- AF区域框将消失，照相机侦测到的人物拍摄对象的脸部周围将出现一个表示对焦点的黄色边框。若照相机侦测到拍摄对象的眼部，黄色对焦点则将出现在拍摄对象两只眼睛中的一只上。\n\n![人脸侦测对焦示意图](assets/knowledge_p72-76_007.png)"
-        }
-      ],
+      "run_at": "2026-06-29T07:50:51.706Z",
+      "candidates": [],
+      "answers": [],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1419.1540000028908,
-        "prepare_ms": 4.4063000023015775,
-        "match_ms": 1413.0289999993693,
-        "match_first_token_ms": 1397.6973999997426,
-        "lookup_ms": 0.5633000000671018,
-        "match_output_tokens": 14,
+        "total_ms": 1843.240499998501,
+        "prepare_ms": 2.8822999993280973,
+        "match_ms": 1839.1926000003878,
+        "match_first_token_ms": 1726.4082000001508,
+        "lookup_ms": 0.0002999986463692039,
+        "match_output_tokens": 1,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 14,
-          "total_tokens": 9637
+          "prompt_tokens": 8866,
+          "completion_tokens": 1,
+          "total_tokens": 8867
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 14,
-              "total_tokens": 9637
+              "prompt_tokens": 8866,
+              "completion_tokens": 1,
+              "total_tokens": 8867
             }
           }
         ]
@@ -1740,22 +1459,17 @@
     {
       "id": "r_1782455701635_kqrpr",
       "question": "录视频有哪些要注意的？",
-      "run_at": "2026-06-26T08:25:22.159Z",
+      "run_at": "2026-06-26T09:23:35.645Z",
       "candidates": [
         {
           "id": "q063",
-          "confidence": 0.95,
+          "confidence": 0.92,
           "question": "视频模式下拍摄照片有哪些注意事项？"
         },
         {
           "id": "q061",
           "confidence": 0.85,
           "question": "录制视频时存储卡指示灯和无法录制图标有什么作用？"
-        },
-        {
-          "id": "q062",
-          "confidence": 0.8,
-          "question": "如何在视频模式下拍摄照片？"
         },
         {
           "id": "q144",
@@ -1766,12 +1480,17 @@
           "id": "q065",
           "confidence": 0.7,
           "question": "视频模式下如何进行变焦操作？"
+        },
+        {
+          "id": "q060",
+          "confidence": 0.65,
+          "question": "如何在AUTO自动模式下录制视频？"
         }
       ],
       "answers": [
         {
           "id": "q063",
-          "confidence": 0.95,
+          "confidence": 0.92,
           "question": "视频模式下拍摄照片有哪些注意事项？",
           "answer": "# 在视频模式下拍摄照片\n✅ **在视频模式下拍摄照片**\n\n- 照片模式设定不会应用至视频模式下所拍的照片。\n- 每个视频录制过程中最多可拍摄40张照片。\n- 请注意，即使拍摄对象未清晰对焦也可拍摄照片。\n- 照片会以视频画面尺寸中当前所选的尺寸记录。\n- 图像品质固定为[**JPEG精细**]。\n- <img alt=\"无法拍摄图标\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/>图标表示无法拍摄照片。\n\n---\n\n✅ **照片拍摄和视频录制**\n\n- 您可能会在拍摄显示中看到以下现象。在使用照相机拍摄的所有照片和录制的所有视频片段中也会看到这些现象。\n  - 由荧光灯、水银灯或钠汽灯等光源照亮的场景中的闪烁或条带痕迹\n  - 屏幕中移动的拍摄对象会出现失真（高速移动通过画面的火车或汽车等单个拍摄对象可能会失真，或者照相机水平摇摄时整个画面可能会出现失真）\n  - 屏幕中可能出现锯齿状边缘、彩色边纹、莫尔条纹和亮点\n  - 在由闪烁标识和其他间歇光源照亮的场景中，或者当拍摄对象被频闪灯或其他闪光光源暂时照亮时，将可能会出现明亮区域或明亮带\n  - 视频录制期间使用了电动光圈时出现闪烁\n- 请注意，若您在录制期间使用<img alt=\"放大按钮标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>按钮放大镜头视野，视频中可能会出现噪点（不规则间距明亮像素、雾像或条纹）或者意外的色彩。\n- 在录制时，请避免将照相机朝向太阳或其他强光源，否则可能会损坏照相机内部电路。"
         },
@@ -1780,12 +1499,6 @@
           "confidence": 0.85,
           "question": "录制视频时存储卡指示灯和无法录制图标有什么作用？",
           "answer": "## 4 再次按下视频录制按钮结束录制。\n✅ **存储卡存取指示灯**\n\n视频记录过程中，存储卡存取指示灯将点亮。**请勿取出存储卡和电池。**\n\n![存储卡存取指示灯位置示意](assets/knowledge_p77-82_005.png)\n\n---\n\n✅ **<img alt=\"无法录制图标\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/> 图标**\n\n<img alt=\"无法录制图标\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/> 图标表示无法录制视频。\n\n---\n\n✅ **录制视频**\n\n- 若出现以下情况，视频录制将自动结束：\n  - 达到可拍摄时间长度\n  - 选择了其他模式\n  - 照片/视频选择器被旋转至<img alt=\"照片模式标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>\n  - 镜头被取下\n- 在以下情况时录制的视频片段中，您可能会听到照相机发出的声音：\n  - 自动对焦期间\n  - 减震期间\n  - 使用电动光圈时"
-        },
-        {
-          "id": "q062",
-          "confidence": 0.8,
-          "question": "如何在视频模式下拍摄照片？",
-          "answer": "# 在视频模式下拍摄照片\n通过完全按下快门释放按钮可在视频模式下拍摄照片。在视频拍摄菜单下的[**释放模式(保存帧)**]中，可以选择单张拍摄或连拍。\n\n---\n\n- 拍摄一张照片后屏幕中的<img alt=\"照片标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>图标将闪烁。\n\n![拍摄照片后界面示意](assets/knowledge_p77-82_006.png)\n\n- [释放模式(保存帧)]中[连拍]的每秒拍摄幅数根据[画面尺寸/帧频]所选项的不同而异。\n- 录制过程中可以拍摄照片。拍摄照片不会中断视频录制。但是请注意，即使将视频拍摄菜单中的[释放模式(保存帧)]选为[连拍]，每按一次快门释放按钮也仅将拍摄一张照片。"
         },
         {
           "id": "q144",
@@ -1798,31 +1511,37 @@
           "confidence": 0.7,
           "question": "视频模式下如何进行变焦操作？",
           "answer": "# 在视频模式下拍摄照片\n📝 **在视频模式下变焦**\n\n在视频模式下按下<img alt=\"放大按钮标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>按钮可放大视野（<img alt=\"页码标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>108）。在视频录制期间按下<img alt=\"放大按钮标识\" src=\"\" style=\"width:1em; vertical-align: middle;\"/>按钮可以1:1（100%）的倍率进行显示。按下<img alt=\"缩小按钮标识\" src=\"\" style=\"width:1.2em; vertical-align: middle;\"/>（？）按钮可取消变焦。"
+        },
+        {
+          "id": "q060",
+          "confidence": 0.65,
+          "question": "如何在AUTO自动模式下录制视频？",
+          "answer": "## 3 按下视频录制按钮开始录制。\nAUTO（自动）模式还可用于简单的“即取即拍”型视频录制。\n\n---\n\n## 1 通过将照片/视频选择器旋转至视频模式标识选择视频模式。\n\n![照片/视频选择器操作示意](assets/knowledge_p77-82_001.png)\n\n请注意，当照相机处于视频模式时，另购的闪光灯组件无法使用。\n\n---\n\n## 2 将模式选择器旋转至AUTO。\n\n![模式选择器旋转至AUTO示意](assets/knowledge_p77-82_002.png)\n\n---\n\n## 3 按下视频录制按钮开始录制。\n\n![视频录制按钮位置示意](assets/knowledge_p77-82_003.png)\n\n- 显示屏中将显示一个录制指示。显示屏还显示剩余时间，即可录制至存储卡中的新视频片段的大致时间长度。\n\n![录制界面指示](assets/knowledge_p77-82_004.png)\n\n1 录制指示\n2 剩余时间\n\n- 声音通过内置麦克风进行录制。录制期间切勿遮盖麦克风。\n- 若您在录制过程中轻触显示屏中的拍摄对象，该拍摄对象在画面中移动时，对焦点将对其进行跟踪。\n\n---\n\n## 4 再次按下视频录制按钮结束录制。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1772.8986000001896,
-        "prepare_ms": 4.294899998058099,
-        "match_ms": 1765.8059000023059,
-        "match_first_token_ms": 1756.7101000022376,
-        "lookup_ms": 0.26810000053956173,
-        "match_output_tokens": 23,
+        "total_ms": 2650.0441000025603,
+        "prepare_ms": 11.685400000715163,
+        "match_ms": 2634.7213000008196,
+        "match_first_token_ms": 1030.7519999987562,
+        "lookup_ms": 0.27570000020205043,
+        "match_output_tokens": 90,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 23,
-          "total_tokens": 9646
+          "prompt_tokens": 8812,
+          "completion_tokens": 90,
+          "total_tokens": 8902
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 23,
-              "total_tokens": 9646
+              "prompt_tokens": 8812,
+              "completion_tokens": 90,
+              "total_tokens": 8902
             }
           }
         ]
@@ -1831,7 +1550,7 @@
     {
       "id": "r_1782455726107_sp9eg",
       "question": "怎么查看照片？",
-      "run_at": "2026-06-26T08:25:23.626Z",
+      "run_at": "2026-06-26T09:23:37.487Z",
       "candidates": [
         {
           "id": "q066",
@@ -1842,6 +1561,11 @@
           "id": "q014",
           "confidence": 0.85,
           "question": "如何用触摸屏播放和浏览照片？"
+        },
+        {
+          "id": "q023",
+          "confidence": 0.7,
+          "question": "播放照片时如何用🔍和🔍❏（？）按钮放大、缩小或切换显示模式？"
         }
       ],
       "answers": [
@@ -1856,31 +1580,37 @@
           "confidence": 0.85,
           "question": "如何用触摸屏播放和浏览照片？",
           "answer": "## 播放\n- 在全屏播放过程中向左或向右轻拨可查看其他照片。\n\n![播放滑动切换示意图](assets/knowledge_p36-39_006.png)\n\n- 在全屏播放中，轻触屏幕底部会显示一个图像快进条。在快进条上向左或向右滑动手指可快速滚动至其他照片。\n\n![快进条操作示意图](assets/knowledge_p36-39_007.png)\n- 若要放大在全屏播放期间显示的照片，请使用分开动作或者快速轻触屏幕2次。您可通过使用手指分开动作进行放大和并拢动作进行缩小来调整缩放率。\n\n![缩放操作示意图](assets/knowledge_p36-39_008.png)\n- 缩放期间使用滑动动作可查看图像的其他部分。\n- 缩放期间快速轻触屏幕2次可取消缩放。\n- 在全屏播放过程中使用并拢动作可“缩小”至缩略图查看。使用并拢和分开动作可从4张、9张及72张中选择图像显示数量。\n\n![缩略图切换示意图](assets/knowledge_p36-39_009.png)\n\n- 当显示72张画面时，使用并拢动作可选择日历播放。使用分开动作则可返回72张画面显示。"
+        },
+        {
+          "id": "q023",
+          "confidence": 0.7,
+          "question": "播放照片时如何用🔍和🔍❏（？）按钮放大、缩小或切换显示模式？",
+          "answer": "# 🔍和🔍❏（？）按钮\n按下🔍可在全屏播放期间放大照片。按下🔍可增加缩放率，按下🔍❏（？）则可减小缩放率。当照片全屏显示时，按下🔍❏（？）可“缩小”至缩略图列表。当显示72张画面时，按下🔍❏（？）可选择日历播放。\n\n![放大/缩小按钮示意图](assets/knowledge_p44-45_001.png)"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1455.5758999995305,
-        "prepare_ms": 4.573700000037206,
-        "match_ms": 1448.649400001159,
-        "match_first_token_ms": 1446.7642999989039,
-        "lookup_ms": 0.6016999977873638,
-        "match_output_tokens": 10,
+        "total_ms": 1821.5096999992966,
+        "prepare_ms": 4.873199999565259,
+        "match_ms": 1812.4156999983825,
+        "match_first_token_ms": 1002.605699999549,
+        "lookup_ms": 0.543199999810895,
+        "match_output_tokens": 43,
         "tokens": {
-          "prompt_tokens": 9621,
-          "completion_tokens": 10,
-          "total_tokens": 9631
+          "prompt_tokens": 8810,
+          "completion_tokens": 43,
+          "total_tokens": 8853
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9621,
-              "completion_tokens": 10,
-              "total_tokens": 9631
+              "prompt_tokens": 8810,
+              "completion_tokens": 43,
+              "total_tokens": 8853
             }
           }
         ]
@@ -1889,7 +1619,7 @@
     {
       "id": "r_1782455766748_5y9fd",
       "question": "视频播放操作有什么？",
-      "run_at": "2026-06-26T08:25:25.578Z",
+      "run_at": "2026-06-29T07:51:00.546Z",
       "candidates": [
         {
           "id": "q068",
@@ -1902,9 +1632,9 @@
           "question": "视频播放时显示屏上有哪些信息？"
         },
         {
-          "id": "q015",
+          "id": "q066",
           "confidence": 0.75,
-          "question": "怎样用触摸屏查看和控制视频播放？"
+          "question": "如何在相机上查看拍摄的照片和视频？"
         }
       ],
       "answers": [
@@ -1921,35 +1651,35 @@
           "answer": "## 视频播放期间的显示屏显示\n视频播放期间显示以下信息，允许您确认视频长度和播放时间。当前画面在视频中的大概位置还可从视频进度条确认。\n\n![视频播放界面标注图示](assets/knowledge_p83-87_004.png)\n\n| 序号 | 标识 | 说明 |\n|-----|-----|-----|\n| 1 | 🎞 图标 | |\n| 2 | 时间长度 | |\n| 3 | ▶ 图标 | |\n| 4 | 当前位置/总时间长度 | |\n| 5 | 进度条 | |\n| 6 | 音量 | |\n| 7 | 指南 | |"
         },
         {
-          "id": "q015",
+          "id": "q066",
           "confidence": 0.75,
-          "question": "怎样用触摸屏查看和控制视频播放？",
-          "answer": "## 查看视频\n- 视频以一个<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M2 2H14V10H2V2Z\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"M4 14H12\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/><path d=\"M6 5L10 7L6 9V5Z\" fill=\"currentColor\"/></svg>图标标识；若要开始播放，请轻触屏幕指南。\n\n![视频播放界面示意图](assets/knowledge_p36-39_010.png)\n- 轻触屏幕可暂停播放。再次轻触可恢复播放。\n- 轻触<svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M11 7H3M3 7L7 11M3 7L7 3\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>可退回全屏播放。"
+          "question": "如何在相机上查看拍摄的照片和视频？",
+          "answer": "# 查看照片\n按下 ▶ 按钮可在显示屏或取景器中查看使用照相机所记录的照片和视频。\n\n![相机播放按钮图示](assets/knowledge_p83-87_001.png)\n\n- 按下 ◀ 或 ▶，或在显示屏上向左或向右轻拨可查看其他图像。\n\n![查看照片界面图示](assets/knowledge_p83-87_002.png)\n\n- 视频由显示屏左上方的 🎞 图标标识。按下 OK 按钮，或轻触显示屏中的 ▶ 图标可播放视频。\n\n![视频播放预览图示](assets/knowledge_p83-87_003.png)\n\n- 若要结束播放并返回拍摄模式，请半按快门释放按钮。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1940.336000003299,
-        "prepare_ms": 4.723100002593128,
-        "match_ms": 1933.313300000009,
-        "match_first_token_ms": 1925.7142999995267,
-        "lookup_ms": 0.5701000009139534,
-        "match_output_tokens": 24,
+        "total_ms": 4720.870000001014,
+        "prepare_ms": 2.7413999996497296,
+        "match_ms": 4713.315100001637,
+        "match_first_token_ms": 581.5456000018457,
+        "lookup_ms": 0.923500003409572,
+        "match_output_tokens": 44,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 24,
-          "total_tokens": 9646
+          "prompt_tokens": 8866,
+          "completion_tokens": 44,
+          "total_tokens": 8910
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 24,
-              "total_tokens": 9646
+              "prompt_tokens": 8866,
+              "completion_tokens": 44,
+              "total_tokens": 8910
             }
           }
         ]
@@ -1958,45 +1688,45 @@
     {
       "id": "r_1782455846227_8cjmj",
       "question": "什么是尼康工坊？",
-      "run_at": "2026-06-26T08:25:26.909Z",
+      "run_at": "2026-06-26T09:23:40.745Z",
       "candidates": [
         {
           "id": "q089",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "尼康工坊软件有什么功能？"
         }
       ],
       "answers": [
         {
           "id": "q089",
-          "confidence": 0.98,
+          "confidence": 0.95,
           "question": "尼康工坊软件有什么功能？",
           "answer": "## 尼康工坊\n查看和编辑使用尼康数码照相机拍摄的照片。\n\n![尼康工坊图标](assets/knowledge_p14-16_001.png)\n\n- 使用尼康工坊的Nikon Transfer 2组件将照片传送至计算机。\n- 可以使用尼康工坊将尼康独特的NEF/NRW（RAW）照片转换成其他图像格式（NEF/RAW处理）。\n- 可以使用尼康工坊调整使用尼康数码照相机所拍摄照片的亮度和对比度。\n- 可以使用尼康工坊调整和管理自定义优化校准。\n- 确保下载最新版本，因为早期版本可能无法从照相机下载照片或打开NEF（RAW）照片。\n- 尼康工坊软件可从尼康下载中心进行下载。\n  https://downloadcenter.nikonimglib.com/zh-cn/products/564/NX_Studio.html"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1319.5236000028672,
-        "prepare_ms": 4.222800002025906,
-        "match_ms": 1313.4752000005392,
-        "match_first_token_ms": 1300.6187999999383,
-        "lookup_ms": 0.5829999972775113,
-        "match_output_tokens": 14,
+        "total_ms": 1412.9619999985152,
+        "prepare_ms": 4.174400000920286,
+        "match_ms": 1406.9832999994105,
+        "match_first_token_ms": 1066.1562999994203,
+        "lookup_ms": 0.5689999998139683,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 14,
-          "total_tokens": 9637
+          "prompt_tokens": 8810,
+          "completion_tokens": 16,
+          "total_tokens": 8826
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 14,
-              "total_tokens": 9637
+              "prompt_tokens": 8810,
+              "completion_tokens": 16,
+              "total_tokens": 8826
             }
           }
         ]
@@ -2005,45 +1735,45 @@
     {
       "id": "r_1782456998274_k94o5",
       "question": "使用存储卡有什么注意事项？",
-      "run_at": "2026-06-26T08:25:29.629Z",
+      "run_at": "2026-06-26T09:23:42.146Z",
       "candidates": [
         {
           "id": "q079",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "使用尼康相机时存储卡有哪些注意事项？"
         }
       ],
       "answers": [
         {
           "id": "q079",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "使用尼康相机时存储卡有哪些注意事项？",
           "answer": "## ●存储卡\n- 存储卡使用后可能会发热。从照相机取出存储卡时，请小心谨慎。\n- 格式化过程中，或者正在记录、删除或向计算机或其他设备复制数据时，请勿执行以下操作。否则，可能会丢失数据或是损坏照相机或存储卡。\n  - 切勿取出或插入存储卡\n  - 切勿关闭照相机\n  - 切勿取下电池\n- 切勿用手指或金属物品触碰存储卡端子。\n- 切勿对存储卡用力过度。否则，可能会损坏存储卡。\n- 切勿弯曲、跌落存储卡或使其受到强烈碰撞。\n- 切勿将存储卡置于水中、高温或阳光直射的环境中。\n- 切勿在计算机中格式化存储卡。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 2705.777399998624,
-        "prepare_ms": 5.130800000188174,
-        "match_ms": 2698.3338999998523,
-        "match_first_token_ms": 2695.8577999976114,
-        "lookup_ms": 0.7020999983069487,
-        "match_output_tokens": 13,
+        "total_ms": 1387.1410000028845,
+        "prepare_ms": 4.608700000972021,
+        "match_ms": 1380.8792000018002,
+        "match_first_token_ms": 1010.6817000014416,
+        "lookup_ms": 0.3611000029195566,
+        "match_output_tokens": 19,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 13,
-          "total_tokens": 9636
+          "prompt_tokens": 8812,
+          "completion_tokens": 19,
+          "total_tokens": 8831
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 13,
-              "total_tokens": 9636
+              "prompt_tokens": 8812,
+              "completion_tokens": 19,
+              "total_tokens": 8831
             }
           }
         ]
@@ -2052,56 +1782,56 @@
     {
       "id": "r_1782457036004_1qe0y",
       "question": "SnapBridge有什么用？",
-      "run_at": "2026-06-26T08:25:34.940Z",
+      "run_at": "2026-06-29T07:51:12.578Z",
       "candidates": [
-        {
-          "id": "q086",
-          "confidence": 1.0,
-          "question": "尼康的SnapBridge应用程序有什么功能？"
-        },
         {
           "id": "q084",
           "confidence": 0.95,
           "question": "SnapBridge应用程序有什么功能，如何获取？"
+        },
+        {
+          "id": "q086",
+          "confidence": 0.85,
+          "question": "尼康的SnapBridge应用程序有什么功能？"
         }
       ],
       "answers": [
-        {
-          "id": "q086",
-          "confidence": 1.0,
-          "question": "尼康的SnapBridge应用程序有什么功能？",
-          "answer": "## SnapBridge\nSnapBridge是一款可无线连接智能设备和照相机的应用程序，可启用将照片下载至智能设备和遥控拍摄等功能。\n\n![SnapBridge图标](assets/knowledge_p13-13_001.png)\n\n- 您可从网站（https://www.nikon.com.cn/sc_CN/service/app.page?Category=service-and-support&Section=downloads/app）免费获取该应用程序。"
-        },
         {
           "id": "q084",
           "confidence": 0.95,
           "question": "SnapBridge应用程序有什么功能，如何获取？",
           "answer": "## SnapBridge\nSnapBridge可将智能设备（智能手机或平板电脑）无线连接至照相机，以便您能下载照片或远程控制照相机。\n\n![SnapBridge应用图标](assets/knowledge_p11-12_003.png)\n\n・您可从网站（`https://www.nikon.com.cn/sc_CN/service/app.page?Category=service-and-support&Section=downloads/app`）免费获取该应用程序。"
+        },
+        {
+          "id": "q086",
+          "confidence": 0.85,
+          "question": "尼康的SnapBridge应用程序有什么功能？",
+          "answer": "## SnapBridge\nSnapBridge是一款可无线连接智能设备和照相机的应用程序，可启用将照片下载至智能设备和遥控拍摄等功能。\n\n![SnapBridge图标](assets/knowledge_p13-13_001.png)\n\n- 您可从网站（https://www.nikon.com.cn/sc_CN/service/app.page?Category=service-and-support&Section=downloads/app）免费获取该应用程序。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 5298.57130000164,
-        "prepare_ms": 5.103300001792377,
-        "match_ms": 5290.858299998945,
-        "match_first_token_ms": 5271.708799999033,
-        "lookup_ms": 0.5552000002353452,
-        "match_output_tokens": 8,
+        "total_ms": 7438.082500000746,
+        "prepare_ms": 2.8717999994114507,
+        "match_ms": 7431.426300001476,
+        "match_first_token_ms": 2189.527000002272,
+        "lookup_ms": 0.9645999998610932,
+        "match_output_tokens": 30,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 8,
-          "total_tokens": 9630
+          "prompt_tokens": 8866,
+          "completion_tokens": 30,
+          "total_tokens": 8896
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 8,
-              "total_tokens": 9630
+              "prompt_tokens": 8866,
+              "completion_tokens": 30,
+              "total_tokens": 8896
             }
           }
         ]
@@ -2110,7 +1840,7 @@
     {
       "id": "r_1782457094323_tkxh0",
       "question": "尼康工坊在哪下载？",
-      "run_at": "2026-06-26T08:25:36.869Z",
+      "run_at": "2026-06-26T09:23:45.204Z",
       "candidates": [
         {
           "id": "q089",
@@ -2128,27 +1858,27 @@
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1916.5868000018236,
-        "prepare_ms": 4.284900001948699,
-        "match_ms": 1910.7952000013029,
-        "match_first_token_ms": 1909.233200000017,
-        "lookup_ms": 0.21379999816417694,
-        "match_output_tokens": 14,
+        "total_ms": 1438.6828000024252,
+        "prepare_ms": 4.0912000004027504,
+        "match_ms": 1432.5951999999234,
+        "match_first_token_ms": 1088.1370999995852,
+        "lookup_ms": 0.6112000010034535,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9624,
-          "completion_tokens": 14,
-          "total_tokens": 9638
+          "prompt_tokens": 8811,
+          "completion_tokens": 16,
+          "total_tokens": 8827
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9624,
-              "completion_tokens": 14,
-              "total_tokens": 9638
+              "prompt_tokens": 8811,
+              "completion_tokens": 16,
+              "total_tokens": 8827
             }
           }
         ]
@@ -2157,56 +1887,56 @@
     {
       "id": "r_1782457174571_7pzzw",
       "question": "相机有哪些按键？",
-      "run_at": "2026-06-26T08:25:38.144Z",
+      "run_at": "2026-06-26T09:23:46.642Z",
       "candidates": [
-        {
-          "id": "q093",
-          "confidence": 0.95,
-          "question": "照相机机身有哪些主要部件？"
-        },
         {
           "id": "q095",
           "confidence": 0.95,
           "question": "照相机有哪些部件？"
+        },
+        {
+          "id": "q093",
+          "confidence": 0.85,
+          "question": "照相机机身有哪些主要部件？"
         }
       ],
       "answers": [
-        {
-          "id": "q093",
-          "confidence": 0.95,
-          "question": "照相机机身有哪些主要部件？",
-          "answer": "### 照相机机身\n![assets/knowledge_p17-19_001.png](assets/knowledge_p17-19_001.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 照相机背带孔（❏88） | 9 | 视频录制按钮（❏109） |\n| 2 | ISO感光度拨盘（❏62、❏162） | 10 | ⌑（焦平面标记；❏137） |\n| 3 | ISO感光度拨盘锁定解除（❏62、❏162） | 11 | 曝光补偿拨盘（❏63、❏165） |\n| 4 | 立体声麦克风（❏109） | 12 | 控制面板（❏53） |\n| 5 | 快门速度拨盘（❏60、❏152） | 13 | 照片/视频选择器（❏104、❏109） |\n| 6 | 快门速度拨盘锁定解除（❏60、❏152） | 14 | 配件热靴（用于另购的闪光灯组件；❏563、❏615） |\n| 7 | 电源开关（❏102） | 15 | 模式选择器（❏60、❏151） |\n| 8 | 快门释放按钮（❏104） | 16 | 扬声器（❏116） |\n\n### 照相机机身\n![assets/knowledge_p17-19_002.png](assets/knowledge_p17-19_002.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 副指令拨盘（❏61） | 9 | USB接口（❏472、❏552） |\n| 2 | 影像传感器（❏653） | 10 | 外置麦克风接口（❏641） |\n| 3 | CPU接点 | 11 | 镜头释放按钮（❏100） |\n| 4 | 镜头安装标记（❏99） | 12 | 镜头卡口（❏99、❏137） |\n| 5 | AF辅助照明器（❏107、❏399）<br>防红眼灯（❏189、❏567）<br>自拍指示灯（❏198） | 13 | Fn按钮（❏85、❏139） |\n| 6 | HDMI、USB及麦克风接口盖 | 14 | 机身盖（❏99） |\n| 7 | HDMI接口（❏557） | | |\n| 8 | 充电指示灯（❏642） | | |"
-        },
         {
           "id": "q095",
           "confidence": 0.95,
           "question": "照相机有哪些部件？",
           "answer": "### 照相机机身\n![assets/knowledge_p17-19_003.png](assets/knowledge_p17-19_003.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 屈光度调节控制器（❏57） | 11 | 📧按钮（❏76、❏135、❏214、❏241） |\n| 2 | 📷（Oᗰ）按钮（❏76、❏149、❏168） | 12 | 电池舱/存储卡插槽盖 |\n| 3 | 主指令拨盘（❏61） | 13 | 电池舱/存储卡插槽盖锁闩 |\n| 4 | ℹ按钮（❏82、❏171） | 14 | 电池锁闩（❏95） |\n| 5 | 🎞按钮（❏79） | 15 | 存储卡插槽（❏95） |\n| 6 | 多重选择器（❏79、❏127） | 16 | 三脚架连接孔 |\n| 7 | DISP按钮（❏74） | 17 | 显示屏（❏63、❏68、❏132） |\n| 8 | MENU按钮（❏78、❏247） | 18 | 📇按钮（❏58、❏451） |\n| 9 | 🎞❓（？）按钮（❏76、❏82、❏214、❏241） | 19 | 🗑按钮（❏118、❏243） |\n| 10 | 存储卡存取指示灯（❏107、❏111） | 20 | ▶按钮（❏115、❏214） |\n| | | 21 | 眼感应（❏57） |\n| | | 22 | 取景器（❏57） |\n| | | 23 | 橡胶接目镜罩（❏641） |"
+        },
+        {
+          "id": "q093",
+          "confidence": 0.85,
+          "question": "照相机机身有哪些主要部件？",
+          "answer": "### 照相机机身\n![assets/knowledge_p17-19_001.png](assets/knowledge_p17-19_001.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 照相机背带孔（❏88） | 9 | 视频录制按钮（❏109） |\n| 2 | ISO感光度拨盘（❏62、❏162） | 10 | ⌑（焦平面标记；❏137） |\n| 3 | ISO感光度拨盘锁定解除（❏62、❏162） | 11 | 曝光补偿拨盘（❏63、❏165） |\n| 4 | 立体声麦克风（❏109） | 12 | 控制面板（❏53） |\n| 5 | 快门速度拨盘（❏60、❏152） | 13 | 照片/视频选择器（❏104、❏109） |\n| 6 | 快门速度拨盘锁定解除（❏60、❏152） | 14 | 配件热靴（用于另购的闪光灯组件；❏563、❏615） |\n| 7 | 电源开关（❏102） | 15 | 模式选择器（❏60、❏151） |\n| 8 | 快门释放按钮（❏104） | 16 | 扬声器（❏116） |\n\n### 照相机机身\n![assets/knowledge_p17-19_002.png](assets/knowledge_p17-19_002.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 副指令拨盘（❏61） | 9 | USB接口（❏472、❏552） |\n| 2 | 影像传感器（❏653） | 10 | 外置麦克风接口（❏641） |\n| 3 | CPU接点 | 11 | 镜头释放按钮（❏100） |\n| 4 | 镜头安装标记（❏99） | 12 | 镜头卡口（❏99、❏137） |\n| 5 | AF辅助照明器（❏107、❏399）<br>防红眼灯（❏189、❏567）<br>自拍指示灯（❏198） | 13 | Fn按钮（❏85、❏139） |\n| 6 | HDMI、USB及麦克风接口盖 | 14 | 机身盖（❏99） |\n| 7 | HDMI接口（❏557） | | |\n| 8 | 充电指示灯（❏642） | | |"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1265.179400001216,
-        "prepare_ms": 3.8181000018084887,
-        "match_ms": 1259.382000000187,
-        "match_first_token_ms": 1252.0049000013387,
-        "lookup_ms": 0.3737999977602158,
-        "match_output_tokens": 10,
+        "total_ms": 1424.0701999988232,
+        "prepare_ms": 4.294299997127382,
+        "match_ms": 1417.0679000017117,
+        "match_first_token_ms": 839.0722000003734,
+        "lookup_ms": 0.6786999983887654,
+        "match_output_tokens": 30,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 10,
-          "total_tokens": 9632
+          "prompt_tokens": 8810,
+          "completion_tokens": 30,
+          "total_tokens": 8840
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 10,
-              "total_tokens": 9632
+              "prompt_tokens": 8810,
+              "completion_tokens": 30,
+              "total_tokens": 8840
             }
           }
         ]
@@ -2215,56 +1945,56 @@
     {
       "id": "r_1782457232530_pijwc",
       "question": "照相机有哪些部件？",
-      "run_at": "2026-06-26T08:25:39.907Z",
+      "run_at": "2026-06-29T07:51:19.263Z",
       "candidates": [
         {
           "id": "q095",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "照相机有哪些部件？"
         },
         {
           "id": "q093",
-          "confidence": 0.95,
+          "confidence": 0.85,
           "question": "照相机机身有哪些主要部件？"
         }
       ],
       "answers": [
         {
           "id": "q095",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "照相机有哪些部件？",
           "answer": "### 照相机机身\n![assets/knowledge_p17-19_003.png](assets/knowledge_p17-19_003.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 屈光度调节控制器（❏57） | 11 | 📧按钮（❏76、❏135、❏214、❏241） |\n| 2 | 📷（Oᗰ）按钮（❏76、❏149、❏168） | 12 | 电池舱/存储卡插槽盖 |\n| 3 | 主指令拨盘（❏61） | 13 | 电池舱/存储卡插槽盖锁闩 |\n| 4 | ℹ按钮（❏82、❏171） | 14 | 电池锁闩（❏95） |\n| 5 | 🎞按钮（❏79） | 15 | 存储卡插槽（❏95） |\n| 6 | 多重选择器（❏79、❏127） | 16 | 三脚架连接孔 |\n| 7 | DISP按钮（❏74） | 17 | 显示屏（❏63、❏68、❏132） |\n| 8 | MENU按钮（❏78、❏247） | 18 | 📇按钮（❏58、❏451） |\n| 9 | 🎞❓（？）按钮（❏76、❏82、❏214、❏241） | 19 | 🗑按钮（❏118、❏243） |\n| 10 | 存储卡存取指示灯（❏107、❏111） | 20 | ▶按钮（❏115、❏214） |\n| | | 21 | 眼感应（❏57） |\n| | | 22 | 取景器（❏57） |\n| | | 23 | 橡胶接目镜罩（❏641） |"
         },
         {
           "id": "q093",
-          "confidence": 0.95,
+          "confidence": 0.85,
           "question": "照相机机身有哪些主要部件？",
           "answer": "### 照相机机身\n![assets/knowledge_p17-19_001.png](assets/knowledge_p17-19_001.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 照相机背带孔（❏88） | 9 | 视频录制按钮（❏109） |\n| 2 | ISO感光度拨盘（❏62、❏162） | 10 | ⌑（焦平面标记；❏137） |\n| 3 | ISO感光度拨盘锁定解除（❏62、❏162） | 11 | 曝光补偿拨盘（❏63、❏165） |\n| 4 | 立体声麦克风（❏109） | 12 | 控制面板（❏53） |\n| 5 | 快门速度拨盘（❏60、❏152） | 13 | 照片/视频选择器（❏104、❏109） |\n| 6 | 快门速度拨盘锁定解除（❏60、❏152） | 14 | 配件热靴（用于另购的闪光灯组件；❏563、❏615） |\n| 7 | 电源开关（❏102） | 15 | 模式选择器（❏60、❏151） |\n| 8 | 快门释放按钮（❏104） | 16 | 扬声器（❏116） |\n\n### 照相机机身\n![assets/knowledge_p17-19_002.png](assets/knowledge_p17-19_002.png)\n\n| 序号 | 部件说明 | 序号 | 部件说明 |\n| ---- | ---- | ---- | ---- |\n| 1 | 副指令拨盘（❏61） | 9 | USB接口（❏472、❏552） |\n| 2 | 影像传感器（❏653） | 10 | 外置麦克风接口（❏641） |\n| 3 | CPU接点 | 11 | 镜头释放按钮（❏100） |\n| 4 | 镜头安装标记（❏99） | 12 | 镜头卡口（❏99、❏137） |\n| 5 | AF辅助照明器（❏107、❏399）<br>防红眼灯（❏189、❏567）<br>自拍指示灯（❏198） | 13 | Fn按钮（❏85、❏139） |\n| 6 | HDMI、USB及麦克风接口盖 | 14 | 机身盖（❏99） |\n| 7 | HDMI接口（❏557） | | |\n| 8 | 充电指示灯（❏642） | | |"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1751.4941000008548,
-        "prepare_ms": 4.3476999999256805,
-        "match_ms": 1744.3882000006852,
-        "match_first_token_ms": 1603.1780000012077,
-        "lookup_ms": 0.5909999999857973,
-        "match_output_tokens": 29,
+        "total_ms": 2584.708499998669,
+        "prepare_ms": 3.05819999994128,
+        "match_ms": 2577.9077999977744,
+        "match_first_token_ms": 1875.1995999991777,
+        "lookup_ms": 0.6657000012637582,
+        "match_output_tokens": 30,
         "tokens": {
-          "prompt_tokens": 9620,
-          "completion_tokens": 29,
-          "total_tokens": 9649
+          "prompt_tokens": 8866,
+          "completion_tokens": 30,
+          "total_tokens": 8896
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9620,
-              "completion_tokens": 29,
-              "total_tokens": 9649
+              "prompt_tokens": 8866,
+              "completion_tokens": 30,
+              "total_tokens": 8896
             }
           }
         ]
@@ -2273,45 +2003,45 @@
     {
       "id": "r_1782457248963_184tm",
       "question": "产品序列号在哪看？",
-      "run_at": "2026-06-26T08:25:41.848Z",
+      "run_at": "2026-06-26T09:23:49.701Z",
       "candidates": [
         {
           "id": "q097",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何找到相机的产品序列号？"
         }
       ],
       "answers": [
         {
           "id": "q097",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何找到相机的产品序列号？",
           "answer": "✅ **产品序列号**\n\n打开显示屏可找到本产品的序列号。\n\n![相机背面示意图](assets/knowledge_p20-21_001.png)"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1930.7661999991979,
-        "prepare_ms": 3.8067000023147557,
-        "match_ms": 1924.988899998425,
-        "match_first_token_ms": 1911.5155999970739,
-        "lookup_ms": 0.5422999965958297,
-        "match_output_tokens": 13,
+        "total_ms": 1482.2198000001663,
+        "prepare_ms": 4.530299996986287,
+        "match_ms": 1475.344500002393,
+        "match_first_token_ms": 1118.281200000638,
+        "lookup_ms": 0.6382999999914318,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 13,
-          "total_tokens": 9636
+          "prompt_tokens": 8812,
+          "completion_tokens": 16,
+          "total_tokens": 8828
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 13,
-              "total_tokens": 9636
+              "prompt_tokens": 8812,
+              "completion_tokens": 16,
+              "total_tokens": 8828
             }
           }
         ]
@@ -2320,7 +2050,7 @@
     {
       "id": "r_1782457319250_jrkth",
       "question": "怎么看控制面板？",
-      "run_at": "2026-06-26T08:25:46.596Z",
+      "run_at": "2026-06-26T09:23:51.155Z",
       "candidates": [
         {
           "id": "q098",
@@ -2338,27 +2068,27 @@
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 4737.42029999994,
-        "prepare_ms": 3.8018000013835263,
-        "match_ms": 4731.757900000957,
-        "match_first_token_ms": 4713.074600000255,
-        "lookup_ms": 0.41250000140280463,
-        "match_output_tokens": 14,
+        "total_ms": 1440.0951999996323,
+        "prepare_ms": 3.112499998678686,
+        "match_ms": 1434.9838000016462,
+        "match_first_token_ms": 1113.4911000008287,
+        "lookup_ms": 0.2806999982567504,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 14,
-          "total_tokens": 9636
+          "prompt_tokens": 8809,
+          "completion_tokens": 16,
+          "total_tokens": 8825
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 14,
-              "total_tokens": 9636
+              "prompt_tokens": 8809,
+              "completion_tokens": 16,
+              "total_tokens": 8825
             }
           }
         ]
@@ -2367,7 +2097,7 @@
     {
       "id": "r_1782457445851_hk5su",
       "question": "显示屏有哪些指示？",
-      "run_at": "2026-06-26T08:25:48.755Z",
+      "run_at": "2026-06-26T09:23:52.981Z",
       "candidates": [
         {
           "id": "q099",
@@ -2376,12 +2106,12 @@
         },
         {
           "id": "q101",
-          "confidence": 0.9,
+          "confidence": 0.85,
           "question": "视频模式下显示屏和取景器显示哪些指示？"
         },
         {
           "id": "q098",
-          "confidence": 0.85,
+          "confidence": 0.75,
           "question": "控制面板有什么用？"
         }
       ],
@@ -2394,40 +2124,40 @@
         },
         {
           "id": "q101",
-          "confidence": 0.9,
+          "confidence": 0.85,
           "question": "视频模式下显示屏和取景器显示哪些指示？",
           "answer": "## 视频模式\n![视频模式拨盘图示](assets/knowledge_p22-24_005.png)\n\n| 显示屏 | 取景器 |\n|--------|--------|\n| ![视频模式显示屏标注图示](assets/knowledge_p22-24_006.png) | ![视频模式取景器标注图示](assets/knowledge_p22-24_007.png) |\n\n1. 录制指示（🖹109）\n    - “无视频”指示（🖹111）\n2. 画面尺寸和帧频/视频品质（🖹204）\n3. 剩余时间（🖹109）\n4. 释放模式（静态拍摄；🖹384）\n5. 声音级别（🖹209）\n6. 麦克风灵敏度（🖹209）\n7. 频响（🖹386）"
         },
         {
           "id": "q098",
-          "confidence": 0.85,
+          "confidence": 0.75,
           "question": "控制面板有什么用？",
           "answer": "# 控制面板\n照相机开启时，控制面板也会开启。\n光圈（0 154、0 155）在控制面板中显示。\n\n![控制面板光圈显示示例](assets/knowledge_p20-21_002.png)\n\n- 如果将光圈设为F0.95，则控制面板中将显示[.95]。\n- 若将[扩展快门速度范围(M)]设为[开启]，当以60秒或更长时间的快门速度开始拍摄时，显示会切换以指示快门已打开。\n- 根据镜头安装方式的不同，可能会显示警告[--]（0 593）。\n- 当连接到计算机或智能手机时，可能会显示[PC]以指示连接正在进行中。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 2146.91319999838,
-        "prepare_ms": 11.951099997531855,
-        "match_ms": 2131.9811000030313,
-        "match_first_token_ms": 2120.508800002426,
-        "lookup_ms": 0.7358000002568588,
-        "match_output_tokens": 21,
+        "total_ms": 1812.4110999997356,
+        "prepare_ms": 4.418799999257317,
+        "match_ms": 1805.2906000011717,
+        "match_first_token_ms": 1041.4730000011332,
+        "lookup_ms": 0.44350000098347664,
+        "match_output_tokens": 44,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 21,
-          "total_tokens": 9643
+          "prompt_tokens": 8810,
+          "completion_tokens": 44,
+          "total_tokens": 8854
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 21,
-              "total_tokens": 9643
+              "prompt_tokens": 8810,
+              "completion_tokens": 44,
+              "total_tokens": 8854
             }
           }
         ]
@@ -2436,7 +2166,7 @@
     {
       "id": "r_1782457511147_uxabf",
       "question": "怎么使用取景器？",
-      "run_at": "2026-06-26T08:25:50.406Z",
+      "run_at": "2026-06-26T09:23:55.465Z",
       "candidates": [
         {
           "id": "q102",
@@ -2449,18 +2179,18 @@
           "question": "如何使用屈光度调节控制器来调节取景器？"
         },
         {
-          "id": "q105",
-          "confidence": 0.8,
-          "question": "🖥️显示屏模式按钮如何切换取景器和显示屏？"
-        },
-        {
           "id": "q104",
           "confidence": 0.75,
           "question": "长时间使用取景器时如何调整显示设置？"
         },
         {
-          "id": "q099",
+          "id": "q105",
           "confidence": 0.7,
+          "question": "🖥️显示屏模式按钮如何切换取景器和显示屏？"
+        },
+        {
+          "id": "q099",
+          "confidence": 0.6,
           "question": "显示屏和取景器有哪些指示？"
         }
       ],
@@ -2478,47 +2208,47 @@
           "answer": "## ✅ 屈光度调节控制器\n- 旋转屈光度调节控制器可进行取景器对焦。\n\n![屈光度调节控制器位置](assets/knowledge_p25-27_002.png)\n\n- 请注意不要让手指或指甲触碰到您的眼睛。"
         },
         {
-          "id": "q105",
-          "confidence": 0.8,
-          "question": "🖥️显示屏模式按钮如何切换取景器和显示屏？",
-          "answer": "## 🖥️（显示屏模式）按钮\n按下🖥️按钮可循环切换取景器和显示屏显示。\n\n![显示屏模式按钮位置](assets/knowledge_p25-27_003.png)\n\n按下🖥️按钮可按以下顺序循环切换显示。\n\n[自动显示开关]：照相机根据来自眼感应的信息在取景器和显示屏显示之间自动切换。\n\n![自动显示开关示意图](assets/knowledge_p25-27_004.png)\n\n---\n\n[仅取景器]：显示屏保持空白。取景器用于拍摄、菜单显示和播放。\n\n![仅取景器示意图](assets/knowledge_p25-27_005.png)\n\n---\n\n[仅显示屏]：显示屏用于拍摄、菜单显示和播放。即使您将眼睛对准取景器，取景器显示也将保持空白。\n\n![仅显示屏示意图](assets/knowledge_p25-27_006.png)\n\n---\n\n[优先考虑取景器]：照相机运作方式与现有数码单镜反光照相机类似。\n\n![优先考虑取景器示意图](assets/knowledge_p25-27_007.png)\n\n- 在照片模式下，将眼睛对准取景器时会开启取景器；将眼睛移开后显示屏仍保持关闭。\n- 在视频模式下或播放过程中，或者显示菜单期间，照相机根据来自眼感应的信息在取景器和显示屏之间自动切换。"
-        },
-        {
           "id": "q104",
           "confidence": 0.75,
           "question": "长时间使用取景器时如何调整显示设置？",
           "answer": "## 📝 长时间使用\n长时间使用取景器时，您可通过将自定义设定d7[将设置应用于即时取景]选为[关闭]，确保取景器以便于查看的亮度和色相进行显示。"
         },
         {
-          "id": "q099",
+          "id": "q105",
           "confidence": 0.7,
+          "question": "🖥️显示屏模式按钮如何切换取景器和显示屏？",
+          "answer": "## 🖥️（显示屏模式）按钮\n按下🖥️按钮可循环切换取景器和显示屏显示。\n\n![显示屏模式按钮位置](assets/knowledge_p25-27_003.png)\n\n按下🖥️按钮可按以下顺序循环切换显示。\n\n[自动显示开关]：照相机根据来自眼感应的信息在取景器和显示屏显示之间自动切换。\n\n![自动显示开关示意图](assets/knowledge_p25-27_004.png)\n\n---\n\n[仅取景器]：显示屏保持空白。取景器用于拍摄、菜单显示和播放。\n\n![仅取景器示意图](assets/knowledge_p25-27_005.png)\n\n---\n\n[仅显示屏]：显示屏用于拍摄、菜单显示和播放。即使您将眼睛对准取景器，取景器显示也将保持空白。\n\n![仅显示屏示意图](assets/knowledge_p25-27_006.png)\n\n---\n\n[优先考虑取景器]：照相机运作方式与现有数码单镜反光照相机类似。\n\n![优先考虑取景器示意图](assets/knowledge_p25-27_007.png)\n\n- 在照片模式下，将眼睛对准取景器时会开启取景器；将眼睛移开后显示屏仍保持关闭。\n- 在视频模式下或播放过程中，或者显示菜单期间，照相机根据来自眼感应的信息在取景器和显示屏之间自动切换。"
+        },
+        {
+          "id": "q099",
+          "confidence": 0.6,
           "question": "显示屏和取景器有哪些指示？",
           "answer": "## 照片模式\n在默认设定下，显示屏和取景器中会显示以下指示；有关指示的完整列表，请参阅“技术注释”中的“照相机显示”（🖹600）。\n\n![照片模式拨盘图示](assets/knowledge_p22-24_001.png)\n\n| 显示屏 | 取景器 |\n|--------|--------|\n| ![显示屏标注图示1](assets/knowledge_p22-24_002.png) | ![取景器标注图示1](assets/knowledge_p22-24_003.png) |\n\n1. 拍摄模式（🖹151）\n2. 对焦点（🖹122）\n3. 释放模式（🖹193）\n4. 对焦模式（🖹120）\n5. AF区域模式（🖹122）\n6. 动态D-Lighting（🖹192）\n7. 优化校准（🖹173、🖹292）\n8. 白平衡（🖹139、🖹179、🖹284）\n\n| 显示屏 | 取景器 |\n|--------|--------|\n| ![显示屏标注图示2](assets/knowledge_p22-24_004.png) | |\n\n9. 图像区域（🖹279）\n10. 图像尺寸（🖹188）\n11. 图像品质（🖹187）\n12. *i* 图标（🖹171）\n13. 曝光指示\n    - 曝光（🖹157）\n    - 曝光补偿（🖹165）\n14. “k”（当剩余存储空间足够拍摄1000张以上时出现；🖹97）\n15. 剩余可拍摄张数（🖹97、🖹682）\n16. ISO感光度（🖹162）\n17. ISO感光度指示（🖹162）\n    - 自动ISO感光度指示（🖹282）\n18. 光圈（🖹154、🖹155）\n19. 快门速度（🖹152、🖹155）\n20. 对象跟踪AF（🖹131）\n21. 测光（🖹190）\n22. 电池电量指示（🖹97）\n23. 快门类型（🖹406）\n24. “未设定时钟”指示（🖹103）\n25. 减震指示（🖹199）\n26. 触控拍摄（🖹132）\n27. AF区域框（🖹123）"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1640.1158999979089,
-        "prepare_ms": 4.285499999241438,
-        "match_ms": 1631.9962000015948,
-        "match_first_token_ms": 1554.6729999987292,
-        "lookup_ms": 0.48659999811206944,
+        "total_ms": 2469.38930000033,
+        "prepare_ms": 6.994199997279793,
+        "match_ms": 2458.24740000171,
+        "match_first_token_ms": 1221.2308000016492,
+        "lookup_ms": 0.5686000004061498,
         "match_output_tokens": 70,
         "tokens": {
-          "prompt_tokens": 9621,
+          "prompt_tokens": 8811,
           "completion_tokens": 70,
-          "total_tokens": 9691
+          "total_tokens": 8881
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9621,
+              "prompt_tokens": 8811,
               "completion_tokens": 70,
-              "total_tokens": 9691
+              "total_tokens": 8881
             }
           }
         ]
@@ -2527,7 +2257,7 @@
     {
       "id": "r_1782457554523_50v9x",
       "question": "为什么我的相机没法对焦？",
-      "run_at": "2026-06-26T08:25:52.339Z",
+      "run_at": "2026-06-29T07:51:31.264Z",
       "candidates": [
         {
           "id": "q108",
@@ -2535,24 +2265,14 @@
           "question": "相机自动对焦时可能遇到哪些问题？"
         },
         {
-          "id": "q115",
+          "id": "q109",
           "confidence": 0.85,
-          "question": "脸部和眼部侦测自动对焦有哪些限制？"
-        },
-        {
-          "id": "q117",
-          "confidence": 0.85,
-          "question": "动物侦测自动对焦在什么情况下可能无法正常工作？"
+          "question": "如何让相机记住关闭时的对焦位置？"
         },
         {
           "id": "q119",
-          "confidence": 0.85,
-          "question": "对象跟踪AF有哪些限制和无法跟踪的情况？"
-        },
-        {
-          "id": "q124",
           "confidence": 0.75,
-          "question": "如何在手动对焦模式下进行对焦？"
+          "question": "对象跟踪AF有哪些限制和无法跟踪的情况？"
         }
       ],
       "answers": [
@@ -2563,53 +2283,41 @@
           "answer": "### ✅ 自动对焦\n- 以下情况时，照相机可能无法对焦：\n  - 拍摄对象包含平行于画面长边缘的线条\n  - 拍摄对象缺少对比度\n  - 对焦点上的拍摄对象包含亮度对比强烈的不同区域\n  - 对焦点包含夜间聚光灯、霓虹灯或其他有亮度变化的光源\n  - 在荧光灯、水银灯、钠汽灯或其他类似灯光下屏幕中出现闪烁或条带痕迹\n  - 使用十字（星芒）滤镜或其他特殊滤镜\n  - 拍摄对象看起来小于对焦点\n  - 拍摄对象由规则的几何图案组成（例如，百叶窗或摩天大楼上的一排窗户）\n  - 拍摄对象正在移动\n- 照相机对焦期间，显示屏可能变亮或变暗。\n- 照相机无法对焦时，对焦点有时也可能以绿色显示。"
         },
         {
-          "id": "q115",
+          "id": "q109",
           "confidence": 0.85,
-          "question": "脸部和眼部侦测自动对焦有哪些限制？",
-          "answer": "## ✅ 脸部/眼部侦测自动对焦\n眼部和脸部侦测在以下情况时可能无法正常执行：\n- 拍摄对象的脸部占据画面中很大或很小的部分，\n- 拍摄对象的脸部被照得过亮或过暗，\n- 拍摄对象佩戴了眼镜或太阳镜，\n- 拍摄对象的脸部或眼部被头发或其他物体遮挡，\n- 拍摄期间拍摄对象剧烈移动。"
-        },
-        {
-          "id": "q117",
-          "confidence": 0.85,
-          "question": "动物侦测自动对焦在什么情况下可能无法正常工作？",
-          "answer": "✅ 动物侦测自动对焦\n- 动物脸部和眼部侦测在以下情况时可能无法正常执行：\n  - 拍摄对象的脸部占据画面中很大或很小的部分，\n  - 拍摄对象的脸部被照得过亮或过暗，\n  - 拍摄对象的脸部或眼部被皮毛或其他物体遮挡，\n  - 拍摄对象的眼部颜色与脸部其余地方类似，\n  - 拍摄期间拍摄对象剧烈移动。\n- 根据拍摄环境的不同，当[宽区域AF(L-动物)]或[自动区域AF(动物)]处于启用状态时，照相机可能无法侦测到某些品种动物的脸部或眼部。或者，照相机可能在狗或猫的脸部或眼部范围之外显示边框。\n- 来自AF辅助照明器的光线可能对某些动物的眼部产生不良影响；将自定义设定a11[内置AF辅助照明器]选为[关闭]。"
+          "question": "如何让相机记住关闭时的对焦位置？",
+          "answer": "### 📝 对焦位置记忆\n若要在照相机关闭时也能保存对焦位置，请在设定菜单中将[保存对焦位置]设为[开启]。但在开启照相机后，可能需要一些时间才能使用照相机（根据变焦操作和温度的变化，开启照相机后的对焦位置可能与照相机关闭之前的位置有所不同）。"
         },
         {
           "id": "q119",
-          "confidence": 0.85,
+          "confidence": 0.75,
           "question": "对象跟踪AF有哪些限制和无法跟踪的情况？",
           "answer": "## 对象跟踪AF\n✅ 对象跟踪\n照相机可能无法跟踪以下情况时的拍摄对象：\n- 色彩或亮度与背景相似，\n- 尺寸、色彩或亮度变化明显，\n- 太大或太小，\n- 太暗或太亮，\n- 移动迅速，\n- 离开画面或被其他物体遮挡。"
-        },
-        {
-          "id": "q124",
-          "confidence": 0.75,
-          "question": "如何在手动对焦模式下进行对焦？",
-          "answer": "## 手动对焦\n在手动对焦模式下可手动进行对焦。当自动对焦无法产生预期效果等情况时，请使用手动对焦。\n- 将对焦点置于您的拍摄对象上并旋转对焦环或控制环直至拍摄对象清晰对焦。\n\n![旋转对焦环示意图](assets/knowledge_p103-106_001.png)\n\n对焦\n135\n- 若要提高精度，请按下放大按钮放大镜头视野。\n\n![放大按钮位置示意图](assets/knowledge_p103-106_002.png)\n\n- 拍摄显示中的对焦指示（●）可用来确认所选对焦点上的拍摄对象是否清晰对焦（电子测距功能）。拍摄对象清晰对焦时，对焦点也将以绿色点亮。\n\n![手动对焦屏幕显示示意图](assets/knowledge_p103-106_003.png)\n1 对焦距离指示  2 对焦指示\n\n| 对焦指示       | 说明                     |\n|----------------|--------------------------|\n| ●<br>（稳定）  | 拍摄对象清晰对焦。       |\n| ▶<br>（稳定）  | 对焦点位于拍摄对象之前。 |\n| ◀<br>（稳定）  | 对焦点位于拍摄对象之后。 |\n\n对焦\n136\n\n| 对焦指示       | 说明                     |\n|----------------|--------------------------|\n| ▶ ◀<br>（闪烁）| 照相机无法对焦。         |\n\n- 使用手动对焦拍摄不适合进行自动对焦的拍摄对象时，请注意，当拍摄对象未清晰对焦时，屏幕中也可能显示对焦指示（●）。请放大镜头视野并确认对焦。当照相机难以对焦时，推荐使用三脚架。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1921.7152000019269,
-        "prepare_ms": 4.791200000909157,
-        "match_ms": 1912.7130999986548,
-        "match_first_token_ms": 1903.900799999974,
-        "lookup_ms": 0.7081000003381632,
-        "match_output_tokens": 26,
+        "total_ms": 3939.061400000355,
+        "prepare_ms": 2.4658000002091285,
+        "match_ms": 3934.676100001525,
+        "match_first_token_ms": 1582.3729000003368,
+        "lookup_ms": 0.29829999766661786,
+        "match_output_tokens": 44,
         "tokens": {
-          "prompt_tokens": 9625,
-          "completion_tokens": 26,
-          "total_tokens": 9651
+          "prompt_tokens": 8868,
+          "completion_tokens": 44,
+          "total_tokens": 8912
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9625,
-              "completion_tokens": 26,
-              "total_tokens": 9651
+              "prompt_tokens": 8868,
+              "completion_tokens": 44,
+              "total_tokens": 8912
             }
           }
         ]
@@ -2618,45 +2326,45 @@
     {
       "id": "r_1782457645404_t8v1q",
       "question": "怎么快速选择对焦点？",
-      "run_at": "2026-06-26T08:25:53.687Z",
+      "run_at": "2026-06-26T09:24:00.917Z",
       "candidates": [
         {
           "id": "q112",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何快速选择对焦点？"
         }
       ],
       "answers": [
         {
           "id": "q112",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何快速选择对焦点？",
           "answer": "## 快速对焦点选择\n- 若要快速选择对焦点，请在自定义设定a4[使用的对焦点]中选择[间隔对焦点]以仅使用可用对焦点的四分之一。即使选择了[间隔对焦点]，[微点AF]、[宽区域AF(L)]、[宽区域AF(L-人物)]或[宽区域AF(L-动物)]的可用对焦点数量也不会改变。\n- 您可以将自定义设定f2[自定义控制(拍摄)]>[OK按钮]选为[选择中央对焦点]，以允许使用OK按钮快速选择中央对焦点。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1335.8959999968647,
-        "prepare_ms": 5.088799996883608,
-        "match_ms": 1328.637800001161,
-        "match_first_token_ms": 1317.4993000029644,
-        "lookup_ms": 0.7525000000896398,
-        "match_output_tokens": 13,
+        "total_ms": 1323.1157999980496,
+        "prepare_ms": 4.003300000476884,
+        "match_ms": 1317.0131999977457,
+        "match_first_token_ms": 959.885000000213,
+        "lookup_ms": 0.5538999976124614,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9623,
-          "completion_tokens": 13,
-          "total_tokens": 9636
+          "prompt_tokens": 8812,
+          "completion_tokens": 16,
+          "total_tokens": 8828
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9623,
-              "completion_tokens": 13,
-              "total_tokens": 9636
+              "prompt_tokens": 8812,
+              "completion_tokens": 16,
+              "total_tokens": 8828
             }
           }
         ]
@@ -2665,56 +2373,45 @@
     {
       "id": "r_1782457677091_3sxb8",
       "question": "动物侦测自动对焦怎么用？",
-      "run_at": "2026-06-26T08:25:55.868Z",
+      "run_at": "2026-06-26T09:24:02.675Z",
       "candidates": [
         {
           "id": "q116",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何使用动物侦测自动对焦？"
-        },
-        {
-          "id": "q117",
-          "confidence": 0.85,
-          "question": "动物侦测自动对焦在什么情况下可能无法正常工作？"
         }
       ],
       "answers": [
         {
           "id": "q116",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何使用动物侦测自动对焦？",
           "answer": "## 对焦于动物的脸部或眼部（动物侦测自动对焦）\n若在照片拍摄菜单或视频拍摄菜单中将[AF区域模式]选为[宽区域AF(L-动物)]或[自动区域AF(动物)]，照相机会侦测狗和猫的脸部和眼部（动物侦测自动对焦）。\n\n![动物AF区域模式选择界面](assets/knowledge_p95-98_005.png)\n\n- 当照相机侦测到狗或猫的脸部时，一个表示对焦点的黄色边框将会出现在拍摄对象的脸部周围。\n\n若照相机侦测到拍摄对象的眼部，黄色对焦点则将出现在拍摄对象两只眼睛中的一只上。\n\n![动物眼部对焦示意](assets/knowledge_p95-98_006.png)\n\n- 若对焦模式选为AF-C或选为AF-A但照相机使用的是AF-C，当侦测到脸部或眼部时对焦点将以黄色点亮。\n- 若对焦模式选为AF-S或选为AF-A但照相机使用的是AF-S，对焦点将在照相机完成对焦时变为绿色。\n- 若选为[自动区域AF(动物)]且侦测到多个动物拍摄对象或多只眼睛，◀和▶图标将出现在对焦点上。您可通过按下◀或▶将对焦点定位至其他脸部或眼部。\n- 在播放过程中，您可以通过按下OK按钮放大用于对焦的脸部或眼部。"
-        },
-        {
-          "id": "q117",
-          "confidence": 0.85,
-          "question": "动物侦测自动对焦在什么情况下可能无法正常工作？",
-          "answer": "✅ 动物侦测自动对焦\n- 动物脸部和眼部侦测在以下情况时可能无法正常执行：\n  - 拍摄对象的脸部占据画面中很大或很小的部分，\n  - 拍摄对象的脸部被照得过亮或过暗，\n  - 拍摄对象的脸部或眼部被皮毛或其他物体遮挡，\n  - 拍摄对象的眼部颜色与脸部其余地方类似，\n  - 拍摄期间拍摄对象剧烈移动。\n- 根据拍摄环境的不同，当[宽区域AF(L-动物)]或[自动区域AF(动物)]处于启用状态时，照相机可能无法侦测到某些品种动物的脸部或眼部。或者，照相机可能在狗或猫的脸部或眼部范围之外显示边框。\n- 来自AF辅助照明器的光线可能对某些动物的眼部产生不良影响；将自定义设定a11[内置AF辅助照明器]选为[关闭]。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 2167.652000000089,
-        "prepare_ms": 4.782399999385234,
-        "match_ms": 2159.256599999935,
-        "match_first_token_ms": 2138.884700001654,
-        "lookup_ms": 0.9715999985928647,
-        "match_output_tokens": 8,
+        "total_ms": 1746.9762999971863,
+        "prepare_ms": 4.59709999995539,
+        "match_ms": 1740.2024000002712,
+        "match_first_token_ms": 1374.5138999984192,
+        "lookup_ms": 0.6216000001586508,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9626,
-          "completion_tokens": 8,
-          "total_tokens": 9634
+          "prompt_tokens": 8813,
+          "completion_tokens": 16,
+          "total_tokens": 8829
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9626,
-              "completion_tokens": 8,
-              "total_tokens": 9634
+              "prompt_tokens": 8813,
+              "completion_tokens": 16,
+              "total_tokens": 8829
             }
           }
         ]
@@ -2723,45 +2420,45 @@
     {
       "id": "r_1782457771274_ljtux",
       "question": "怎么给照片进行评级？",
-      "run_at": "2026-06-26T08:25:57.183Z",
+      "run_at": "2026-06-26T09:24:04.018Z",
       "candidates": [
         {
           "id": "q136",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何给照片进行评级？"
         }
       ],
       "answers": [
         {
           "id": "q136",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何给照片进行评级？",
           "answer": "# 为照片评级\n所选照片可以评级或标记为稍后删除的候选照片。评级也可在尼康工坊中进行查看。受保护的照片无法评级。\n\n## 1 按下▶按钮开始播放。\n![播放按钮位置示意图](assets/knowledge_p113-118_003.png)\n\n## 2 选择所需照片并按下i按钮。\n![i按钮位置示意图](assets/knowledge_p113-118_004.png)\n\n屏幕中将显示播放i菜单。\n\n## 3 加亮显示[评级]并按下OK。\n![播放i菜单界面](assets/knowledge_p113-118_005.png)\n\n## 4 选择一个评级。\n![评级选择界面](assets/knowledge_p113-118_006.png)\n\n- 旋转主指令拨盘从0至5星评级中进行选择，或者选择🗑将照片标记为稍后删除的候选照片。\n- 按下OK可选择加亮显示的选项。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1296.937800001615,
-        "prepare_ms": 6.091899998864392,
-        "match_ms": 1288.9337000015075,
-        "match_first_token_ms": 1269.705900002009,
-        "lookup_ms": 0.523599999723956,
-        "match_output_tokens": 13,
+        "total_ms": 1333.0677000012656,
+        "prepare_ms": 3.9036000016494654,
+        "match_ms": 1327.1854999984498,
+        "match_first_token_ms": 1025.0828999996884,
+        "lookup_ms": 0.6090000024414621,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9624,
-          "completion_tokens": 13,
-          "total_tokens": 9637
+          "prompt_tokens": 8812,
+          "completion_tokens": 16,
+          "total_tokens": 8828
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9624,
-              "completion_tokens": 13,
-              "total_tokens": 9637
+              "prompt_tokens": 8812,
+              "completion_tokens": 16,
+              "total_tokens": 8828
             }
           }
         ]
@@ -2770,56 +2467,45 @@
     {
       "id": "r_1782457790572_c6i2s",
       "question": "静音拍摄功能怎么用？",
-      "run_at": "2026-06-26T08:25:58.603Z",
+      "run_at": "2026-06-29T07:51:39.693Z",
       "candidates": [
         {
           "id": "q134",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何启用相机的静音拍摄功能？"
-        },
-        {
-          "id": "q135",
-          "confidence": 0.85,
-          "question": "使用静音拍摄时有哪些注意事项和可能出现的问题？"
         }
       ],
       "answers": [
         {
           "id": "q134",
-          "confidence": 1.0,
+          "confidence": 0.95,
           "question": "如何启用相机的静音拍摄功能？",
           "answer": "# 静音拍摄\n若要启用电子快门并消除操作机械快门所导致的噪音和震动，请在照片拍摄菜单中将[静音拍摄]选为[开启]。\n\n![静音拍摄菜单界面](assets/knowledge_p113-118_001.png)\n\n- 进行静音拍摄时，屏幕中将显示一个图标。\n\n![显示静音拍摄图标的屏幕](assets/knowledge_p113-118_002.png)\n\n- 无论在自定义设定d4[快门类型]中选择了何种选项，都将使用电子快门。\n- 若选为[高速连拍(延长)]以外的释放模式，释放快门时，屏幕将暂时变暗。这表示已拍摄完一张照片。\n- 无论在设定菜单的[蜂鸣音选项]中选择了何种设定，照相机完成对焦时或自拍过程中都不会发出蜂鸣音。\n- 启用静音拍摄将禁用某些功能，包括：\n  - 闪光灯，\n  - 长时间曝光降噪，\n  - 闪烁消减，\n  - 高ISO感光度（Hi 1、Hi 2）。"
-        },
-        {
-          "id": "q135",
-          "confidence": 0.85,
-          "question": "使用静音拍摄时有哪些注意事项和可能出现的问题？",
-          "answer": "# 静音拍摄\n✅ 静音拍摄\n- [静音拍摄]选为[开启]不会使照相机完全静音。照相机声音仍然可能听到，例如在自动对焦或光圈调整过程中，调整光圈时照相机声音在光圈小于（即f值高于）f/5.6的情况下最明显。\n- 您可能会在照片和拍摄显示中看到以下现象：\n  - 由荧光灯、水银灯或钠汽灯等光源照亮的场景中的闪烁或条带痕迹\n  - 与移动相关的失真（移动中的拍摄对象可能会失真，或者当照相机在拍摄期间发生移动时整个画面都可能出现失真）\n  - 屏幕中的锯齿状边缘、彩色边纹、莫尔条纹和亮点\n  - 在由闪烁标识和其他间歇光源照亮的场景中，或者当拍摄对象被频闪灯或其他闪光光源暂时照亮时出现的明亮区域或明亮带\n- 当[静音拍摄]选为[开启]时，连拍模式的每秒拍摄幅数会发生改变（❏196）。\n- 静音拍摄可消除快门的声音，但摄影者仍需尊重拍摄对象的隐私权和肖像权。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mquo6rwj",
+      "model_label": "硅基流动Qwen/Qwen3-8B (Qwen/Qwen3-8B)",
       "timings": {
-        "total_ms": 1407.7055999987351,
-        "prepare_ms": 4.474299999856157,
-        "match_ms": 1400.9947000013199,
-        "match_first_token_ms": 1378.5428000010143,
-        "lookup_ms": 0.6542000010085758,
-        "match_output_tokens": 8,
+        "total_ms": 2513.410199997452,
+        "prepare_ms": 3.9013999994494952,
+        "match_ms": 2507.166399998823,
+        "match_first_token_ms": 2337.9150000000664,
+        "lookup_ms": 0.47199999971780926,
+        "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9624,
-          "completion_tokens": 8,
-          "total_tokens": 9632
+          "prompt_tokens": 8868,
+          "completion_tokens": 16,
+          "total_tokens": 8884
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9624,
-              "completion_tokens": 8,
-              "total_tokens": 9632
+              "prompt_tokens": 8868,
+              "completion_tokens": 16,
+              "total_tokens": 8884
             }
           }
         ]
@@ -2828,7 +2514,7 @@
     {
       "id": "r_1782457813956_wjidr",
       "question": "P模式是什么？",
-      "run_at": "2026-06-26T08:26:00.146Z",
+      "run_at": "2026-06-26T09:24:06.988Z",
       "candidates": [
         {
           "id": "q140",
@@ -2846,27 +2532,27 @@
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1525.5150000011781,
-        "prepare_ms": 4.233299998304574,
-        "match_ms": 1519.0208000021812,
-        "match_first_token_ms": 1424.7170000016922,
-        "lookup_ms": 0.6501999996544328,
+        "total_ms": 1296.1695000012696,
+        "prepare_ms": 4.634299999452196,
+        "match_ms": 1289.3901000024925,
+        "match_first_token_ms": 994.8279000018374,
+        "lookup_ms": 0.5115000021760352,
         "match_output_tokens": 16,
         "tokens": {
-          "prompt_tokens": 9619,
+          "prompt_tokens": 8810,
           "completion_tokens": 16,
-          "total_tokens": 9635
+          "total_tokens": 8826
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9619,
+              "prompt_tokens": 8810,
               "completion_tokens": 16,
-              "total_tokens": 9635
+              "total_tokens": 8826
             }
           }
         ]
@@ -2875,78 +2561,89 @@
     {
       "id": "r_1782457940372_xgreb",
       "question": "怎么调整白平衡？",
-      "run_at": "2026-06-26T08:26:01.919Z",
+      "run_at": "2026-06-26T09:24:09.529Z",
       "candidates": [
         {
           "id": "q128",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何调整相机的白平衡设置？"
         },
         {
           "id": "q130",
-          "confidence": 0.85,
+          "confidence": 0.75,
           "question": "如何微调白平衡以及在摄影棚闪光灯下如何设置？"
         },
         {
+          "id": "q129",
+          "confidence": 0.65,
+          "question": "相机白平衡有哪些选项及其适用场景？"
+        },
+        {
           "id": "q132",
-          "confidence": 0.75,
+          "confidence": 0.6,
           "question": "如何查看照片的白平衡色温信息？"
         },
         {
-          "id": "q129",
-          "confidence": 0.7,
-          "question": "相机白平衡有哪些选项及其适用场景？"
+          "id": "q131",
+          "confidence": 0.5,
+          "question": "使用自动白平衡和自然光自动适应时需要注意什么？"
         }
       ],
       "answers": [
         {
           "id": "q128",
-          "confidence": 1.0,
+          "confidence": 0.98,
           "question": "如何调整相机的白平衡设置？",
           "answer": "## 调整白平衡\n白平衡可使用📷菜单、照片拍摄菜单或视频拍摄菜单中的[白平衡]项目进行选择（🗋179、🗋284、🗋380）。\n\n![白平衡菜单界面](assets/knowledge_p107-112_001.png)\n\n在默认设定下，白平衡也可通过按住Fn按钮并旋转主指令拨盘进行选择（🗋85）。\n\n![Fn按钮+主指令拨盘操作图示](assets/knowledge_p107-112_002.png)\n![旋转主指令拨盘操作图示](assets/knowledge_p107-112_003.png)\n![白平衡选择界面](assets/knowledge_p107-112_004.png)\n\n当选择了<sup>WB</sup>A[自动]或💡[荧光灯]时，您可通过按住Fn按钮并旋转副指令拨盘选择一个子选项。\n\n![副指令拨盘操作图示+子选项选择界面](assets/knowledge_p107-112_005.png)"
         },
         {
           "id": "q130",
-          "confidence": 0.85,
+          "confidence": 0.75,
           "question": "如何微调白平衡以及在摄影棚闪光灯下如何设置？",
           "answer": "## 调整白平衡\n✅ 白平衡微调\n在K[选择色温]以外的设定下，您可微调白平衡。使用📷菜单、照片拍摄菜单或视频拍摄菜单中的[白平衡]项目（🗋180、🗋285）。\n\n✅ 摄影棚闪光灯灯光\n<sup>WB</sup>A[自动]在大型摄影棚闪光灯组件照明下可能无法产生预期效果。请使用手动预设白平衡，或将白平衡设为<sup>WB</sup>⚡[闪光灯]并使用微调来调整白平衡。"
         },
         {
+          "id": "q129",
+          "confidence": 0.65,
+          "question": "相机白平衡有哪些选项及其适用场景？",
+          "answer": "## 调整白平衡\n| 选项 | 色温* | 说明 |\n| ---- | ---- | ---- |\n| <sup>WB</sup>A[自动] |  | 在大多数光源下，照相机会自动调整白平衡以获得良好效果。若使用另购的闪光灯组件，闪光灯闪光时照相机将根据当时的光线条件调整白平衡。 |\n| <sup>WB</sup>A₀[保持白色(减少暖色)] | 约3500-8000K | 消除白炽灯灯光所产生的温暖色彩氛围。 |\n| <sup>WB</sup>A₁[保持总体氛围] | 约3500-8000K | 部分保留白炽灯灯光所产生的温暖色彩氛围。 |\n| <sup>WB</sup>A₂[保留暖色调颜色] | 约3500-8000K | 保留白炽灯灯光所产生的温暖色彩氛围。 |\n\n| 选项 | 色温* | 说明 |\n| ---- | ---- | ---- |\n| ☀A[自然光自动适应] | 约4500-8000K | 在自然光线下使用时，该选项所产生的色彩比使用<sup>WB</sup>A[自动]时更接近肉眼看到的效果。 |\n| ☀[晴天] | 约5200K | 适用于晴天时的拍摄对象。 |\n| ☁[阴天] | 约6000K | 在白天多云时使用。 |\n| 🏠[背阴] | 约8000K | 在白天拍摄对象背阴时使用。 |\n| 💡[白炽灯] | 约3000K | 在白炽灯灯光下使用。 |\n| 💡[荧光灯] |  |  |\n| [冷白色荧光灯] | 约4200K | 在荧光灯灯光下使用；请根据光源选择灯泡类型。 |\n| [昼白色荧光灯] | 约5000K |  |\n| [白昼荧光灯] | 约6500K |  |\n| <sup>WB</sup>⚡[闪光灯] | 约5400K | 适用于闪光拍摄。 |\n\n| 选项 | 色温* | 说明 |\n| ---- | ---- | ---- |\n| K[选择色温] | 约2500-10000K | · 直接选择色温。<br>· 若要选择色温，请按住Fn按钮并旋转副指令拨盘。 |\n| PRE[手动预设] |  | · 测量拍摄对象或光源的白平衡或从现有照片复制白平衡。<br>· 若要选择白平衡预设，请按住Fn按钮并旋转副指令拨盘。<br>· 若要进入直接测量模式，请按住Fn按钮（🗋182）。 |\n\n\\* 微调设为0时的值。"
+        },
+        {
           "id": "q132",
-          "confidence": 0.75,
+          "confidence": 0.6,
           "question": "如何查看照片的白平衡色温信息？",
           "answer": "## 调整白平衡\n📝 使用<sup>WB</sup>A或☀A拍摄时的色温\n- 使用<sup>WB</sup>A[自动]或☀A[自然光自动适应]所拍照片的照片信息中会列出拍摄照片时照相机选择的色温。为K[选择色温]设定数值时可将其用作参考。\n\n![照片信息色温显示界面](assets/knowledge_p107-112_006.png)\n\n- 若要在播放过程中查看拍摄数据，请在播放菜单中选择[播放显示选项]>[更多照片信息]，并勾选[拍摄数据]旁边的复选框（☑）。\n\n📝 色温\n感知的光源色彩根据观察者的不同而异；有些可能带红色氛围而有些则呈现蓝色。色温是对光源色彩的一种客观衡量标准，以凯尔文（K）表示。色温越低，色彩越偏红（①）；色温越高，色彩越偏蓝（②）。\n\n![色温数值与色彩偏向示意图](assets/knowledge_p107-112_007.png)\n\n📝 选择一个色温\n一般情况下，若您的照片带红色氛围或者想要使照片偏蓝，请选择较低值，若您的照片为蓝色调或者想要使照片偏红，请选择较高值。"
         },
         {
-          "id": "q129",
-          "confidence": 0.7,
-          "question": "相机白平衡有哪些选项及其适用场景？",
-          "answer": "## 调整白平衡\n| 选项 | 色温* | 说明 |\n| ---- | ---- | ---- |\n| <sup>WB</sup>A[自动] |  | 在大多数光源下，照相机会自动调整白平衡以获得良好效果。若使用另购的闪光灯组件，闪光灯闪光时照相机将根据当时的光线条件调整白平衡。 |\n| <sup>WB</sup>A₀[保持白色(减少暖色)] | 约3500-8000K | 消除白炽灯灯光所产生的温暖色彩氛围。 |\n| <sup>WB</sup>A₁[保持总体氛围] | 约3500-8000K | 部分保留白炽灯灯光所产生的温暖色彩氛围。 |\n| <sup>WB</sup>A₂[保留暖色调颜色] | 约3500-8000K | 保留白炽灯灯光所产生的温暖色彩氛围。 |\n\n| 选项 | 色温* | 说明 |\n| ---- | ---- | ---- |\n| ☀A[自然光自动适应] | 约4500-8000K | 在自然光线下使用时，该选项所产生的色彩比使用<sup>WB</sup>A[自动]时更接近肉眼看到的效果。 |\n| ☀[晴天] | 约5200K | 适用于晴天时的拍摄对象。 |\n| ☁[阴天] | 约6000K | 在白天多云时使用。 |\n| 🏠[背阴] | 约8000K | 在白天拍摄对象背阴时使用。 |\n| 💡[白炽灯] | 约3000K | 在白炽灯灯光下使用。 |\n| 💡[荧光灯] |  |  |\n| [冷白色荧光灯] | 约4200K | 在荧光灯灯光下使用；请根据光源选择灯泡类型。 |\n| [昼白色荧光灯] | 约5000K |  |\n| [白昼荧光灯] | 约6500K |  |\n| <sup>WB</sup>⚡[闪光灯] | 约5400K | 适用于闪光拍摄。 |\n\n| 选项 | 色温* | 说明 |\n| ---- | ---- | ---- |\n| K[选择色温] | 约2500-10000K | · 直接选择色温。<br>· 若要选择色温，请按住Fn按钮并旋转副指令拨盘。 |\n| PRE[手动预设] |  | · 测量拍摄对象或光源的白平衡或从现有照片复制白平衡。<br>· 若要选择白平衡预设，请按住Fn按钮并旋转副指令拨盘。<br>· 若要进入直接测量模式，请按住Fn按钮（🗋182）。 |\n\n\\* 微调设为0时的值。"
+          "id": "q131",
+          "confidence": 0.5,
+          "question": "使用自动白平衡和自然光自动适应时需要注意什么？",
+          "answer": "## 调整白平衡\n✅ ☀A[自然光自动适应]\n☀A[自然光自动适应]在人造光下可能无法产生预期效果。请选择<sup>WB</sup>A[自动]或适合光源的其他选项。"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1760.0634999980684,
-        "prepare_ms": 3.379300000233343,
-        "match_ms": 1753.5620999988168,
-        "match_first_token_ms": 1742.5141999992775,
-        "lookup_ms": 0.405700000555953,
-        "match_output_tokens": 7,
+        "total_ms": 2530.0677999985055,
+        "prepare_ms": 4.328399998485111,
+        "match_ms": 2521.734199999628,
+        "match_first_token_ms": 1223.501500000566,
+        "lookup_ms": 0.645500000246102,
+        "match_output_tokens": 70,
         "tokens": {
-          "prompt_tokens": 9622,
-          "completion_tokens": 7,
-          "total_tokens": 9629
+          "prompt_tokens": 8811,
+          "completion_tokens": 70,
+          "total_tokens": 8881
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9622,
-              "completion_tokens": 7,
-              "total_tokens": 9629
+              "prompt_tokens": 8811,
+              "completion_tokens": 70,
+              "total_tokens": 8881
             }
           }
         ]
@@ -2955,45 +2652,45 @@
     {
       "id": "r_1782457997044_xzbrd",
       "question": "调高ISO感光度会怎么样？",
-      "run_at": "2026-06-26T08:26:03.382Z",
+      "run_at": "2026-06-26T09:24:10.959Z",
       "candidates": [
         {
           "id": "q155",
-          "confidence": 0.98,
+          "confidence": 0.92,
           "question": "高ISO感光度有什么优缺点？"
         }
       ],
       "answers": [
         {
           "id": "q155",
-          "confidence": 0.98,
+          "confidence": 0.92,
           "question": "高ISO感光度有什么优缺点？",
           "answer": "# 高ISO感光度\nISO感光度越高，曝光时所需光线就越少，使您可以在光线不足时拍摄照片以及在拍摄对象处于移动状态时帮助防止模糊。但是请注意，感光度越高，图像受不规则间距明亮像素、雾像或条纹形式“噪点”的影响就越大。\n\n---\n✅ H1和H2\n---\n\n设定**[H1]（Hi 1）**表示比ISO 51200约高1EV的ISO感光度（相当于ISO 102400），设定**[H2]（Hi 2）**则表示约高2EV的ISO感光度（相当于ISO 204800）。请注意，在这些设定下拍摄的照片尤其容易产生不规则间距明亮像素、雾像或条纹形式的“噪点”。\n"
         }
       ],
       "recalled": "yes",
       "notes": "",
-      "match_profile_id": "default",
-      "model_label": "Openrouter-google/gemini-3.1-flash-lite (google/gemini-3.1-flash-lite)",
+      "match_profile_id": "p_mqupvhrk",
+      "model_label": "阿里云百炼qwen3.7-plus (qwen3.7-plus)",
       "timings": {
-        "total_ms": 1445.069199999125,
-        "prepare_ms": 3.299100000731414,
-        "match_ms": 1439.7089999984019,
-        "match_first_token_ms": 1393.1630000006407,
-        "lookup_ms": 0.3660000002128072,
-        "match_output_tokens": 16,
+        "total_ms": 1418.4910999974818,
+        "prepare_ms": 4.521099999692524,
+        "match_ms": 1411.592299999029,
+        "match_first_token_ms": 1046.639399999549,
+        "lookup_ms": 0.6619999985559843,
+        "match_output_tokens": 19,
         "tokens": {
-          "prompt_tokens": 9624,
-          "completion_tokens": 16,
-          "total_tokens": 9640
+          "prompt_tokens": 8814,
+          "completion_tokens": 19,
+          "total_tokens": 8833
         },
         "token_breakdown": [
           {
             "phase": "置信度匹配",
             "usage": {
-              "prompt_tokens": 9624,
-              "completion_tokens": 16,
-              "total_tokens": 9640
+              "prompt_tokens": 8814,
+              "completion_tokens": 19,
+              "total_tokens": 8833
             }
           }
         ]

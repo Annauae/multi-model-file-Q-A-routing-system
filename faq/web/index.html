@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FAQ 传统 RAG</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/web/theme.css?v=9" />
+  </head>
+  <body>
+    <div class="layout">
+      <!-- 最左侧：功能菜单栏 -->
+      <nav class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">◉</div>
+          <div>
+            <p class="brand-title">FAQ RAG</p>
+            <p class="brand-sub">尼康知识库</p>
+          </div>
+        </div>
+        <ul class="menu">
+          <li class="menu-item active" data-tab="qa"><span class="mi">Q</span>问答检索</li>
+          <li class="menu-item" data-tab="eval"><span class="mi">E</span>批量评测</li>
+          <li class="menu-item" data-tab="params"><span class="mi">P</span>模型参数</li>
+          <li class="menu-item muted" data-tab="data"><span class="mi">D</span>数据管理</li>
+          <li class="menu-item muted" data-tab="status"><span class="mi">S</span>索引状态</li>
+        </ul>
+        <div class="status-card" id="indexStatus">正在检查索引…</div>
+      </nav>
+
+      <!-- 右侧主区 -->
+      <div class="main">
+        <!-- 顶栏：询问框 -->
+        <header class="topbar">
+          <div class="search-row">
+            <input id="queryInput" placeholder="输入你的问题，例如：曝光补偿拨盘怎么调？" autocomplete="off" />
+            <button id="chatBtn">问答</button>
+            <button id="searchBtn" class="secondary">检索</button>
+          </div>
+          <div class="topbar-meta">
+            <span id="modePill" class="pill">direct</span>
+            <span id="resultCount" class="pill muted">0 条候选</span>
+          </div>
+        </header>
+
+        <!-- 问答面板 -->
+        <section id="qaPanel" class="panel active">
+          <div class="qa-columns">
+            <!-- 左：大模型回答 -->
+            <section class="answer-pane">
+              <div class="pane-title">
+                <h2>大模型回答</h2>
+                <div class="pane-title-right">
+                  <div id="qaTiming" class="qa-timing-inline hidden" aria-label="耗时统计"></div>
+                  <span id="confidencePill" class="pill muted">置信度 -</span>
+                </div>
+              </div>
+              <article id="answerBox" class="answer empty">发起问答后，这里展示大模型的回答。</article>
+            </section>
+
+            <!-- 中：所有检索内容，按条分开，可跳转 -->
+            <section class="sources-pane">
+              <div class="pane-title"><h2>检索内容</h2><span id="sourcesCount" class="pill muted">0</span></div>
+              <div id="sourcesList" class="sources-list empty">检索后按条展示所有命中的 FAQ。</div>
+            </section>
+
+            <!-- 右：小条导航，点击跳转到中间对应条 -->
+            <aside class="nav-pane">
+              <div class="pane-title"><h2>条目导航</h2></div>
+              <div id="navList" class="nav-list empty">点击条目跳转到对应内容。</div>
+            </aside>
+          </div>
+
+          <details id="debugDetails" class="debug-details">
+            <summary>Top-K 检索来源（原始 JSON）</summary>
+            <pre id="debugJson">{}</pre>
+          </details>
+        </section>
+
+        <!-- 批量评测面板 -->
+        <section id="evalPanel" class="panel">
+          <div class="eval-top">
+            <div class="eval-toolbar">
+              <div>
+                <h2>批量测试评估</h2>
+                <p class="hint" id="evalModeHint">混合模式：主问题 + 未入索引的相似问法，贴近真实用户提问分布。</p>
+              </div>
+              <div class="eval-controls">
+                <select id="evalMode" aria-label="评测模式">
+                  <option value="mixed">mixed · 混合模式</option>
+                  <option value="holdout_variant">holdout_variant · 预留相似问法</option>
+                  <option value="question">question · 主问题</option>
+                  <option value="indexed_variant">indexed_variant · 已索引相似问法</option>
+                </select>
+                <button data-eval-size="10">评测 10 个</button>
+                <button data-eval-size="50" class="secondary">评测 50 个</button>
+                <button data-eval-size="100" class="secondary">评测 100 个</button>
+              </div>
+            </div>
+
+            <details class="eval-mode-details">
+              <summary>四种评测模式说明（点击展开）</summary>
+              <section class="eval-mode-guide" aria-label="评测模式说明">
+                <article class="mode-card" data-mode="question">
+                  <h3>question · 主问题</h3>
+                  <p>用每条 FAQ 的<strong>主问题原文</strong>作为测试句。主问题一定已建索引，召回最容易，适合冒烟测试和建立基线。</p>
+                </article>
+                <article class="mode-card" data-mode="indexed_variant">
+                  <h3>indexed_variant · 已索引相似问法</h3>
+                  <p>用<strong>已写入索引</strong>的相似问法（variants）测试。测的是「换种说法但索引里有这条 variant 文档」时的召回能力。</p>
+                </article>
+                <article class="mode-card" data-mode="holdout_variant">
+                  <h3>holdout_variant · 预留相似问法</h3>
+                  <p>用<strong>故意未建索引</strong>的 holdout 相似问法测试。测试句不在向量/关键词索引中，不能靠原句匹配刷分，指标最可信。</p>
+                </article>
+                <article class="mode-card active" data-mode="mixed">
+                  <h3>mixed · 混合模式</h3>
+                  <p>合并 holdout 相似问法与主问题后抽样。同时覆盖标准问法和换说法提问，更贴近线上混合流量（<strong>默认推荐</strong>）。</p>
+                </article>
+              </section>
+            </details>
+
+            <div id="evalSummary" class="metric-grid">
+              <div class="metric"><b>0</b><span>已处理</span></div>
+              <div class="metric"><b>0%</b><span>Recall@1</span></div>
+              <div class="metric"><b>0%</b><span>Recall@5</span></div>
+              <div class="metric"><b>0.00</b><span>平均质量</span></div>
+              <div class="metric"><b>0.00</b><span>平均置信度</span></div>
+            </div>
+            <details id="evalTimingDetails" class="eval-timing-details hidden">
+              <summary id="evalTimingSummaryLine">平均耗时</summary>
+              <div id="evalTimingSummary" class="timing-panel timing-compact"></div>
+            </details>
+          </div>
+
+          <div class="eval-layout eval-layout-stack">
+            <section class="eval-main">
+              <div class="pane-title">
+                <h2>评测明细</h2>
+                <span class="hint">点击任一条目查看完整详情</span>
+                <span id="evalStatus" class="pill muted">尚未运行</span>
+              </div>
+              <div id="evalResults" class="eval-results empty">点击上方按钮开始评测。结果以列表展示，点击条目在弹窗中查看完整内容。</div>
+            </section>
+            <aside class="eval-side">
+              <h3>历史运行</h3>
+              <p class="hint">点击可重新加载该次评测。</p>
+              <div id="evalHistory" class="history-list"></div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- 模型参数面板 -->
+        <section id="paramsPanel" class="panel">
+          <div class="params-grid">
+            <section class="param-card">
+              <h2>生成参数</h2>
+              <label class="field">
+                <span>温度 temperature</span>
+                <input id="cfgTemperature" type="number" step="0.1" min="0" max="2" />
+              </label>
+              <label class="field">
+                <span>检索 Top-K</span>
+                <input id="cfgTopK" type="number" step="1" min="1" max="50" />
+              </label>
+              <label class="field">
+                <span>回答 Top-N</span>
+                <input id="cfgTopN" type="number" step="1" min="1" max="10" />
+              </label>
+              <label class="field">
+                <span>最低置信度阈值</span>
+                <input id="cfgMinConf" type="number" step="0.01" min="0" max="1" />
+              </label>
+              <label class="field row">
+                <span>回答模式</span>
+                <select id="cfgAnswerMode">
+                  <option value="direct">direct 直接返回原 FAQ</option>
+                  <option value="generated">generated LLM 生成</option>
+                </select>
+              </label>
+              <label class="field row check">
+                <input id="cfgUseRerank" type="checkbox" />
+                <span>启用 Reranker 重排</span>
+              </label>
+              <button id="saveParams">保存参数</button>
+              <p id="paramsSaved" class="hint" hidden>已保存。</p>
+            </section>
+
+            <section class="param-card">
+              <div class="pane-title">
+                <h2>提示词模板</h2>
+                <button id="addTemplate" class="ghost">+ 新增模板</button>
+              </div>
+              <div class="tpl-controls">
+                <select id="tplSelect"></select>
+                <button id="enableTpl">启用此模板</button>
+                <button id="deleteTpl" class="ghost">删除</button>
+              </div>
+              <label class="field">
+                <span>模板名称</span>
+                <input id="tplName" />
+              </label>
+              <label class="field">
+                <span>模板内容（可用 {query} 和 {context} 占位符）</span>
+                <textarea id="tplContent" rows="8"></textarea>
+              </label>
+              <div class="tpl-actions">
+                <button id="saveTpl">保存模板</button>
+                <p id="tplSaved" class="hint" hidden>模板已保存。</p>
+              </div>
+              <p class="hint" id="tplActiveHint">当前启用：default</p>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- 图片预览 -->
+    <div id="imageModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-card">
+        <button class="modal-close" data-close aria-label="关闭">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <img id="modalImage" alt="" />
+        <p id="modalCaption"></p>
+      </div>
+    </div>
+
+    <!-- 评测明细详情 -->
+    <div id="evalDetailModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="evalDetailTitle">
+      <div class="modal-backdrop" data-close-eval></div>
+      <div class="modal-card modal-card-wide modal-card-scroll">
+        <button class="modal-close" data-close-eval aria-label="关闭">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <div id="evalDetailBody" class="eval-detail-body"></div>
+      </div>
+    </div>
+
+    <script src="/web/app.js?v=10"></script>
+  </body>
+</html>
