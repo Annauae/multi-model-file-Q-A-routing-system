@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppUiProvider, ModalOverlay, ToastContainer } from "./context/AppUiContext";
-import { useHealth, useKnowledgeBases, useMatchProfiles } from "./hooks/useKnowledgeBases";
+import { useHealth, useKnowledgeBases, useMatchProfiles, useRagKnowledgeBases } from "./hooks/useKnowledgeBases";
 import { DocsModal } from "./components/DocsModal";
 import { ModeBar } from "./components/ModeBar";
 import { IndexStatusPill } from "./components/IndexStatusPill";
 import { CandidatesPanel, DebugAnswersPanel, useDebugAsk, useDebugQuestions } from "./views/DebugViews";
-import { RagQaMain, RagTimingsPanel, useRagAsk } from "./views/RagDebugViews";
+import { RagQaMain, RagTimingsPanel, RagTokenPanel, useRagAsk } from "./views/RagDebugViews";
 import { TimingsPanel, TokenPanel } from "./components/MetricsPanels";
 import { ManageView } from "./views/ManageView";
 import { LogsView } from "./views/LogsView";
@@ -29,6 +29,7 @@ function Breadcrumb({ module, debugSub, manageSub }: { module: ModuleName; debug
 function AppShell() {
   const { data: health } = useHealth();
   const { kbMap } = useKnowledgeBases();
+  const { kbMap: ragKbMap } = useRagKnowledgeBases();
   const { data: profilesData } = useMatchProfiles();
   const [module, setModule] = useState<ModuleName>("debug");
   const [debugSub, setDebugSub] = useState<DebugSub>("single");
@@ -39,18 +40,20 @@ function AppShell() {
   const [debugMode, setDebugMode] = useState<AskMode>("llm");
 
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
+  const ragKbIds = Object.keys(ragKbMap).sort((a, b) => Number(a) - Number(b));
   const [debugKb, setDebugKb] = useState("");
+  const [debugRagKb, setDebugRagKb] = useState("");
   const [debugProfile, setDebugProfile] = useState("");
   const [debugTopK, setDebugTopK] = useState(5);
   const [question, setQuestion] = useState("");
 
-  const effectiveKb = debugKb || kbIds[0] || "";
+  const effectiveKb = debugMode === "rag" ? (debugRagKb || ragKbIds[0] || "") : (debugKb || kbIds[0] || "");
   const profiles = profilesData?.profiles || [];
   const effectiveProfile = debugProfile || profilesData?.default_id || profiles[0]?.id || "";
 
-  const debugAsk = useDebugAsk(effectiveKb, effectiveProfile, debugTopK);
-  const ragAsk = useRagAsk(effectiveKb, debugTopK);
-  const debugQuestions = useDebugQuestions(effectiveKb);
+  const debugAsk = useDebugAsk(debugMode === "llm" ? effectiveKb : (debugKb || kbIds[0] || ""), effectiveProfile, debugTopK);
+  const ragAsk = useRagAsk(debugMode === "rag" ? effectiveKb : (debugRagKb || ragKbIds[0] || ""), debugTopK);
+  const debugQuestions = useDebugQuestions(debugKb || kbIds[0] || "");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -73,7 +76,7 @@ function AppShell() {
   };
 
   const llmTabs = ["ask", "candidates", "timing", "tokens"] as const;
-  const ragTabs = ["ask", "timing"] as const;
+  const ragTabs = ["ask", "timing", "tokens"] as const;
   const tabs = debugMode === "llm" ? llmTabs : ragTabs;
 
   return (
@@ -134,22 +137,22 @@ function AppShell() {
                     <div className="qActions qBtnRow">
                       {debugMode === "llm" ? (
                         <>
-                          <button className="btn primary btnXs" type="button" disabled={debugAsk.loading} onClick={() => void debugAsk.ask(question)}>{debugAsk.loading ? "运行中…" : "提问"}</button>
+                          <button className="btn primary btnXs" type="button" disabled={debugAsk.loading} onClick={() => void debugAsk.ask(question)}>{debugAsk.loading ? "提问中…" : "提问"}</button>
                           <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); debugAsk.reset(); }}>清空</button>
                           <button className="btn ghost btnXs" type="button" onClick={() => { void debugQuestions.load().then(() => setQuestion(debugQuestions.randomQuestion())); }}>随机问题</button>
                         </>
                       ) : (
                         <>
-                          <button className="btn primary btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.chat(question)}>{ragAsk.loading ? "运行中…" : "问答"}</button>
-                          <button className="btn btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.search(question)}>检索</button>
+                          <button className="btn primary btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.chat(question)}>{ragAsk.loading ? "问答中…" : "问答"}</button>
+                          <button className="btn btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.search(question)}>{ragAsk.loading ? "检索中…" : "检索"}</button>
                           <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); ragAsk.reset(); }}>清空</button>
                         </>
                       )}
                     </div>
                     <div className="qActions qConfigRow">
-                      <label className="kbSelectLabel">知识库<select className="kbSelect" value={effectiveKb} onChange={(e) => setDebugKb(e.target.value)}>{kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>)}</select></label>
+                      <label className="kbSelectLabel">知识库<select className="kbSelect" value={debugMode === "rag" ? (debugRagKb || ragKbIds[0] || "") : (debugKb || kbIds[0] || "")} onChange={(e) => { if (debugMode === "rag") setDebugRagKb(e.target.value); else setDebugKb(e.target.value); }}>{(debugMode === "rag" ? ragKbIds : kbIds).map((id) => <option key={id} value={id}>{(debugMode === "rag" ? ragKbMap : kbMap)[id]?.name || id}</option>)}</select></label>
                       {debugMode === "llm" && (
-                        <label className="kbSelectLabel">回答模型<select className="kbSelect" value={effectiveProfile} onChange={(e) => setDebugProfile(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
+                        <label className="kbSelectLabel">问答模型<select className="kbSelect" value={effectiveProfile} onChange={(e) => setDebugProfile(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
                       )}
                       <label className="kbSelectLabel">Top K<input type="number" className="topKInput" min={1} max={20} value={debugTopK} onChange={(e) => setDebugTopK(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 5)))} /></label>
                       {debugMode === "rag" && <IndexStatusPill kbId={effectiveKb} />}
@@ -173,6 +176,13 @@ function AppShell() {
                       : <RagTimingsPanel timing={ragAsk.chatResult?.timing} />}
                   </div>
                 </div>
+                {debugMode === "rag" && (
+                  <div className={`rightTabPane ${rightTab === "tokens" ? "active" : ""}`}>
+                    <div className="moduleMetrics ask">
+                      <RagTokenPanel chatResult={ragAsk.chatResult} />
+                    </div>
+                  </div>
+                )}
               </div>
             </aside>
             <div className="mainContent">
@@ -183,7 +193,7 @@ function AppShell() {
                     <div className="answersScroll"><div className="answersBody"><DebugAnswersPanel kbId={effectiveKb} loading={debugAsk.loading} answers={debugAsk.answers} /></div></div>
                   </div>
                 ) : (
-                  <RagQaMain kbId={effectiveKb} loading={ragAsk.loading} chatResult={ragAsk.chatResult} searchResults={ragAsk.searchResults} activeNav={ragAsk.activeNav} setActiveNav={ragAsk.setActiveNav} />
+                  <RagQaMain kbId={effectiveKb} loading={ragAsk.loading} chatResult={ragAsk.chatResult} searchResults={ragAsk.searchResults} activeNav={ragAsk.activeNav} setActiveNav={ragAsk.setActiveNav} lastError={ragAsk.lastError} />
                 )}
               </section>
             </div>

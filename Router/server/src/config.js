@@ -53,6 +53,7 @@ export function loadSettings() {
         reasoningEffort,
         dataRoot,
         kbConfigPath: path.resolve(process.env.KB_CONFIG_PATH || path.join(dataRoot, "config", "knowledge_bases.json")),
+        ragKbConfigPath: path.resolve(process.env.RAG_KB_CONFIG_PATH || path.join(dataRoot, "config", "rag_knowledge_bases.json")),
         filesRoot,
         debugRequestTimeoutS: Math.max(1, parseInt(process.env.DEBUG_REQUEST_TIMEOUT_S || "60", 10)),
         weaviateUrl: (process.env.WEAVIATE_URL || "").trim(),

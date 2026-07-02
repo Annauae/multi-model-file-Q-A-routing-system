@@ -1,6 +1,4 @@
-/**
- * Weaviate REST client with optional in-memory mock (MOCK_WEAVIATE=1).
- */
+import { SEARCHABLE_DOC_TYPES } from "./searchDocBuilder.js";
 
 export class MockWeaviateStore {
     objects = new Map();
@@ -27,6 +25,8 @@ export class MockWeaviateStore {
         const hits = [];
         for (const obj of this.objects.values()) {
             if (obj.kbId !== kbId || obj.is_eval_holdout)
+                continue;
+            if (!SEARCHABLE_DOC_TYPES.has(String(obj.doc_type || "")))
                 continue;
             let vecScore = 0;
             if (vector?.length && obj.vector?.length) {
@@ -193,7 +193,7 @@ export class WeaviateStore {
                 keyword_text: row.keywordText,
                 score: 1 - Number(row._additional?.distance ?? 1),
                 rank_source: "vector",
-            }));
+            })).filter((h) => SEARCHABLE_DOC_TYPES.has(String(h.doc_type || "")));
         }
 
         const qEsc = String(query || " ").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -209,7 +209,7 @@ export class WeaviateStore {
                 keyword_text: row.keywordText,
                 score: Number(row._additional?.score ?? 0),
                 rank_source: "keyword",
-            }));
+            })).filter((h) => SEARCHABLE_DOC_TYPES.has(String(h.doc_type || "")));
         }
         catch {
             return [];

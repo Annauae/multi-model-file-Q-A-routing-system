@@ -44,10 +44,11 @@ export class OperationLog {
             /* ignore */
         }
     }
-    normalizeDetail(detail) {
-        if (detail.length <= MAX_DETAIL_LEN)
+    normalizeDetail(detail, module = "") {
+        const maxLen = String(module).startsWith("rag") ? 4000 : MAX_DETAIL_LEN;
+        if (detail.length <= maxLen)
             return detail;
-        return `${detail.slice(0, MAX_DETAIL_LEN)}…（已截断，共 ${detail.length} 字符）`;
+        return `${detail.slice(0, maxLen)}…（已截断，共 ${detail.length} 字符）`;
     }
     append(opts) {
         const entry = {
@@ -56,7 +57,7 @@ export class OperationLog {
             module: opts.module ?? "system",
             action: opts.action ?? "",
             kb_id: opts.kb_id ?? "",
-            detail: this.normalizeDetail(opts.detail ?? ""),
+            detail: this.normalizeDetail(opts.detail ?? "", opts.module ?? ""),
             kind: opts.kind ?? "log",
         };
         if (opts.extra)
@@ -73,8 +74,14 @@ export class OperationLog {
     listEntries(opts = {}) {
         let limit = Math.max(1, Math.min(5000, opts.limit ?? 500));
         let items = [...this.entries];
-        if (opts.module)
-            items = items.filter((e) => e.module === opts.module);
+        const modulesRaw = opts.modules ?? opts.module ?? "";
+        if (modulesRaw) {
+            const moduleList = String(modulesRaw).split(",").map((m) => m.trim()).filter(Boolean);
+            if (moduleList.length === 1)
+                items = items.filter((e) => e.module === moduleList[0]);
+            else if (moduleList.length > 1)
+                items = items.filter((e) => moduleList.includes(e.module));
+        }
         if (opts.kb_id)
             items = items.filter((e) => e.kb_id === opts.kb_id);
         if (opts.level)

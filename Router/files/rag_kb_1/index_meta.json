@@ -1,0 +1,5515 @@
+{
+  "data_hash": "a6e5b0f6a6798b0341d92cef2897c0c7f7b6391126086edc31237be76369214b",
+  "embedding_model": "BAAI/bge-m3",
+  "embedding_dim": "1024",
+  "built_at": "2026-07-01T06:47:36Z",
+  "items": "154",
+  "search_docs": "476",
+  "holdout_docs": "154",
+  "keyword_index": [
+    {
+      "doc_id": "q001::question",
+      "item_id": "q001",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用模式选择器选择拍摄模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q001::variant::0",
+      "item_id": "q001",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "模式选择器的作用是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q001::variant::1",
+      "item_id": "q001",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机的模式选择器怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q001::variant::2",
+      "item_id": "q001",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "模式选择器有哪些拍摄模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q001::variant::3",
+      "item_id": "q001",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么通过模式选择器选择拍摄模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q001::variant::4",
+      "item_id": "q001",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "模式选择器怎么用？有哪些模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q002::question",
+      "item_id": "q002",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "快门速度拨盘如何设置快门速度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q002::variant::0",
+      "item_id": "q002",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用快门速度拨盘调节快门速度？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q002::variant::1",
+      "item_id": "q002",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "快门速度拨盘有什么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q002::variant::2",
+      "item_id": "q002",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "快门速度拨盘怎么操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q003::question",
+      "item_id": "q003",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "指令拨盘有什么功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q003::variant::0",
+      "item_id": "q003",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "指令拨盘怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q003::variant::1",
+      "item_id": "q003",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "指令拨盘的作用是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q004::question",
+      "item_id": "q004",
+      "doc_type": "question",
+      "keyword_text": "is so oi is so iso soi ois iso iso iso",
+      "text": "如何使用ISO感光度拨盘调节ISO感光度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q004::variant::0",
+      "item_id": "q004",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so oi is so iso soi ois iso iso iso",
+      "text": "ISO感光度拨盘怎么调？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q004::variant::1",
+      "item_id": "q004",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so oi is so iso soi ois iso iso iso",
+      "text": "怎么用ISO拨盘设置感光度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q004::variant::2",
+      "item_id": "q004",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so oi is so iso soi ois iso iso iso",
+      "text": "ISO感光度拨盘有什么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q004::variant::3",
+      "item_id": "q004",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so oi is so iso soi ois iso iso iso",
+      "text": "怎么设置ISO感光度？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q004::variant::4",
+      "item_id": "q004",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so oi is so iso soi ois iso iso iso",
+      "text": "如何调整相机的ISO感光度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q005::question",
+      "item_id": "q005",
+      "doc_type": "question",
+      "keyword_text": "is so iso iso",
+      "text": "照片模式下如何调节ISO感光度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q005::variant::0",
+      "item_id": "q005",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "照片模式里怎么调ISO？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q005::variant::1",
+      "item_id": "q005",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "拍照时ISO感光度怎么设置？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q005::variant::2",
+      "item_id": "q005",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "照片模式下ISO感光度拨盘怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q005::variant::3",
+      "item_id": "q005",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "照片模式ISO感光度怎么选？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q005::variant::4",
+      "item_id": "q005",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "照相机什么时候会自动更改ISO感光度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::question",
+      "item_id": "q006",
+      "doc_type": "question",
+      "keyword_text": "is so iso iso",
+      "text": "视频模式下如何设置ISO感光度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::variant::0",
+      "item_id": "q006",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "录视频时怎么调ISO？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::variant::1",
+      "item_id": "q006",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "视频模式下ISO感光度怎么设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::variant::2",
+      "item_id": "q006",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "视频拍摄时如何调整ISO感光度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::variant::3",
+      "item_id": "q006",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "拍视频时ISO感光度怎么设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::variant::4",
+      "item_id": "q006",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "视频模式ISO感光度调节方法？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::variant::5",
+      "item_id": "q006",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "视频拍摄时ISO感光度范围是多少？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q006::variant::6",
+      "item_id": "q006",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "视频模式下如何调节ISO感光度？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q007::question",
+      "item_id": "q007",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用曝光补偿拨盘调整照片亮度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q007::variant::0",
+      "item_id": "q007",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光补偿拨盘怎么调节照片明暗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q007::variant::1",
+      "item_id": "q007",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么通过曝光补偿让照片更亮或更暗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q007::variant::2",
+      "item_id": "q007",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光补偿拨盘的作用是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q007::variant::3",
+      "item_id": "q007",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光补偿拨盘怎么调？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q007::variant::4",
+      "item_id": "q007",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用曝光补偿让照片更亮或更暗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q008::question",
+      "item_id": "q008",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "显示屏可以调整哪些角度和方向？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q008::variant::0",
+      "item_id": "q008",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机显示屏怎么调节角度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q008::variant::1",
+      "item_id": "q008",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏能转动到哪些位置？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q008::variant::2",
+      "item_id": "q008",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏的方向怎么调整？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q009::question",
+      "item_id": "q009",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用人像自拍模式及显示屏的注意事项有哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q009::variant::0",
+      "item_id": "q009",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "人像自拍模式怎么开启？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q009::variant::1",
+      "item_id": "q009",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏转到自拍模式有什么注意？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q009::variant::2",
+      "item_id": "q009",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "使用人像自拍模式时显示屏要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q010::question",
+      "item_id": "q010",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "人像自拍模式有哪些功能和操作方法？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q010::variant::0",
+      "item_id": "q010",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自拍模式下怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q010::variant::1",
+      "item_id": "q010",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "人像自拍模式有哪些拍摄功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q010::variant::2",
+      "item_id": "q010",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自拍模式如何设置曝光和拍摄？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q011::question",
+      "item_id": "q011",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "人像自拍模式下有哪些限制和注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q011::variant::0",
+      "item_id": "q011",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自拍模式有什么功能限制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q011::variant::1",
+      "item_id": "q011",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "人像自拍模式期间需要注意什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q011::variant::2",
+      "item_id": "q011",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自拍模式下哪些功能不能用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q012::question",
+      "item_id": "q012",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何通过触摸屏对焦并释放快门？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q012::variant::0",
+      "item_id": "q012",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏怎么对焦和拍照？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q012::variant::1",
+      "item_id": "q012",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用手指触摸屏幕能不能直接拍照？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q012::variant::2",
+      "item_id": "q012",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控快门和触控对焦怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q013::question",
+      "item_id": "q013",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "怎样用触摸屏调整相机设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q013::variant::0",
+      "item_id": "q013",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏怎么改设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q013::variant::1",
+      "item_id": "q013",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用手指触摸屏幕调整参数的方法是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q013::variant::2",
+      "item_id": "q013",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控屏调整设定的步骤有哪些？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q014::question",
+      "item_id": "q014",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何用触摸屏播放和浏览照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q014::variant::0",
+      "item_id": "q014",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏怎么看照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q014::variant::1",
+      "item_id": "q014",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用手指滑动照片播放怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q014::variant::2",
+      "item_id": "q014",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控屏播放照片有哪些手势？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q015::question",
+      "item_id": "q015",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "怎样用触摸屏查看和控制视频播放？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q015::variant::0",
+      "item_id": "q015",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏怎么播放视频？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q015::variant::1",
+      "item_id": "q015",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用手指触摸屏幕能暂停视频吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q015::variant::2",
+      "item_id": "q015",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频播放时触控屏有哪些操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q016::question",
+      "item_id": "q016",
+      "doc_type": "question",
+      "keyword_text": "i",
+      "text": "触摸屏上的i菜单怎么使用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q016::variant::0",
+      "item_id": "q016",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "i菜单在哪里，怎么打开？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q016::variant::1",
+      "item_id": "q016",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "用触摸屏怎么调出i菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q016::variant::2",
+      "item_id": "q016",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "i菜单的触控操作是怎样的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q017::question",
+      "item_id": "q017",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何在设备上输入文本？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q017::variant::0",
+      "item_id": "q017",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用键盘输入文字？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q017::variant::1",
+      "item_id": "q017",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "设备的文本输入方法是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q017::variant::2",
+      "item_id": "q017",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "文本输入时怎么定位光标？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q018::question",
+      "item_id": "q018",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "菜单操作是怎样进行的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q018::variant::0",
+      "item_id": "q018",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么操作菜单？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q018::variant::1",
+      "item_id": "q018",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单的使用方法是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q018::variant::2",
+      "item_id": "q018",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何选择和滚动菜单选项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q019::question",
+      "item_id": "q019",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "触摸屏有哪些使用注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q019::variant::0",
+      "item_id": "q019",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏使用时需要注意什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q019::variant::1",
+      "item_id": "q019",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏不能用什么操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q019::variant::2",
+      "item_id": "q019",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏的正确使用方法是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q020::question",
+      "item_id": "q020",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何启用或禁用触控控制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q020::variant::0",
+      "item_id": "q020",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么开关触控控制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q020::variant::1",
+      "item_id": "q020",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控控制如何设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q020::variant::2",
+      "item_id": "q020",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "在哪里可以启用或关闭触控功能？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q021::question",
+      "item_id": "q021",
+      "doc_type": "question",
+      "keyword_text": "di is sp dis isp disp",
+      "text": "DISP按钮有什么功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q021::variant::0",
+      "item_id": "q021",
+      "doc_type": "variant",
+      "keyword_text": "di is sp dis isp disp di is sp dis isp disp",
+      "text": "DISP按钮是干什么的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q021::variant::1",
+      "item_id": "q021",
+      "doc_type": "variant",
+      "keyword_text": "di is sp dis isp disp di is sp dis isp disp",
+      "text": "怎么用DISP按钮切换显示？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q021::variant::2",
+      "item_id": "q021",
+      "doc_type": "variant",
+      "keyword_text": "di is sp dis isp disp di is sp dis isp disp",
+      "text": "DISP按钮能显示哪些信息？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q022::question",
+      "item_id": "q022",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用🔍和🔍❏（？）按钮在拍摄时放大或缩小画面？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q022::variant::0",
+      "item_id": "q022",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍摄时怎么用放大缩小按钮？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q022::variant::1",
+      "item_id": "q022",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍照时怎样调整镜头的放大比例？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q022::variant::2",
+      "item_id": "q022",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍摄过程中如何控制显示屏的缩放？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q023::question",
+      "item_id": "q023",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "播放照片时如何用🔍和🔍❏（？）按钮放大、缩小或切换显示模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q023::variant::0",
+      "item_id": "q023",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "看照片时怎么用放大缩小按钮？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q023::variant::1",
+      "item_id": "q023",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "播放照片时怎样调整照片大小？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q023::variant::2",
+      "item_id": "q023",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "照片播放时如何切换缩略图和日历播放？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q024::question",
+      "item_id": "q024",
+      "doc_type": "question",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l",
+      "text": "AE-L/AF-L按钮在拍摄和播放时有什么作用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q024::variant::0",
+      "item_id": "q024",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l ae el la af fl ael ela laf afl ae-l af-l",
+      "text": "拍照时AE-L/AF-L按钮怎么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q024::variant::1",
+      "item_id": "q024",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l ae el la af fl ael ela laf afl ae-l af-l",
+      "text": "AE-L/AF-L按钮播放照片时有什么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q024::variant::2",
+      "item_id": "q024",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l",
+      "text": "这个锁定按钮拍摄和播放时分别做什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q025::question",
+      "item_id": "q025",
+      "doc_type": "question",
+      "keyword_text": "me en nu men enu menu",
+      "text": "如何使用MENU按钮查看菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q025::variant::0",
+      "item_id": "q025",
+      "doc_type": "variant",
+      "keyword_text": "me en nu men enu menu",
+      "text": "怎么打开菜单？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q025::variant::1",
+      "item_id": "q025",
+      "doc_type": "variant",
+      "keyword_text": "me en nu men enu menu me en nu men enu menu",
+      "text": "MENU按钮有什么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q025::variant::2",
+      "item_id": "q025",
+      "doc_type": "variant",
+      "keyword_text": "me en nu men enu menu me en nu men enu menu",
+      "text": "按MENU键能做什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q026::question",
+      "item_id": "q026",
+      "doc_type": "question",
+      "keyword_text": "ok ok",
+      "text": "如何使用多重选择器和OK按钮操作菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q026::variant::0",
+      "item_id": "q026",
+      "doc_type": "variant",
+      "keyword_text": "ok ok",
+      "text": "菜单怎么用多重选择器操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q026::variant::1",
+      "item_id": "q026",
+      "doc_type": "variant",
+      "keyword_text": "ok ok ok ok",
+      "text": "怎样用OK键选择菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q026::variant::2",
+      "item_id": "q026",
+      "doc_type": "variant",
+      "keyword_text": "ok ok",
+      "text": "多重选择器在菜单中怎么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q027::question",
+      "item_id": "q027",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何用多重选择器定位和选择菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q027::variant::0",
+      "item_id": "q027",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用多重选择器加亮菜单图标？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q027::variant::1",
+      "item_id": "q027",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单选择时光标怎么移动？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q027::variant::2",
+      "item_id": "q027",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何定位菜单选择区域？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q027::variant::3",
+      "item_id": "q027",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单项目怎么加亮？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q027::variant::4",
+      "item_id": "q027",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样选择菜单里的项目？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q027::variant::5",
+      "item_id": "q027",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单项目的光标怎么移动？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q029::question",
+      "item_id": "q029",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何确认菜单中的选项或退出菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q029::variant::0",
+      "item_id": "q029",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么确认菜单选项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q029::variant::1",
+      "item_id": "q029",
+      "doc_type": "variant",
+      "keyword_text": "ok ok",
+      "text": "按OK键有什么作用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q029::variant::2",
+      "item_id": "q029",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何退出菜单返回拍摄模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q030::question",
+      "item_id": "q030",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "为什么菜单中的某些项目显示为灰色？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q030::variant::0",
+      "item_id": "q030",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单选项为什么有些是灰色的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q030::variant::1",
+      "item_id": "q030",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "为什么有些功能不能选，显示灰色？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q030::variant::2",
+      "item_id": "q030",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "灰色的菜单项是什么意思？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q031::question",
+      "item_id": "q031",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何查看菜单项的帮助信息？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q031::variant::0",
+      "item_id": "q031",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单里的帮助怎么打开？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q031::variant::1",
+      "item_id": "q031",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么查看当前选项的帮助？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q031::variant::2",
+      "item_id": "q031",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "帮助按钮怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q032::question",
+      "item_id": "q032",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "菜单可以用触控操作吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q032::variant::0",
+      "item_id": "q032",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单支持触摸操作吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q032::variant::1",
+      "item_id": "q032",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "能用触摸屏控制菜单吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q032::variant::2",
+      "item_id": "q032",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "菜单能用手指点吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q033::question",
+      "item_id": "q033",
+      "doc_type": "question",
+      "keyword_text": "i",
+      "text": "如何快速访问常用设置的i菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q033::variant::0",
+      "item_id": "q033",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "i菜单怎么打开？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q033::variant::1",
+      "item_id": "q033",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "怎么快速调出i菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q033::variant::2",
+      "item_id": "q033",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "i按钮有什么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q034::question",
+      "item_id": "q034",
+      "doc_type": "question",
+      "keyword_text": "i",
+      "text": "如何自定义照片模式下的i菜单？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q034::variant::0",
+      "item_id": "q034",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "怎么修改i菜单里的项目？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q034::variant::1",
+      "item_id": "q034",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "i菜单可以自定义吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q034::variant::2",
+      "item_id": "q034",
+      "doc_type": "variant",
+      "keyword_text": "i i",
+      "text": "如何设置自定义i菜单？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q035::question",
+      "item_id": "q035",
+      "doc_type": "question",
+      "keyword_text": "fn fn",
+      "text": "Fn按钮有什么作用，怎么使用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q035::variant::0",
+      "item_id": "q035",
+      "doc_type": "variant",
+      "keyword_text": "fn fn fn fn",
+      "text": "Fn按钮是干什么的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q035::variant::1",
+      "item_id": "q035",
+      "doc_type": "variant",
+      "keyword_text": "fn fn fn fn",
+      "text": "怎么用Fn按钮快速调节？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q035::variant::2",
+      "item_id": "q035",
+      "doc_type": "variant",
+      "keyword_text": "fn fn fn fn",
+      "text": "Fn键默认设置是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q036::question",
+      "item_id": "q036",
+      "doc_type": "question",
+      "keyword_text": "fn fn",
+      "text": "如何设置相机的Fn按钮功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q036::variant::0",
+      "item_id": "q036",
+      "doc_type": "variant",
+      "keyword_text": "fn fn fn fn",
+      "text": "怎么给Fn按钮分配功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q036::variant::1",
+      "item_id": "q036",
+      "doc_type": "variant",
+      "keyword_text": "fn fn fn fn",
+      "text": "相机的Fn按钮怎么自定义？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q036::variant::2",
+      "item_id": "q036",
+      "doc_type": "variant",
+      "keyword_text": "fn fn fn fn",
+      "text": "如何更改Fn按钮的操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q037::question",
+      "item_id": "q037",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何安装相机的挂带？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q037::variant::0",
+      "item_id": "q037",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "挂带怎么安装到相机上？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q037::variant::1",
+      "item_id": "q037",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机挂带安装步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q037::variant::2",
+      "item_id": "q037",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样给相机装挂带？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q038::question",
+      "item_id": "q038",
+      "doc_type": "question",
+      "keyword_text": "en ne el l2 25 5m mh h3 32 ene nel el2 l25 25m 5mh mh3 h32 en-el25 mh-32",
+      "text": "如何为EN-EL25电池使用MH-32充电器充电？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q038::variant::0",
+      "item_id": "q038",
+      "doc_type": "variant",
+      "keyword_text": "mh h3 32 2e en ne el l2 25 mh3 h32 32e 2en ene nel el2 l25 mh-32 en-el25 en ne el l2 25 5m mh h3 32 ene nel el2 l25 25m 5mh mh3 h32 en-el25 mh-32",
+      "text": "怎么用MH-32给EN-EL25电池充电？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q038::variant::1",
+      "item_id": "q038",
+      "doc_type": "variant",
+      "keyword_text": "en ne el l2 25 ene nel el2 l25 en-el25 en ne el l2 25 5m mh h3 32 ene nel el2 l25 25m 5mh mh3 h32 en-el25 mh-32",
+      "text": "EN-EL25电池充电器怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q038::variant::2",
+      "item_id": "q038",
+      "doc_type": "variant",
+      "keyword_text": "mh h3 32 mh3 h32 mh-32 en ne el l2 25 5m mh h3 32 ene nel el2 l25 25m 5mh mh3 h32 en-el25 mh-32",
+      "text": "MH-32充电器充电步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q038::variant::3",
+      "item_id": "q038",
+      "doc_type": "variant",
+      "keyword_text": "en ne el l2 25 5m mh h3 32 ene nel el2 l25 25m 5mh mh3 h32 en-el25 mh-32",
+      "text": "怎么使用充电器充电？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q039::question",
+      "item_id": "q039",
+      "doc_type": "question",
+      "keyword_text": "mh h3 32 mh3 h32 mh-32",
+      "text": "MH-32充电器充电时指示灯快速闪烁怎么办？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q039::variant::0",
+      "item_id": "q039",
+      "doc_type": "variant",
+      "keyword_text": "mh h3 32 mh3 h32 mh-32",
+      "text": "充电器指示灯快速闪烁是怎么回事？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q039::variant::1",
+      "item_id": "q039",
+      "doc_type": "variant",
+      "keyword_text": "mh h3 32 mh3 h32 mh-32 mh h3 32 mh3 h32 mh-32",
+      "text": "MH-32充电时灯闪烁异常怎么办？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q039::variant::2",
+      "item_id": "q039",
+      "doc_type": "variant",
+      "keyword_text": "mh h3 32 mh3 h32 mh-32",
+      "text": "充电器充电错误指示灯闪烁怎么处理？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q040::question",
+      "item_id": "q040",
+      "doc_type": "question",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p",
+      "text": "如何使用EH-8P电源适配器为电池充电？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q040::variant::0",
+      "item_id": "q040",
+      "doc_type": "variant",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p eh h8 8p eh8 h8p eh-8p",
+      "text": "EH-8P电源适配器充电步骤是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q040::variant::1",
+      "item_id": "q040",
+      "doc_type": "variant",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p eh h8 8p eh8 h8p eh-8p",
+      "text": "怎么用EH-8P给相机电池充电？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q040::variant::2",
+      "item_id": "q040",
+      "doc_type": "variant",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p eh h8 8p eh8 h8p eh-8p",
+      "text": "用EH-8P适配器充电要怎么操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q041::question",
+      "item_id": "q041",
+      "doc_type": "question",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p",
+      "text": "使用EH-8P电源适配器充电时出现指示灯快速闪烁怎么办？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q041::variant::0",
+      "item_id": "q041",
+      "doc_type": "variant",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p eh h8 8p eh8 h8p eh-8p",
+      "text": "EH-8P充电指示灯闪烁异常怎么办？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q041::variant::1",
+      "item_id": "q041",
+      "doc_type": "variant",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p",
+      "text": "电源适配器充电失败指示灯闪烁怎么处理？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q041::variant::2",
+      "item_id": "q041",
+      "doc_type": "variant",
+      "keyword_text": "eh h8 8p eh8 h8p eh-8p eh h8 8p eh8 h8p eh-8p",
+      "text": "用EH-8P充电时灯闪烁后熄灭是啥情况？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q042::question",
+      "item_id": "q042",
+      "doc_type": "question",
+      "keyword_text": "us sb usb usb",
+      "text": "如何通过USB电力输送功能为照相机供电？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q042::variant::0",
+      "item_id": "q042",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb us sb usb usb",
+      "text": "USB电力输送怎么给相机供电？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q042::variant::1",
+      "item_id": "q042",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb us sb usb usb",
+      "text": "用USB电源适配器给相机供电的条件是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q042::variant::2",
+      "item_id": "q042",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb",
+      "text": "什么时候有供电时，电池不会充电？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q043::question",
+      "item_id": "q043",
+      "doc_type": "question",
+      "keyword_text": "us sb usb usb",
+      "text": "可以用第三方USB电源适配器给相机电池充电吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q043::variant::0",
+      "item_id": "q043",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb us sb usb usb",
+      "text": "第三方USB适配器能给相机电池充电吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q043::variant::1",
+      "item_id": "q043",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb us sb usb usb",
+      "text": "用非官方USB电源适配器充电可以吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q043::variant::2",
+      "item_id": "q043",
+      "doc_type": "variant",
+      "keyword_text": "us sb bp pd usb sbp bpd usb pd us sb usb usb",
+      "text": "支持USB PD的第三方适配器能用来充电吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q044::question",
+      "item_id": "q044",
+      "doc_type": "question",
+      "keyword_text": "us sb usb usb",
+      "text": "通过电脑USB接口给相机充电有哪些注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q044::variant::0",
+      "item_id": "q044",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb us sb usb usb",
+      "text": "用电脑USB给相机充电要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q044::variant::1",
+      "item_id": "q044",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb us sb usb usb",
+      "text": "电脑USB接口充电时有什么限制？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q044::variant::2",
+      "item_id": "q044",
+      "doc_type": "variant",
+      "keyword_text": "us sb usb usb",
+      "text": "电脑连接相机充电时需要注意哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q045::question",
+      "item_id": "q045",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "便携式充电器可以为相机电池充电吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q045::variant::0",
+      "item_id": "q045",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "移动电源能给相机电池充电吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q045::variant::1",
+      "item_id": "q045",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用便携式充电器给相机充电行吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q045::variant::2",
+      "item_id": "q045",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "移动电源充电相机电池支持吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q046::question",
+      "item_id": "q046",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何正确插入电池和存储卡？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q046::variant::0",
+      "item_id": "q046",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么安装电池和存储卡？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q046::variant::1",
+      "item_id": "q046",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "电池和存储卡应该怎样放进去？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q046::variant::2",
+      "item_id": "q046",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "插电池和存储卡的步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q047::question",
+      "item_id": "q047",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何安全取出电池和存储卡？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q047::variant::0",
+      "item_id": "q047",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么把电池和存储卡取出来？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q047::variant::1",
+      "item_id": "q047",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "取电池和存储卡需要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q047::variant::2",
+      "item_id": "q047",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样正确拆卸电池和存储卡？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q048::question",
+      "item_id": "q048",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何查看和理解照相机的电池电量显示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q048::variant::0",
+      "item_id": "q048",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么知道电池还有多少电？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q048::variant::1",
+      "item_id": "q048",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "电池电量显示怎么看？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q048::variant::2",
+      "item_id": "q048",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机电量低了有什么提示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q049::question",
+      "item_id": "q049",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何查看照相机剩余可拍摄张数？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q049::variant::0",
+      "item_id": "q049",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么知道还能拍多少张照片？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q049::variant::1",
+      "item_id": "q049",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机显示剩余照片数量在哪里？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q049::variant::2",
+      "item_id": "q049",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "剩余拍摄张数怎么看？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q050::question",
+      "item_id": "q050",
+      "doc_type": "question",
+      "keyword_text": "z",
+      "text": "如何正确安装尼克尔Z卡口镜头？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q050::variant::0",
+      "item_id": "q050",
+      "doc_type": "variant",
+      "keyword_text": "z z",
+      "text": "怎么给相机装上Z卡口镜头？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q050::variant::1",
+      "item_id": "q050",
+      "doc_type": "variant",
+      "keyword_text": "zd dx x1 16 65 50 0m mm zdx dx1 x16 165 650 50m 0mm z dx 16-50mm z",
+      "text": "安装尼克尔Z DX 16-50mm镜头的步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q050::variant::2",
+      "item_id": "q050",
+      "doc_type": "variant",
+      "keyword_text": "z",
+      "text": "相机镜头怎么安装才不会进灰尘？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q051::question",
+      "item_id": "q051",
+      "doc_type": "question",
+      "keyword_text": "f",
+      "text": "使用F卡口镜头时需要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q051::variant::0",
+      "item_id": "q051",
+      "doc_type": "variant",
+      "keyword_text": "f f",
+      "text": "F卡口镜头怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q051::variant::1",
+      "item_id": "q051",
+      "doc_type": "variant",
+      "keyword_text": "f f",
+      "text": "能直接装F卡口镜头吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q051::variant::2",
+      "item_id": "q051",
+      "doc_type": "variant",
+      "keyword_text": "f f",
+      "text": "F卡口镜头安装有什么特别要求？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q052::question",
+      "item_id": "q052",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何安全取下相机镜头？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q052::variant::0",
+      "item_id": "q052",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么拆下相机镜头？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q052::variant::1",
+      "item_id": "q052",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "取镜头的正确步骤是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q052::variant::2",
+      "item_id": "q052",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机镜头怎么卸下来？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q053::question",
+      "item_id": "q053",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何正确打开相机的显示屏？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q053::variant::0",
+      "item_id": "q053",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏怎么打开？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q053::variant::1",
+      "item_id": "q053",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机屏幕如何慢慢旋转展开？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q053::variant::2",
+      "item_id": "q053",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "打开显示屏时要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q054::question",
+      "item_id": "q054",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何首次开启照相机并设置时钟？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q054::variant::0",
+      "item_id": "q054",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "照相机第一次开机怎么设置时间？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q054::variant::1",
+      "item_id": "q054",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "新买的相机开机时怎么调日期和时间？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q054::variant::2",
+      "item_id": "q054",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机初次使用时如何设定时钟？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q055::question",
+      "item_id": "q055",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "拍摄时显示闪烁的🕒图标是什么意思？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q055::variant::0",
+      "item_id": "q055",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机屏幕上出现闪烁的时钟图标代表什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q055::variant::1",
+      "item_id": "q055",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍照时为什么会看到闪烁的🕒符号？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q055::variant::2",
+      "item_id": "q055",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "闪烁的时钟图标有什么提示？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q056::question",
+      "item_id": "q056",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何切换至自动模式拍摄照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q056::variant::0",
+      "item_id": "q056",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用相机的自动模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q056::variant::1",
+      "item_id": "q056",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动拍照模式怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q056::variant::2",
+      "item_id": "q056",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用自动模式拍照片的步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q057::question",
+      "item_id": "q057",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "自动模式下拍摄时如何正确持握相机和构图？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q057::variant::0",
+      "item_id": "q057",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍照时怎么握相机比较稳？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q057::variant::1",
+      "item_id": "q057",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍照时相机怎么拿才好？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q057::variant::2",
+      "item_id": "q057",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍照时如何进行构图和持机？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q058::question",
+      "item_id": "q058",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "自动模式下如何对焦和拍摄照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q058::variant::0",
+      "item_id": "q058",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动模式怎么对焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q058::variant::1",
+      "item_id": "q058",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍照时如何半按快门对焦？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q058::variant::2",
+      "item_id": "q058",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动拍照时对焦失败怎么办？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q059::question",
+      "item_id": "q059",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "自动模式下如何使用触控快门和变焦功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q059::variant::0",
+      "item_id": "q059",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用触控快门拍照？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q059::variant::1",
+      "item_id": "q059",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动模式下如何变焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q059::variant::2",
+      "item_id": "q059",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸屏拍照和变焦怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q060::question",
+      "item_id": "q060",
+      "doc_type": "question",
+      "keyword_text": "au ut to aut uto auto",
+      "text": "如何在AUTO自动模式下录制视频？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q060::variant::0",
+      "item_id": "q060",
+      "doc_type": "variant",
+      "keyword_text": "au ut to aut uto auto",
+      "text": "怎么用自动模式录视频？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q060::variant::1",
+      "item_id": "q060",
+      "doc_type": "variant",
+      "keyword_text": "au ut to aut uto auto au ut to aut uto auto",
+      "text": "AUTO模式下怎么开始拍视频？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q060::variant::2",
+      "item_id": "q060",
+      "doc_type": "variant",
+      "keyword_text": "au ut to aut uto auto",
+      "text": "自动模式录制视频的步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q061::question",
+      "item_id": "q061",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "录制视频时存储卡指示灯和无法录制图标有什么作用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q061::variant::0",
+      "item_id": "q061",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频录制时存储卡灯亮代表什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q061::variant::1",
+      "item_id": "q061",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "无法录制图标是什么意思？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q061::variant::2",
+      "item_id": "q061",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "录视频时存储卡指示灯和录制失败图标有什么提示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q062::question",
+      "item_id": "q062",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何在视频模式下拍摄照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q062::variant::0",
+      "item_id": "q062",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频录制时怎么拍照？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q062::variant::1",
+      "item_id": "q062",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频模式下拍照的操作是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q062::variant::2",
+      "item_id": "q062",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "录视频时能拍照片吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q063::question",
+      "item_id": "q063",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "视频模式下拍摄照片有哪些注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q063::variant::0",
+      "item_id": "q063",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频拍照时需要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q063::variant::1",
+      "item_id": "q063",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频模式拍照有什么限制？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q063::variant::2",
+      "item_id": "q063",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "录视频时拍照的注意点有哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q065::question",
+      "item_id": "q065",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "视频模式下如何进行变焦操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q065::variant::0",
+      "item_id": "q065",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "录视频时怎么变焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q065::variant::1",
+      "item_id": "q065",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频模式下变焦按钮怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q065::variant::2",
+      "item_id": "q065",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍视频时如何放大或缩小画面？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q066::question",
+      "item_id": "q066",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何在相机上查看拍摄的照片和视频？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q066::variant::0",
+      "item_id": "q066",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用相机看我拍的照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q066::variant::1",
+      "item_id": "q066",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机里怎么播放照片和视频？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q066::variant::2",
+      "item_id": "q066",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "我想查看相机里的图片和录像，怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q067::question",
+      "item_id": "q067",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "视频播放时显示屏上有哪些信息？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q067::variant::0",
+      "item_id": "q067",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "播放视频时屏幕上显示什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q067::variant::1",
+      "item_id": "q067",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频播放界面有哪些标识？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q067::variant::2",
+      "item_id": "q067",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "看视频时显示屏显示哪些内容？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q068::question",
+      "item_id": "q068",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何操作视频播放功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q068::variant::0",
+      "item_id": "q068",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频播放时怎么暂停和快进？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q068::variant::1",
+      "item_id": "q068",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "播放视频时有哪些控制操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q068::variant::2",
+      "item_id": "q068",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频播放过程中怎么快退快进和调音量？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q069::question",
+      "item_id": "q069",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何删除相机中不想要的照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q069::variant::0",
+      "item_id": "q069",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机里的照片怎么删除？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q069::variant::1",
+      "item_id": "q069",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "我想删掉拍的照片，怎么操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q069::variant::2",
+      "item_id": "q069",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么在相机上删除照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q071::question",
+      "item_id": "q071",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "使用本产品时有哪些警告事项需要特别注意？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q071::variant::0",
+      "item_id": "q071",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "产品使用时有哪些危险操作要避免？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q071::variant::1",
+      "item_id": "q071",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "有哪些操作可能导致事故或受伤？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q071::variant::2",
+      "item_id": "q071",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "使用时需要注意哪些安全警告？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q072::question",
+      "item_id": "q072",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "本产品的保管和使用中有哪些安全注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q072::variant::0",
+      "item_id": "q072",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "产品保管时需要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q072::variant::1",
+      "item_id": "q072",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "使用和存放产品时有哪些安全提示？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q072::variant::2",
+      "item_id": "q072",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样避免产品使用或保管时发生危险？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q073::question",
+      "item_id": "q073",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "使用本产品时有哪些注意事项需要留意？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q073::variant::0",
+      "item_id": "q073",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "产品使用时需要注意哪些事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q073::variant::1",
+      "item_id": "q073",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "有哪些事项是使用时必须注意的？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q073::variant::2",
+      "item_id": "q073",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "使用过程中需要注意什么安全细节？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q074::question",
+      "item_id": "q074",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "电池使用时有哪些危险和注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q074::variant::0",
+      "item_id": "q074",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "电池使用时需要注意什么安全问题？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q074::variant::1",
+      "item_id": "q074",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "电池有哪些危险操作要避免？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q074::variant::2",
+      "item_id": "q074",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样安全使用和保管电池？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q075::question",
+      "item_id": "q075",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "电池保管和使用时有哪些警告需要注意？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q075::variant::0",
+      "item_id": "q075",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "电池存放时需要注意什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q075::variant::1",
+      "item_id": "q075",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "电池使用中有哪些安全警告？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q075::variant::2",
+      "item_id": "q075",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样避免电池使用和保管中的危险？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q076::question",
+      "item_id": "q076",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康产品的使用说明内容可以随意翻印或传播吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q076::variant::0",
+      "item_id": "q076",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康说明书能不能随便复制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q076::variant::1",
+      "item_id": "q076",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "使用说明可以公开分享吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q076::variant::2",
+      "item_id": "q076",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康的说明书内容能不能翻译成别的语言？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q077::question",
+      "item_id": "q077",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康产品使用说明中关于拷贝或复制资料有哪些法律限制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q077::variant::0",
+      "item_id": "q077",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拷贝资料会不会违法？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q077::variant::1",
+      "item_id": "q077",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "使用尼康相机复制东西有什么注意？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q077::variant::2",
+      "item_id": "q077",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "哪些东西不能用尼康设备复制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q078::question",
+      "item_id": "q078",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "为什么尼康相机只能使用尼康品牌的电子配件？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q078::variant::0",
+      "item_id": "q078",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用非尼康配件会有什么问题？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q078::variant::1",
+      "item_id": "q078",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康配件和其他品牌配件有什么区别？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q078::variant::2",
+      "item_id": "q078",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "为什么要用带尼康全息防伪图的电池？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q079::question",
+      "item_id": "q079",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "使用尼康相机时存储卡有哪些注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q079::variant::0",
+      "item_id": "q079",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "存储卡使用时要注意什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q079::variant::1",
+      "item_id": "q079",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康相机的存储卡怎么保护？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q079::variant::2",
+      "item_id": "q079",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "存储卡格式化时有什么禁忌？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q080::question",
+      "item_id": "q080",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "拍摄重要照片前应该做哪些准备？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q080::variant::0",
+      "item_id": "q080",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "重要场合拍照前要注意什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q080::variant::1",
+      "item_id": "q080",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样确认相机能正常拍摄重要照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q080::variant::2",
+      "item_id": "q080",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍婚礼等重要照片前有什么建议？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q081::question",
+      "item_id": "q081",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康提供哪些渠道可以获取最新的产品支持和技术信息？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q081::variant::0",
+      "item_id": "q081",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "哪里可以查尼康的最新产品信息？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q081::variant::1",
+      "item_id": "q081",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康有哪些官方网站提供技术支持？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q081::variant::2",
+      "item_id": "q081",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么获得尼康的常见问题解答和教育资料？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q082::question",
+      "item_id": "q082",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康有什么内容可以帮助我更好地处理照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q082::variant::0",
+      "item_id": "q082",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康提供哪些软件和应用程序？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q082::variant::1",
+      "item_id": "q082",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康的内容包括哪些方面来提升拍照体验？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q084::question",
+      "item_id": "q084",
+      "doc_type": "question",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "SnapBridge应用程序有什么功能，如何获取？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q084::variant::0",
+      "item_id": "q084",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "SnapBridge能做什么？怎么下载？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q084::variant::1",
+      "item_id": "q084",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "如何用SnapBridge连接相机和手机？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q084::variant::2",
+      "item_id": "q084",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "SnapBridge应用怎么用，在哪里下载？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q084::variant::3",
+      "item_id": "q084",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "SnapBridge能做什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q084::variant::4",
+      "item_id": "q084",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "怎么将设备无线连接至照相机？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q086::question",
+      "item_id": "q086",
+      "doc_type": "question",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "尼康的SnapBridge应用程序有什么功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q086::variant::0",
+      "item_id": "q086",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "SnapBridge能做什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q086::variant::1",
+      "item_id": "q086",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "尼康SnapBridge应用是干嘛的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q086::variant::2",
+      "item_id": "q086",
+      "doc_type": "variant",
+      "keyword_text": "sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge sn na ap pb br ri id dg ge sna nap apb pbr bri rid idg dge snapbridge",
+      "text": "SnapBridge有哪些主要功能？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q087::question",
+      "item_id": "q087",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康影速传应用程序是如何工作的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q087::variant::0",
+      "item_id": "q087",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康影速传怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q087::variant::1",
+      "item_id": "q087",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康影速传的功能是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q087::variant::2",
+      "item_id": "q087",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康影速传应用有什么特点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q088::question",
+      "item_id": "q088",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康有哪些主要的计算机软件可以用来处理照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q088::variant::0",
+      "item_id": "q088",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康的软件有哪些可以用来编辑照片？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q088::variant::1",
+      "item_id": "q088",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康提供哪些电脑软件来管理和调整照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q088::variant::2",
+      "item_id": "q088",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康的计算机软件主要包括哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q089::question",
+      "item_id": "q089",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康工坊软件有什么功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q089::variant::0",
+      "item_id": "q089",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康工坊能做什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q089::variant::1",
+      "item_id": "q089",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康工坊软件有哪些主要用途？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q089::variant::2",
+      "item_id": "q089",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康工坊软件能做什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q089::variant::3",
+      "item_id": "q089",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "在哪里下载尼康工坊？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q090::question",
+      "item_id": "q090",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "尼康远控软件有什么作用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q090::variant::0",
+      "item_id": "q090",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康远控是用来做什么的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q090::variant::1",
+      "item_id": "q090",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "尼康远控软件能实现哪些功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q090::variant::2",
+      "item_id": "q090",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用尼康远控可以远程控制相机吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q091::question",
+      "item_id": "q091",
+      "doc_type": "question",
+      "keyword_text": "wi ir re el le es ss st tr ra an ns sm mi it tt te er ru ut ti il li it ty wir ire rel ele les ess sst str tra ran ans nsm smi mit itt tte ter eru rut uti til ili lit ity wireless transmitter utility",
+      "text": "Wireless Transmitter Utility软件有什么用途？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q091::variant::0",
+      "item_id": "q091",
+      "doc_type": "variant",
+      "keyword_text": "wi ir re el le es ss st tr ra an ns sm mi it tt te er ru ut ti il li it ty wir ire rel ele les ess sst str tra ran ans nsm smi mit itt tte ter eru rut uti til ili lit ity wireless transmitter utility wi ir re el le es ss st tr ra an ns sm mi it tt te er ru ut ti il li it ty wir ire rel ele les ess sst str tra ran ans nsm smi mit itt tte ter eru rut uti til ili lit ity wireless transmitter utility",
+      "text": "Wireless Transmitter Utility是干什么的？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q091::variant::1",
+      "item_id": "q091",
+      "doc_type": "variant",
+      "keyword_text": "wi ir re el le es ss st tr ra an ns sm mi it tt te er ru ut ti il li it ty wir ire rel ele les ess sst str tra ran ans nsm smi mit itt tte ter eru rut uti til ili lit ity wireless transmitter utility wi ir re el le es ss st tr ra an ns sm mi it tt te er ru ut ti il li it ty wir ire rel ele les ess sst str tra ran ans nsm smi mit itt tte ter eru rut uti til ili lit ity wireless transmitter utility",
+      "text": "尼康的Wireless Transmitter Utility软件有什么功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q091::variant::2",
+      "item_id": "q091",
+      "doc_type": "variant",
+      "keyword_text": "wi ir re el le es ss st tr ra an ns sm mi it tt te er ru ut ti il li it ty wir ire rel ele les ess sst str tra ran ans nsm smi mit itt tte ter eru rut uti til ili lit ity wireless transmitter utility wi ir re el le es ss st tr ra an ns sm mi it tt te er ru ut ti il li it ty wir ire rel ele les ess sst str tra ran ans nsm smi mit itt tte ter eru rut uti til ili lit ity wireless transmitter utility",
+      "text": "用Wireless Transmitter Utility可以做什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q092::question",
+      "item_id": "q092",
+      "doc_type": "question",
+      "keyword_text": "we eb bc ca am mu ut ti il li it ty web ebc bca cam amu mut uti til ili lit ity webcam utility",
+      "text": "Webcam Utility软件如何使用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q092::variant::0",
+      "item_id": "q092",
+      "doc_type": "variant",
+      "keyword_text": "we eb bc ca am mu ut ti il li it ty web ebc bca cam amu mut uti til ili lit ity webcam utility we eb bc ca am mu ut ti il li it ty web ebc bca cam amu mut uti til ili lit ity webcam utility",
+      "text": "Webcam Utility软件能做什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q092::variant::1",
+      "item_id": "q092",
+      "doc_type": "variant",
+      "keyword_text": "we eb bc ca am mu ut ti il li it ty web ebc bca cam amu mut uti til ili lit ity webcam utility we eb bc ca am mu ut ti il li it ty web ebc bca cam amu mut uti til ili lit ity webcam utility",
+      "text": "尼康的Webcam Utility怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q092::variant::2",
+      "item_id": "q092",
+      "doc_type": "variant",
+      "keyword_text": "we eb bc ca am mu ut ti il li it ty web ebc bca cam amu mut uti til ili lit ity webcam utility we eb bc ca am mu ut ti il li it ty web ebc bca cam amu mut uti til ili lit ity webcam utility",
+      "text": "用Webcam Utility可以把相机当摄像头吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q093::question",
+      "item_id": "q093",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "照相机机身有哪些主要部件？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q093::variant::0",
+      "item_id": "q093",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机机身上都有什么部件？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q093::variant::1",
+      "item_id": "q093",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "能介绍一下照相机机身的组成吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q093::variant::2",
+      "item_id": "q093",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "照相机机身包括哪些部分？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q095::question",
+      "item_id": "q095",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "照相机有哪些部件？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q095::variant::0",
+      "item_id": "q095",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机上有哪些按钮和接口？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q095::variant::1",
+      "item_id": "q095",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "能介绍一下照相机的部件吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q096::question",
+      "item_id": "q096",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "为什么不能触摸影像传感器？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q096::variant::0",
+      "item_id": "q096",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "影像传感器为什么不能用手碰？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q096::variant::1",
+      "item_id": "q096",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触摸影像传感器会有什么后果？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q096::variant::2",
+      "item_id": "q096",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "能不能用工具清洁影像传感器？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q097::question",
+      "item_id": "q097",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何找到相机的产品序列号？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q097::variant::0",
+      "item_id": "q097",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机序列号在哪里看？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q097::variant::1",
+      "item_id": "q097",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么查看产品序列号？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q098::question",
+      "item_id": "q098",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "控制面板有什么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q098::variant::0",
+      "item_id": "q098",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机控制面板显示了哪些信息？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q098::variant::1",
+      "item_id": "q098",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "光圈和快门速度在控制面板上怎么看？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q098::variant::2",
+      "item_id": "q098",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "控制面板长什么样？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q099::question",
+      "item_id": "q099",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "显示屏和取景器有哪些指示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q099::variant::0",
+      "item_id": "q099",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "照片模式下显示屏和取景器会显示什么信息？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q099::variant::1",
+      "item_id": "q099",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍照时取景器和显示屏上有哪些指示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q099::variant::2",
+      "item_id": "q099",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "照片模式中取景器和屏幕显示的内容有哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q101::question",
+      "item_id": "q101",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "视频模式下显示屏和取景器显示哪些指示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q101::variant::0",
+      "item_id": "q101",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "录像时显示屏和取景器上显示什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q101::variant::1",
+      "item_id": "q101",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频模式中取景器和屏幕显示的内容有哪些？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q101::variant::2",
+      "item_id": "q101",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "摄像时显示屏和取景器会显示哪些信息？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q102::question",
+      "item_id": "q102",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "取景器是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q102::variant::0",
+      "item_id": "q102",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么激活取景器？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q102::variant::1",
+      "item_id": "q102",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "取景器位置在哪？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q102::variant::2",
+      "item_id": "q102",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "取景器的感应功能有什么注意事项？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q103::question",
+      "item_id": "q103",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用屈光度调节控制器来调节取景器？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q103::variant::0",
+      "item_id": "q103",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "屈光度调节控制器怎么调节取景器？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q103::variant::1",
+      "item_id": "q103",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "取景器对焦用哪个控制器？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q103::variant::2",
+      "item_id": "q103",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "调节取景器屈光度有什么注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q104::question",
+      "item_id": "q104",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "长时间使用取景器时如何调整显示设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q104::variant::0",
+      "item_id": "q104",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "取景器用久了怎么调亮度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q104::variant::1",
+      "item_id": "q104",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "长时间看取景器有什么设置推荐？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q104::variant::2",
+      "item_id": "q104",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "取景器长时间使用时如何保护眼睛？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q105::question",
+      "item_id": "q105",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "🖥️显示屏模式按钮如何切换取景器和显示屏？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q105::variant::0",
+      "item_id": "q105",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏模式按钮怎么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q105::variant::1",
+      "item_id": "q105",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何用按钮切换取景器和显示屏？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q105::variant::2",
+      "item_id": "q105",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "🖥️按钮切换显示屏和取景器的步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q106::question",
+      "item_id": "q106",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何限制显示屏模式的选择？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q106::variant::0",
+      "item_id": "q106",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏模式可以限制选择吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q106::variant::1",
+      "item_id": "q106",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么设置显示屏模式的限制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q106::variant::2",
+      "item_id": "q106",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏模式选择有限制功能吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q107::question",
+      "item_id": "q107",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何选择照相机的对焦模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q107::variant::0",
+      "item_id": "q107",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么设置相机的对焦方式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q107::variant::1",
+      "item_id": "q107",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机的对焦模式在哪里调？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q107::variant::2",
+      "item_id": "q107",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何切换不同的对焦模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q108::question",
+      "item_id": "q108",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "相机自动对焦时可能遇到哪些问题？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q108::variant::0",
+      "item_id": "q108",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "为什么我的相机有时对焦不上？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q108::variant::1",
+      "item_id": "q108",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动对焦失败的常见原因有哪些？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q108::variant::2",
+      "item_id": "q108",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机对焦困难时可能是什么原因？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q109::question",
+      "item_id": "q109",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何让相机记住关闭时的对焦位置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q109::variant::0",
+      "item_id": "q109",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机关闭后还能保存对焦点吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q109::variant::1",
+      "item_id": "q109",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么设置对焦位置记忆？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q109::variant::2",
+      "item_id": "q109",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机关机后对焦位置会丢失吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q110::question",
+      "item_id": "q110",
+      "doc_type": "question",
+      "keyword_text": "af af",
+      "text": "如何选择和使用相机的AF区域模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q110::variant::0",
+      "item_id": "q110",
+      "doc_type": "variant",
+      "keyword_text": "af af af af",
+      "text": "相机的AF区域模式怎么设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q110::variant::1",
+      "item_id": "q110",
+      "doc_type": "variant",
+      "keyword_text": "af af af af",
+      "text": "AF区域模式有什么选项？分别有什么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q111::question",
+      "item_id": "q111",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何在画面中央显示对焦点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q111::variant::0",
+      "item_id": "q111",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样让对焦点显示在中央？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q111::variant::1",
+      "item_id": "q111",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "中央对焦点怎么设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q111::variant::2",
+      "item_id": "q111",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "对焦点如何固定在画面中心？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q112::question",
+      "item_id": "q112",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何快速选择对焦点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q112::variant::0",
+      "item_id": "q112",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样快速切换对焦点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q112::variant::1",
+      "item_id": "q112",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "快速选择对焦点的方法是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q112::variant::2",
+      "item_id": "q112",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "有没有快捷方式选择对焦点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q113::question",
+      "item_id": "q113",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何手动选择对焦点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q113::variant::0",
+      "item_id": "q113",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用多重选择器选对焦点？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q113::variant::1",
+      "item_id": "q113",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "手动调整对焦点怎么操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q113::variant::2",
+      "item_id": "q113",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "对焦点选择功能怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q114::question",
+      "item_id": "q114",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用脸部和眼部侦测自动对焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q114::variant::0",
+      "item_id": "q114",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "脸部眼部自动对焦怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q114::variant::1",
+      "item_id": "q114",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样开启脸部和眼部侦测对焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q114::variant::2",
+      "item_id": "q114",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动识别人脸和眼睛对焦怎么设置？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q115::question",
+      "item_id": "q115",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "脸部和眼部侦测自动对焦有哪些限制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q115::variant::0",
+      "item_id": "q115",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "脸部眼部对焦什么时候不灵敏？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q115::variant::1",
+      "item_id": "q115",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动对焦识别人脸失败的原因？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q115::variant::2",
+      "item_id": "q115",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "脸部眼部侦测对焦的注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q116::question",
+      "item_id": "q116",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用动物侦测自动对焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q116::variant::0",
+      "item_id": "q116",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "动物脸部和眼部对焦怎么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q116::variant::1",
+      "item_id": "q116",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样开启动物侦测自动对焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q116::variant::2",
+      "item_id": "q116",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动识别猫狗脸部对焦怎么设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q117::question",
+      "item_id": "q117",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "动物侦测自动对焦在什么情况下可能无法正常工作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q117::variant::0",
+      "item_id": "q117",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "动物脸部侦测失败的常见原因有哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q117::variant::1",
+      "item_id": "q117",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "什么时候动物自动对焦会失效？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q117::variant::2",
+      "item_id": "q117",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "动物眼部侦测不准是因为什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q118::question",
+      "item_id": "q118",
+      "doc_type": "question",
+      "keyword_text": "af af",
+      "text": "如何使用对象跟踪AF功能跟踪拍摄对象？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q118::variant::0",
+      "item_id": "q118",
+      "doc_type": "variant",
+      "keyword_text": "af af af af",
+      "text": "对象跟踪AF怎么启动和关闭？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q118::variant::1",
+      "item_id": "q118",
+      "doc_type": "variant",
+      "keyword_text": "af af",
+      "text": "怎样让相机跟踪移动的拍摄对象？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q118::variant::2",
+      "item_id": "q118",
+      "doc_type": "variant",
+      "keyword_text": "af af",
+      "text": "对象跟踪模式如何操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q119::question",
+      "item_id": "q119",
+      "doc_type": "question",
+      "keyword_text": "af af",
+      "text": "对象跟踪AF有哪些限制和无法跟踪的情况？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q119::variant::0",
+      "item_id": "q119",
+      "doc_type": "variant",
+      "keyword_text": "af af",
+      "text": "对象跟踪功能在哪些情况下可能失效？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q119::variant::1",
+      "item_id": "q119",
+      "doc_type": "variant",
+      "keyword_text": "af af",
+      "text": "为什么相机跟踪不到某些拍摄对象？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q119::variant::2",
+      "item_id": "q119",
+      "doc_type": "variant",
+      "keyword_text": "af af",
+      "text": "对象跟踪失败的常见原因是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q120::question",
+      "item_id": "q120",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "触控快门功能如何使用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q120::variant::0",
+      "item_id": "q120",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样用触控快门拍照？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q120::variant::1",
+      "item_id": "q120",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控快门是怎么操作的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q120::variant::2",
+      "item_id": "q120",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用触摸屏如何释放快门？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q121::question",
+      "item_id": "q121",
+      "doc_type": "question",
+      "keyword_text": "af af",
+      "text": "触控快门和触控AF有哪些不同的操作选项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q121::variant::0",
+      "item_id": "q121",
+      "doc_type": "variant",
+      "keyword_text": "af af af af",
+      "text": "触控快门和触控AF怎么选择？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q121::variant::1",
+      "item_id": "q121",
+      "doc_type": "variant",
+      "keyword_text": "af af",
+      "text": "触控屏幕时有哪些对焦和快门释放模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q121::variant::2",
+      "item_id": "q121",
+      "doc_type": "variant",
+      "keyword_text": "af af af af",
+      "text": "触控快门和触控AF的区别是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q122::question",
+      "item_id": "q122",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "触控快门功能还有哪些其他设置选项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q122::variant::0",
+      "item_id": "q122",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控快门可以关闭吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q122::variant::1",
+      "item_id": "q122",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控快门的其他模式有哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q122::variant::2",
+      "item_id": "q122",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控快门的[位置对焦点]功能是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q123::question",
+      "item_id": "q123",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用触控拍摄选项拍摄照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q123::variant::0",
+      "item_id": "q123",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控拍摄照片怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q123::variant::1",
+      "item_id": "q123",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "用触控屏拍照有哪些限制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q123::variant::2",
+      "item_id": "q123",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "触控拍照和快门按钮有什么区别？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q124::question",
+      "item_id": "q124",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何在手动对焦模式下进行对焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q124::variant::0",
+      "item_id": "q124",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "手动对焦怎么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q124::variant::1",
+      "item_id": "q124",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "手动对焦时如何调整对焦环？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q124::variant::2",
+      "item_id": "q124",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动对焦不好用时怎么手动对焦？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q125::question",
+      "item_id": "q125",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "镜头上的对焦模式选择如何使用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q125::variant::0",
+      "item_id": "q125",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "镜头对焦模式选择控制怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q125::variant::1",
+      "item_id": "q125",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "手动对焦模式能用镜头上的开关吗？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q125::variant::2",
+      "item_id": "q125",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "镜头有对焦模式选择开关，怎么切换？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q126::question",
+      "item_id": "q126",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "什么是焦平面标记和法兰距？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q126::variant::0",
+      "item_id": "q126",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "焦平面标记有什么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q126::variant::1",
+      "item_id": "q126",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "法兰距是什么意思？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q126::variant::2",
+      "item_id": "q126",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么测量对焦距离？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q127::question",
+      "item_id": "q127",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "什么是峰值对焦辅助，如何使用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q127::variant::0",
+      "item_id": "q127",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "峰值对焦辅助怎么开启？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q127::variant::1",
+      "item_id": "q127",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "手动对焦时峰值对焦辅助有什么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q127::variant::2",
+      "item_id": "q127",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "为什么峰值对焦辅助有时不显示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q128::question",
+      "item_id": "q128",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何调整相机的白平衡设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q128::variant::0",
+      "item_id": "q128",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么更改白平衡？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q128::variant::1",
+      "item_id": "q128",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机白平衡怎么调？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q128::variant::2",
+      "item_id": "q128",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "白平衡设置在哪里调整？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q129::question",
+      "item_id": "q129",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "相机白平衡有哪些选项及其适用场景？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q129::variant::0",
+      "item_id": "q129",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "白平衡选项有哪些？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q129::variant::1",
+      "item_id": "q129",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "不同白平衡模式适合什么光线？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q129::variant::2",
+      "item_id": "q129",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "白平衡模式说明是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q130::question",
+      "item_id": "q130",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何微调白平衡以及在摄影棚闪光灯下如何设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q130::variant::0",
+      "item_id": "q130",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "白平衡微调怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q130::variant::1",
+      "item_id": "q130",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "摄影棚闪光灯下白平衡怎么调？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q130::variant::2",
+      "item_id": "q130",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "白平衡手动预设怎么操作？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q131::question",
+      "item_id": "q131",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "使用自动白平衡和自然光自动适应时需要注意什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q131::variant::0",
+      "item_id": "q131",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动白平衡和自然光自动适应有什么区别？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q131::variant::1",
+      "item_id": "q131",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自然光自动适应模式适合什么环境？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q131::variant::2",
+      "item_id": "q131",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "自动白平衡什么时候不适用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q132::question",
+      "item_id": "q132",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何查看照片的白平衡色温信息？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q132::variant::0",
+      "item_id": "q132",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "照片色温信息怎么看？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q132::variant::1",
+      "item_id": "q132",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么在相机里查看拍摄时的色温？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q132::variant::2",
+      "item_id": "q132",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何调节白平衡色温？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q134::question",
+      "item_id": "q134",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何启用相机的静音拍摄功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q134::variant::0",
+      "item_id": "q134",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样设置电子快门实现静音拍摄？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q134::variant::1",
+      "item_id": "q134",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机怎么开启静音拍摄模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q134::variant::2",
+      "item_id": "q134",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何消除机械快门的噪音和震动？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q135::question",
+      "item_id": "q135",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "使用静音拍摄时有哪些注意事项和可能出现的问题？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q135::variant::0",
+      "item_id": "q135",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "静音拍摄模式下会有哪些限制？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q135::variant::1",
+      "item_id": "q135",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "开启静音拍摄后会出现什么异常现象？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q135::variant::2",
+      "item_id": "q135",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "静音拍摄有什么缺点或需要注意的吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q136::question",
+      "item_id": "q136",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何给照片进行评级？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q136::variant::0",
+      "item_id": "q136",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "照片评级功能怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q136::variant::1",
+      "item_id": "q136",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样给照片打星标？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q136::variant::2",
+      "item_id": "q136",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机里如何给照片评分？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q137::question",
+      "item_id": "q137",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "怎样保护照片防止被误删？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q137::variant::0",
+      "item_id": "q137",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何给照片加锁保护？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q137::variant::1",
+      "item_id": "q137",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机里怎么防止照片被删除？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q137::variant::2",
+      "item_id": "q137",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样设置照片保护功能？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q138::question",
+      "item_id": "q138",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何取消所有照片的保护？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q138::variant::0",
+      "item_id": "q138",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎样一次性解除所有照片的保护？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q138::variant::1",
+      "item_id": "q138",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "相机里怎么取消所有照片的保护状态？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q138::variant::2",
+      "item_id": "q138",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何批量取消照片保护？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q140::question",
+      "item_id": "q140",
+      "doc_type": "question",
+      "keyword_text": "p",
+      "text": "程序自动模式（P）如何工作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q140::variant::0",
+      "item_id": "q140",
+      "doc_type": "variant",
+      "keyword_text": "p p",
+      "text": "P模式下相机怎么调节快门和光圈？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q140::variant::1",
+      "item_id": "q140",
+      "doc_type": "variant",
+      "keyword_text": "p",
+      "text": "程序自动模式有什么特点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q140::variant::2",
+      "item_id": "q140",
+      "doc_type": "variant",
+      "keyword_text": "p p",
+      "text": "P档的曝光调整是怎样的？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q141::question",
+      "item_id": "q141",
+      "doc_type": "question",
+      "keyword_text": "s",
+      "text": "快门优先自动模式（S）怎么设置快门速度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q141::variant::0",
+      "item_id": "q141",
+      "doc_type": "variant",
+      "keyword_text": "s s",
+      "text": "S模式下如何调整快门速度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q141::variant::1",
+      "item_id": "q141",
+      "doc_type": "variant",
+      "keyword_text": "s",
+      "text": "快门优先模式怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q141::variant::2",
+      "item_id": "q141",
+      "doc_type": "variant",
+      "keyword_text": "s s",
+      "text": "怎么在S档选择快门速度？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q142::question",
+      "item_id": "q142",
+      "doc_type": "question",
+      "keyword_text": "13 1 3",
+      "text": "如何用1/3步长调整快门速度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q142::variant::0",
+      "item_id": "q142",
+      "doc_type": "variant",
+      "keyword_text": "13 1 3 13 1 3",
+      "text": "1/3步长模式怎么调快门？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q142::variant::1",
+      "item_id": "q142",
+      "doc_type": "variant",
+      "keyword_text": "13 1 3 13 1 3",
+      "text": "快门速度如何用1/3步长设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q142::variant::2",
+      "item_id": "q142",
+      "doc_type": "variant",
+      "keyword_text": "13 3s st te ep 13s 3st ste tep 1 3step 13 1 3",
+      "text": "怎么用1/3STEP调节快门速度？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q143::question",
+      "item_id": "q143",
+      "doc_type": "question",
+      "keyword_text": "a",
+      "text": "光圈优先自动模式（A）如何调整光圈？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q143::variant::0",
+      "item_id": "q143",
+      "doc_type": "variant",
+      "keyword_text": "a a",
+      "text": "A档怎么调光圈？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q143::variant::1",
+      "item_id": "q143",
+      "doc_type": "variant",
+      "keyword_text": "a",
+      "text": "光圈优先模式下光圈怎么设置？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q143::variant::2",
+      "item_id": "q143",
+      "doc_type": "variant",
+      "keyword_text": "a a",
+      "text": "在A模式中如何改变光圈大小？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q144::question",
+      "item_id": "q144",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "视频模式下的曝光设定有哪些区别？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q144::variant::0",
+      "item_id": "q144",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "视频录制时怎么调曝光？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q144::variant::1",
+      "item_id": "q144",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso",
+      "text": "视频模式下光圈、快门和ISO怎么设置？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q144::variant::2",
+      "item_id": "q144",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "拍视频时曝光控制有什么不同？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q145::question",
+      "item_id": "q145",
+      "doc_type": "question",
+      "keyword_text": "m",
+      "text": "手动模式（M）如何调整快门速度和光圈？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q145::variant::0",
+      "item_id": "q145",
+      "doc_type": "variant",
+      "keyword_text": "m m",
+      "text": "M档怎么调快门和光圈？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q145::variant::1",
+      "item_id": "q145",
+      "doc_type": "variant",
+      "keyword_text": "m",
+      "text": "手动模式下快门和光圈如何设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q145::variant::2",
+      "item_id": "q145",
+      "doc_type": "variant",
+      "keyword_text": "m m",
+      "text": "M模式调整曝光参数的方法是什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q146::question",
+      "item_id": "q146",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "什么是曝光指示，如何在显示屏和取景器中查看？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q146::variant::0",
+      "item_id": "q146",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光指示怎么显示？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q146::variant::1",
+      "item_id": "q146",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "如何知道曝光是否合适？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q146::variant::2",
+      "item_id": "q146",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "显示屏和取景器的曝光指示怎么看？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q147::question",
+      "item_id": "q147",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "曝光警告是什么，什么时候会闪烁？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q147::variant::0",
+      "item_id": "q147",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光警告怎么触发？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q147::variant::1",
+      "item_id": "q147",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "什么时候会看到曝光警告闪烁？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q147::variant::2",
+      "item_id": "q147",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光警告闪烁代表什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q148::question",
+      "item_id": "q148",
+      "doc_type": "question",
+      "keyword_text": "m",
+      "text": "如何在模式M下使用快门速度扩展功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q148::variant::0",
+      "item_id": "q148",
+      "doc_type": "variant",
+      "keyword_text": "m m",
+      "text": "模式M下怎么开启快门速度扩展？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q148::variant::1",
+      "item_id": "q148",
+      "doc_type": "variant",
+      "keyword_text": "m",
+      "text": "快门速度扩展功能怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q148::variant::2",
+      "item_id": "q148",
+      "doc_type": "variant",
+      "keyword_text": "m",
+      "text": "快门速度能调到多长时间？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q149::question",
+      "item_id": "q149",
+      "doc_type": "question",
+      "keyword_text": "mi is so mis iso m iso",
+      "text": "模式M下如何启用ISO感光度自动控制？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q149::variant::0",
+      "item_id": "q149",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso mi is so mis iso m iso",
+      "text": "ISO感光度自动控制怎么开？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q149::variant::1",
+      "item_id": "q149",
+      "doc_type": "variant",
+      "keyword_text": "mi is so mis iso m iso mi is so mis iso m iso",
+      "text": "模式M下相机怎么自动调ISO？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q149::variant::2",
+      "item_id": "q149",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso mi is so mis iso m iso",
+      "text": "ISO自动控制功能在哪设置？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q150::question",
+      "item_id": "q150",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "长时间曝光模式有哪些选项，如何使用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q150::variant::0",
+      "item_id": "q150",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么用长时间曝光拍照？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q150::variant::1",
+      "item_id": "q150",
+      "doc_type": "variant",
+      "keyword_text": "bb b b",
+      "text": "长时间曝光的B门和遥控B门有什么区别？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q150::variant::2",
+      "item_id": "q150",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "长时间曝光模式怎么设置？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q151::question",
+      "item_id": "q151",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "长时间曝光拍摄时有哪些注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q151::variant::0",
+      "item_id": "q151",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "长时间曝光拍照要注意什么？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q151::variant::1",
+      "item_id": "q151",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "长曝光会出现什么问题？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q151::variant::2",
+      "item_id": "q151",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么减少长时间曝光的噪点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q155::question",
+      "item_id": "q155",
+      "doc_type": "question",
+      "keyword_text": "is so iso iso",
+      "text": "高ISO感光度有什么优缺点？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q155::variant::0",
+      "item_id": "q155",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "ISO感光度高有什么影响？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q155::variant::1",
+      "item_id": "q155",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "高ISO拍照效果怎么样？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q155::variant::2",
+      "item_id": "q155",
+      "doc_type": "variant",
+      "keyword_text": "is so iso iso is so iso iso",
+      "text": "ISO感光度高低对照片有什么影响？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q157::question",
+      "item_id": "q157",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "除了拨盘，曝光补偿还能怎么设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q157::variant::0",
+      "item_id": "q157",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光补偿拨盘以外怎么调曝光？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q157::variant::1",
+      "item_id": "q157",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光补偿还有哪些调整方式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q157::variant::2",
+      "item_id": "q157",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "怎么通过其他方式设置曝光补偿？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q158::question",
+      "item_id": "q158",
+      "doc_type": "question",
+      "keyword_text": "m",
+      "text": "模式M下曝光补偿有什么特别之处？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q158::variant::0",
+      "item_id": "q158",
+      "doc_type": "variant",
+      "keyword_text": "m",
+      "text": "手动模式曝光补偿怎么影响照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q158::variant::1",
+      "item_id": "q158",
+      "doc_type": "variant",
+      "keyword_text": "m m",
+      "text": "模式M时曝光补偿有什么效果？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q158::variant::2",
+      "item_id": "q158",
+      "doc_type": "variant",
+      "keyword_text": "m m",
+      "text": "M模式下调整曝光补偿会改变照片吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q159::question",
+      "item_id": "q159",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "使用闪光灯时曝光补偿如何影响照片？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q159::variant::0",
+      "item_id": "q159",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "闪光灯拍照曝光补偿有什么作用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q159::variant::1",
+      "item_id": "q159",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "闪光灯模式下曝光补偿怎么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q159::variant::2",
+      "item_id": "q159",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "闪光灯时调整曝光补偿会改变什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q160::question",
+      "item_id": "q160",
+      "doc_type": "question",
+      "keyword_text": "ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "AE-L/AF-L（on）按钮有什么作用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q160::variant::0",
+      "item_id": "q160",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "AE-L/AF-L按钮是干什么的？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q160::variant::1",
+      "item_id": "q160",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "怎么用AE-L/AF-L按钮锁定对焦和曝光？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q160::variant::2",
+      "item_id": "q160",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "AE-L/AF-L（on）按钮功能介绍",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q161::question",
+      "item_id": "q161",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "曝光锁定功能什么时候使用比较合适？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q161::variant::0",
+      "item_id": "q161",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光锁定有什么用？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q161::variant::1",
+      "item_id": "q161",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "什么时候需要用曝光锁定？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q161::variant::2",
+      "item_id": "q161",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "曝光锁定适合用在哪些测光模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q162::question",
+      "item_id": "q162",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用对焦锁定功能？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q162::variant::0",
+      "item_id": "q162",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "对焦锁定怎么用？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q162::variant::1",
+      "item_id": "q162",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "对焦锁定功能有什么注意事项？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q162::variant::2",
+      "item_id": "q162",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "对焦锁定适合哪些对焦模式？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q163::question",
+      "item_id": "q163",
+      "doc_type": "question",
+      "keyword_text": "ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "如何通过AE-L/AF-L（on）按钮锁定对焦和曝光？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q163::variant::0",
+      "item_id": "q163",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "用AE-L/AF-L按钮锁定对焦和曝光的步骤是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q163::variant::1",
+      "item_id": "q163",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "怎么用AE-L/AF-L按钮先对焦再锁定曝光？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q163::variant::2",
+      "item_id": "q163",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l ae el la af fl lo on ael ela laf afl flo lon ae-l af-l on",
+      "text": "AE-L/AF-L按钮锁定对焦曝光的操作流程",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q164::question",
+      "item_id": "q164",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "在什么情况下对焦会自动锁定？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q164::variant::0",
+      "item_id": "q164",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "什么时候半按快门就能锁定对焦？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q164::variant::1",
+      "item_id": "q164",
+      "doc_type": "variant",
+      "keyword_text": "af fs afs af-s",
+      "text": "AF-S模式下对焦锁定怎么实现？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q164::variant::2",
+      "item_id": "q164",
+      "doc_type": "variant",
+      "keyword_text": "af fs sa af fa afs fsa saf afa af-s af-a",
+      "text": "使用AF-S或AF-A模式时对焦锁定规则是什么？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q165::question",
+      "item_id": "q165",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何使用快门释放按钮锁定曝光？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q165::variant::0",
+      "item_id": "q165",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "快门按钮怎么锁定曝光？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q165::variant::1",
+      "item_id": "q165",
+      "doc_type": "variant",
+      "keyword_text": "ae el ael ae-l",
+      "text": "快门释放按钮AE-L功能怎么设置？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q165::variant::2",
+      "item_id": "q165",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "半按快门能锁定曝光吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q166::question",
+      "item_id": "q166",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "如何在相同对焦距离下拍摄多张照片并保持对焦锁定？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q166::variant::0",
+      "item_id": "q166",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "连续拍摄时怎么保持对焦锁定？",
+      "is_eval_holdout": true
+    },
+    {
+      "doc_id": "q166::variant::1",
+      "item_id": "q166",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "多张照片对焦不变怎么操作？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q166::variant::2",
+      "item_id": "q166",
+      "doc_type": "variant",
+      "keyword_text": "ae el la af fl ael ela laf afl ae-l af-l",
+      "text": "按住AE-L/AF-L按钮拍多张照片对焦会锁定吗？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q167::question",
+      "item_id": "q167",
+      "doc_type": "question",
+      "keyword_text": "",
+      "text": "使用产品前需要阅读哪些安全注意事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q167::variant::0",
+      "item_id": "q167",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "这个产品的安全须知在哪里看？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q167::variant::1",
+      "item_id": "q167",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "使用之前需要注意哪些安全事项？",
+      "is_eval_holdout": false
+    },
+    {
+      "doc_id": "q167::variant::2",
+      "item_id": "q167",
+      "doc_type": "variant",
+      "keyword_text": "",
+      "text": "安全须知要怎么保存和查看？",
+      "is_eval_holdout": true
+    }
+  ],
+  "holdout_variants": {
+    "q001": [
+      "相机的模式选择器怎么操作？"
+    ],
+    "q002": [
+      "怎么用快门速度拨盘调节快门速度？"
+    ],
+    "q003": [
+      "指令拨盘的作用是什么？"
+    ],
+    "q004": [
+      "怎么设置ISO感光度？"
+    ],
+    "q005": [
+      "拍照时ISO感光度怎么设置？"
+    ],
+    "q006": [
+      "视频模式下如何调节ISO感光度？"
+    ],
+    "q007": [
+      "怎么通过曝光补偿让照片更亮或更暗？"
+    ],
+    "q008": [
+      "显示屏能转动到哪些位置？"
+    ],
+    "q009": [
+      "显示屏转到自拍模式有什么注意？"
+    ],
+    "q010": [
+      "自拍模式下怎么操作？"
+    ],
+    "q011": [
+      "人像自拍模式期间需要注意什么？"
+    ],
+    "q012": [
+      "用手指触摸屏幕能不能直接拍照？"
+    ],
+    "q013": [
+      "触控屏调整设定的步骤有哪些？"
+    ],
+    "q014": [
+      "用手指滑动照片播放怎么操作？"
+    ],
+    "q015": [
+      "触摸屏怎么播放视频？"
+    ],
+    "q016": [
+      "i菜单在哪里，怎么打开？"
+    ],
+    "q017": [
+      "设备的文本输入方法是什么？"
+    ],
+    "q018": [
+      "怎么操作菜单？"
+    ],
+    "q019": [
+      "触摸屏使用时需要注意什么？"
+    ],
+    "q020": [
+      "在哪里可以启用或关闭触控功能？"
+    ],
+    "q021": [
+      "怎么用DISP按钮切换显示？"
+    ],
+    "q022": [
+      "拍摄时怎么用放大缩小按钮？"
+    ],
+    "q023": [
+      "看照片时怎么用放大缩小按钮？"
+    ],
+    "q024": [
+      "拍照时AE-L/AF-L按钮怎么用？"
+    ],
+    "q025": [
+      "怎么打开菜单？"
+    ],
+    "q026": [
+      "多重选择器在菜单中怎么用？"
+    ],
+    "q027": [
+      "菜单选择时光标怎么移动？"
+    ],
+    "q029": [
+      "按OK键有什么作用？"
+    ],
+    "q030": [
+      "灰色的菜单项是什么意思？"
+    ],
+    "q031": [
+      "菜单里的帮助怎么打开？"
+    ],
+    "q032": [
+      "能用触摸屏控制菜单吗？"
+    ],
+    "q033": [
+      "i按钮有什么用？"
+    ],
+    "q034": [
+      "如何设置自定义i菜单？"
+    ],
+    "q035": [
+      "怎么用Fn按钮快速调节？"
+    ],
+    "q036": [
+      "如何更改Fn按钮的操作？"
+    ],
+    "q037": [
+      "怎样给相机装挂带？"
+    ],
+    "q038": [
+      "怎么使用充电器充电？"
+    ],
+    "q039": [
+      "MH-32充电时灯闪烁异常怎么办？"
+    ],
+    "q040": [
+      "EH-8P电源适配器充电步骤是什么？"
+    ],
+    "q041": [
+      "EH-8P充电指示灯闪烁异常怎么办？"
+    ],
+    "q042": [
+      "USB电力输送怎么给相机供电？"
+    ],
+    "q043": [
+      "第三方USB适配器能给相机电池充电吗？"
+    ],
+    "q044": [
+      "电脑USB接口充电时有什么限制？"
+    ],
+    "q045": [
+      "移动电源充电相机电池支持吗？"
+    ],
+    "q046": [
+      "怎么安装电池和存储卡？"
+    ],
+    "q047": [
+      "怎样正确拆卸电池和存储卡？"
+    ],
+    "q048": [
+      "电池电量显示怎么看？"
+    ],
+    "q049": [
+      "怎么知道还能拍多少张照片？"
+    ],
+    "q050": [
+      "相机镜头怎么安装才不会进灰尘？"
+    ],
+    "q051": [
+      "F卡口镜头安装有什么特别要求？"
+    ],
+    "q052": [
+      "取镜头的正确步骤是什么？"
+    ],
+    "q053": [
+      "相机屏幕如何慢慢旋转展开？"
+    ],
+    "q054": [
+      "相机初次使用时如何设定时钟？"
+    ],
+    "q055": [
+      "闪烁的时钟图标有什么提示？"
+    ],
+    "q056": [
+      "自动拍照模式怎么操作？"
+    ],
+    "q057": [
+      "拍照时相机怎么拿才好？"
+    ],
+    "q058": [
+      "拍照时如何半按快门对焦？"
+    ],
+    "q059": [
+      "触摸屏拍照和变焦怎么操作？"
+    ],
+    "q060": [
+      "怎么用自动模式录视频？"
+    ],
+    "q061": [
+      "无法录制图标是什么意思？"
+    ],
+    "q062": [
+      "视频录制时怎么拍照？"
+    ],
+    "q063": [
+      "视频模式拍照有什么限制？"
+    ],
+    "q065": [
+      "拍视频时如何放大或缩小画面？"
+    ],
+    "q066": [
+      "我想查看相机里的图片和录像，怎么操作？"
+    ],
+    "q067": [
+      "看视频时显示屏显示哪些内容？"
+    ],
+    "q068": [
+      "播放视频时有哪些控制操作？"
+    ],
+    "q069": [
+      "相机里的照片怎么删除？"
+    ],
+    "q071": [
+      "产品使用时有哪些危险操作要避免？"
+    ],
+    "q072": [
+      "使用和存放产品时有哪些安全提示？"
+    ],
+    "q073": [
+      "有哪些事项是使用时必须注意的？"
+    ],
+    "q074": [
+      "电池使用时需要注意什么安全问题？"
+    ],
+    "q075": [
+      "电池存放时需要注意什么？"
+    ],
+    "q076": [
+      "使用说明可以公开分享吗？"
+    ],
+    "q077": [
+      "拷贝资料会不会违法？"
+    ],
+    "q078": [
+      "用非尼康配件会有什么问题？"
+    ],
+    "q079": [
+      "存储卡使用时要注意什么？"
+    ],
+    "q080": [
+      "重要场合拍照前要注意什么？"
+    ],
+    "q081": [
+      "哪里可以查尼康的最新产品信息？"
+    ],
+    "q082": [
+      "尼康提供哪些软件和应用程序？"
+    ],
+    "q084": [
+      "SnapBridge能做什么？怎么下载？"
+    ],
+    "q086": [
+      "SnapBridge有哪些主要功能？"
+    ],
+    "q087": [
+      "尼康影速传的功能是什么？"
+    ],
+    "q088": [
+      "尼康的软件有哪些可以用来编辑照片？"
+    ],
+    "q089": [
+      "尼康工坊软件能做什么？"
+    ],
+    "q090": [
+      "用尼康远控可以远程控制相机吗？"
+    ],
+    "q091": [
+      "Wireless Transmitter Utility是干什么的？"
+    ],
+    "q092": [
+      "用Webcam Utility可以把相机当摄像头吗？"
+    ],
+    "q093": [
+      "照相机机身包括哪些部分？"
+    ],
+    "q095": [
+      "相机上有哪些按钮和接口？"
+    ],
+    "q096": [
+      "能不能用工具清洁影像传感器？"
+    ],
+    "q097": [
+      "相机序列号在哪里看？"
+    ],
+    "q098": [
+      "相机控制面板显示了哪些信息？"
+    ],
+    "q099": [
+      "照片模式下显示屏和取景器会显示什么信息？"
+    ],
+    "q101": [
+      "视频模式中取景器和屏幕显示的内容有哪些？"
+    ],
+    "q102": [
+      "取景器的感应功能有什么注意事项？"
+    ],
+    "q103": [
+      "取景器对焦用哪个控制器？"
+    ],
+    "q104": [
+      "长时间看取景器有什么设置推荐？"
+    ],
+    "q105": [
+      "显示屏模式按钮怎么用？"
+    ],
+    "q106": [
+      "显示屏模式可以限制选择吗？"
+    ],
+    "q107": [
+      "相机的对焦模式在哪里调？"
+    ],
+    "q108": [
+      "自动对焦失败的常见原因有哪些？"
+    ],
+    "q109": [
+      "怎么设置对焦位置记忆？"
+    ],
+    "q110": [
+      "AF区域模式有什么选项？分别有什么用？"
+    ],
+    "q111": [
+      "怎样让对焦点显示在中央？"
+    ],
+    "q112": [
+      "快速选择对焦点的方法是什么？"
+    ],
+    "q113": [
+      "怎么用多重选择器选对焦点？"
+    ],
+    "q114": [
+      "自动识别人脸和眼睛对焦怎么设置？"
+    ],
+    "q115": [
+      "自动对焦识别人脸失败的原因？"
+    ],
+    "q116": [
+      "动物脸部和眼部对焦怎么用？"
+    ],
+    "q117": [
+      "什么时候动物自动对焦会失效？"
+    ],
+    "q118": [
+      "对象跟踪AF怎么启动和关闭？"
+    ],
+    "q119": [
+      "对象跟踪功能在哪些情况下可能失效？"
+    ],
+    "q120": [
+      "用触摸屏如何释放快门？"
+    ],
+    "q121": [
+      "触控快门和触控AF的区别是什么？"
+    ],
+    "q122": [
+      "触控快门可以关闭吗？"
+    ],
+    "q123": [
+      "触控拍摄照片怎么操作？"
+    ],
+    "q124": [
+      "手动对焦怎么用？"
+    ],
+    "q125": [
+      "手动对焦模式能用镜头上的开关吗？"
+    ],
+    "q126": [
+      "焦平面标记有什么用？"
+    ],
+    "q127": [
+      "手动对焦时峰值对焦辅助有什么用？"
+    ],
+    "q128": [
+      "相机白平衡怎么调？"
+    ],
+    "q129": [
+      "白平衡模式说明是什么？"
+    ],
+    "q130": [
+      "白平衡手动预设怎么操作？"
+    ],
+    "q131": [
+      "自然光自动适应模式适合什么环境？"
+    ],
+    "q132": [
+      "如何调节白平衡色温？"
+    ],
+    "q134": [
+      "怎样设置电子快门实现静音拍摄？"
+    ],
+    "q135": [
+      "静音拍摄模式下会有哪些限制？"
+    ],
+    "q136": [
+      "怎样给照片打星标？"
+    ],
+    "q137": [
+      "怎样设置照片保护功能？"
+    ],
+    "q138": [
+      "如何批量取消照片保护？"
+    ],
+    "q140": [
+      "P模式下相机怎么调节快门和光圈？"
+    ],
+    "q141": [
+      "怎么在S档选择快门速度？"
+    ],
+    "q142": [
+      "1/3步长模式怎么调快门？"
+    ],
+    "q143": [
+      "光圈优先模式下光圈怎么设置？"
+    ],
+    "q144": [
+      "视频模式下光圈、快门和ISO怎么设置？"
+    ],
+    "q145": [
+      "M模式调整曝光参数的方法是什么？"
+    ],
+    "q146": [
+      "显示屏和取景器的曝光指示怎么看？"
+    ],
+    "q147": [
+      "曝光警告怎么触发？"
+    ],
+    "q148": [
+      "模式M下怎么开启快门速度扩展？"
+    ],
+    "q149": [
+      "ISO自动控制功能在哪设置？"
+    ],
+    "q150": [
+      "长时间曝光模式怎么设置？"
+    ],
+    "q151": [
+      "长时间曝光拍照要注意什么？"
+    ],
+    "q155": [
+      "ISO感光度高有什么影响？"
+    ],
+    "q157": [
+      "怎么通过其他方式设置曝光补偿？"
+    ],
+    "q158": [
+      "模式M时曝光补偿有什么效果？"
+    ],
+    "q159": [
+      "闪光灯模式下曝光补偿怎么用？"
+    ],
+    "q160": [
+      "AE-L/AF-L按钮是干什么的？"
+    ],
+    "q161": [
+      "曝光锁定有什么用？"
+    ],
+    "q162": [
+      "对焦锁定功能有什么注意事项？"
+    ],
+    "q163": [
+      "怎么用AE-L/AF-L按钮先对焦再锁定曝光？"
+    ],
+    "q164": [
+      "什么时候半按快门就能锁定对焦？"
+    ],
+    "q165": [
+      "快门按钮怎么锁定曝光？"
+    ],
+    "q166": [
+      "连续拍摄时怎么保持对焦锁定？"
+    ],
+    "q167": [
+      "安全须知要怎么保存和查看？"
+    ]
+  }
+}

@@ -19,7 +19,7 @@ export function Dropdown({ label, children, primary = true }: { label: string; c
       >
         {label}<span className="dropdownChevron">▾</span>
       </button>
-      <div className={`dropdownMenu ${open ? "" : "hidden"}`} onClick={() => setOpen(false)}>{children}</div>
+      <div className={`dropdownMenu ${open ? "" : "hidden"}`} onClick={(e) => { e.stopPropagation(); setOpen(false); }}>{children}</div>
     </div>
   );
 }

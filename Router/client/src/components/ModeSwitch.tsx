@@ -8,7 +8,7 @@ export function ModeSwitch({ mode, onChange }: { mode: AskMode; onChange: (m: As
         className={`segmentedBtn ${mode === "llm" ? "active" : ""}`}
         onClick={() => onChange("llm")}
       >
-        回答模型
+        问答模型
       </button>
       <button
         type="button"

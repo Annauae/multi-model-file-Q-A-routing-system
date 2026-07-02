@@ -31,7 +31,7 @@ export class ModelsStore {
         const filePath = path.join(settings.dataRoot, "config", "models.json");
         const defaults = {
             match: {
-                label: "回答模型",
+                label: "问答模型",
                 api_base_url: settings.apiBaseUrl,
                 api_key: settings.apiKey,
                 model: settings.matchModel,

@@ -1,5 +1,6 @@
 import express from "express";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import multer from "multer";
 import { APP_ROOT, loadSettings } from "./config.js";
@@ -12,9 +13,11 @@ import { OperationLog } from "./services/operationLog.js";
 import { LLMClient, LLMError } from "./services/llmClient.js";
 import { AskLogSink, runConfidenceMatch, sseEvent, } from "./services/confidenceMatch.js";
 import { kbAssetsDirPath, kbDirPath, questionsJsonPath, recallTestsJsonPath, documentsAssetsDirPath, documentsSourcesDirPath, } from "./services/paths.js";
-import { buildMarkdownFilesTree, readMarkdownContent, saveMarkdownContent, deleteDocumentFile, renameDocumentFile, createModuleMarkdown, documentsSourcePath, } from "./services/markdownFiles.js";
-import { extractMarkdownRange, extractPdfToMarkdown, mergeExtractStats, } from "./services/fileProcessor.js";
+import { buildMarkdownFilesTree, readDocumentContent, saveMarkdownContent, deleteDocumentFile, renameDocumentFile, createModuleMarkdown, documentsSourcePath, resolvePreviewFilePath, listExcelSheets, } from "./services/markdownFiles.js";
+import { extractMarkdownRange, extractPdfToMarkdown, extractSourceToMarkdown, mergeExtractStats, finalizeCombinedExtract, detectSourceFormat, } from "./services/fileProcessor.js";
+import { isAllowedSourceExtension, fileKind as docFileKind, capabilitiesForKind, formatFromFilename, listCapabilitiesPayload, } from "./services/documentTypes.js";
 import { assignQuestionIds, generateFaqQuestionsOnly } from "./services/questionsImport.js";
+import { importRagFaqToLlm } from "./services/ragImport.js";
 import { allDefaultPrompts } from "./services/promptDefaults.js";
 import { buildQuestionListSection, defaultConfidenceMatchPrompt, } from "./services/matcher.js";
 import { createRagContext } from "./services/ragContext.js";
@@ -298,6 +301,28 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    app.post("/knowledge-bases/:kbId/import/from-rag", async (req, res) => {
+        try {
+            const llmKbId = validateKbId(ctx, req.params.kbId);
+            const ragKbId = String(req.body.rag_kb_id ?? "").trim();
+            if (!ragKbId)
+                throw httpError(400, "rag_kb_id 必填");
+            const result = importRagFaqToLlm(ctx, llmKbId, ragKbId, {
+                append: req.body.append !== false,
+                replace: Boolean(req.body.replace),
+            });
+            ctx.opLog.append({
+                module: "manage",
+                action: "import-from-rag",
+                kb_id: llmKbId,
+                detail: `from rag ${ragKbId}, ${result.imported} items`,
+            });
+            res.json({ ok: true, ...result });
+        }
+        catch (e) {
+            res.status(e.status || 400).json({ detail: e.detail ?? (e instanceof Error ? e.message : String(e)) });
+        }
+    });
     app.get("/knowledge-bases/:kbId/questions", (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -408,7 +433,7 @@ export function createApp(ctx, clientDist) {
     app.get("/logs", (req, res) => {
         const items = ctx.opLog.listEntries({
             limit: Number(req.query.limit ?? 500),
-            module: String(req.query.module ?? ""),
+            modules: String(req.query.modules ?? req.query.module ?? ""),
             kb_id: String(req.query.kb_id ?? ""),
             level: String(req.query.level ?? ""),
         });
@@ -480,7 +505,7 @@ export function createApp(ctx, clientDist) {
             faq_generation_prompt: "faq_generation_prompt" in req.body ? req.body.faq_generation_prompt : undefined,
             pdf_vlm_prompt: "pdf_vlm_prompt" in req.body ? req.body.pdf_vlm_prompt : undefined,
         });
-        ctx.opLog.append({ module: "settings", action: "update_prompts", detail: "更新回答模型提示词" });
+        ctx.opLog.append({ module: "settings", action: "update_prompts", detail: "更新问答模型提示词" });
         res.json({ ...gp, defaults: allDefaultPrompts(ctx.settings.confidenceTopK) });
     });
     app.get("/settings/match-profiles", (_req, res) => {
@@ -491,7 +516,7 @@ export function createApp(ctx, clientDist) {
     });
     app.put("/settings/match-profiles", (req, res) => {
         const updated = ctx.matchProfilesStore.updateAll(req.body);
-        ctx.opLog.append({ module: "settings", action: "update_match_profiles", detail: "更新回答模型配置" });
+        ctx.opLog.append({ module: "settings", action: "update_match_profiles", detail: "更新问答模型配置" });
         res.json(updated);
     });
     app.get("/settings/models", (_req, res) => {
@@ -531,9 +556,34 @@ export function createApp(ctx, clientDist) {
     app.get("/markdown-files/tree", (_req, res) => {
         res.json(buildMarkdownFilesTree(ctx.settings.filesRoot));
     });
-    app.get("/markdown-files/content", (req, res) => {
+    app.get("/documents/capabilities", (_req, res) => {
+        res.json(listCapabilitiesPayload());
+    });
+    app.get("/documents/preview-file", (req, res) => {
         try {
-            res.json(readMarkdownContent(ctx.settings.filesRoot, String(req.query.path ?? "")));
+            const filePath = resolvePreviewFilePath(ctx.settings.filesRoot, String(req.query.path ?? ""));
+            res.setHeader("Content-Type", "application/pdf");
+            res.sendFile(filePath);
+        }
+        catch (e) {
+            res.status(e.status ?? 400).json({ detail: e instanceof LLMError ? e.message : String(e) });
+        }
+    });
+    app.get("/documents/excel-sheets", (req, res) => {
+        try {
+            const filename = path.basename(String(req.query.filename ?? "").trim());
+            const sourcePath = documentsSourcePath(ctx.settings.filesRoot, filename);
+            if (!fs.existsSync(sourcePath))
+                return res.status(404).json({ detail: "源文件不存在" });
+            res.json({ sheets: listExcelSheets(sourcePath) });
+        }
+        catch (e) {
+            res.status(400).json({ detail: e instanceof LLMError ? e.message : String(e) });
+        }
+    });
+    app.get("/markdown-files/content", async (req, res) => {
+        try {
+            res.json(await readDocumentContent(ctx.settings.filesRoot, String(req.query.path ?? "")));
         }
         catch (e) {
             res.status(400).json({ detail: e instanceof LLMError ? e.message : String(e) });
@@ -590,20 +640,41 @@ export function createApp(ctx, clientDist) {
         if (!file)
             return res.status(400).json({ detail: "file 必填" });
         const name = (file.originalname || "upload").trim();
-        if (!name.toLowerCase().endsWith(".pdf") && !name.toLowerCase().endsWith(".md")) {
-            return res.status(400).json({ detail: "仅支持 .pdf 或 .md 文件" });
+        if (!isAllowedSourceExtension(name)) {
+            return res.status(400).json({ detail: "不支持的文件类型" });
         }
         const destDir = documentsSourcesDirPath(ctx.settings.filesRoot);
         fs.mkdirSync(destDir, { recursive: true });
         const dest = path.join(destDir, path.basename(name));
-        fs.writeFileSync(dest, file.buffer);
-        const meta = { filename: path.basename(dest), size: file.size };
-        if (dest.toLowerCase().endsWith(".md")) {
-            meta.line_count = fs.readFileSync(dest, "utf-8").split(/\r?\n/).length;
-            meta.file_type = "md";
+        const overwrite = req.query.overwrite === "1"
+            || req.query.overwrite === "true"
+            || req.body?.overwrite === "1"
+            || req.body?.overwrite === true;
+        if (fs.existsSync(dest) && !overwrite) {
+            return res.status(409).json({
+                detail: `文件「${path.basename(dest)}」已存在`,
+                filename: path.basename(dest),
+                exists: true,
+            });
         }
-        else {
-            meta.file_type = "pdf";
+        fs.writeFileSync(dest, file.buffer);
+        const kind = docFileKind(path.basename(dest), "sources");
+        const file_type = formatFromFilename(path.basename(dest));
+        const caps = capabilitiesForKind(kind);
+        const meta = {
+            filename: path.basename(dest),
+            size: file.size,
+            file_type,
+            kind,
+            capabilities: caps,
+        };
+        if (caps?.editable !== false && kind !== "source_pdf") {
+            try {
+                meta.line_count = fs.readFileSync(dest, "utf-8").split(/\r?\n/).length;
+            }
+            catch {
+                meta.line_count = 0;
+            }
         }
         ctx.opLog.append({ module: "files", action: "upload", detail: `uploaded ${path.basename(dest)}` });
         res.json(meta);
@@ -612,6 +683,8 @@ export function createApp(ctx, clientDist) {
         const filename = String(req.body.filename ?? "").trim()
             || path.basename(String(req.body.path ?? "").trim());
         const ranges = normalizeImportRanges(req.body.ranges);
+        const useVlmRefine = req.body.use_vlm_refine !== false;
+        const sheetName = String(req.body.sheet_name ?? "").trim() || undefined;
         if (!filename)
             return res.status(400).json({ detail: "filename 必填" });
         if (!ranges.length)
@@ -625,51 +698,167 @@ export function createApp(ctx, clientDist) {
         }
         if (!fs.existsSync(sourcePath))
             return res.status(404).json({ detail: "源文件不存在" });
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache, no-transform");
+        res.setHeader("Connection", "keep-alive");
+        res.setHeader("X-Accel-Buffering", "no");
         res.flushHeaders?.();
         res.write(": connected\n\n");
-        const emit = (line, kind = "log") => {
-            res.write(sseEvent("log", { line, kind }));
+        const flushSse = () => {
+            if (typeof res.flush === "function")
+                res.flush();
+        };
+        const keepAlive = setInterval(() => {
+            if (!res.writableEnded) {
+                res.write(": keepalive\n\n");
+                flushSse();
+            }
+        }, 8000);
+        const emitStep = (line) => {
+            res.write(sseEvent("log", { line, kind: "step" }));
+            flushSse();
             ctx.opLog.append({ module: "files", action: "step", detail: line, kind: "step" });
         };
+        const forwardProgress = (msg) => {
+            const line = String(msg ?? "").trim();
+            if (line)
+                emitStep(line);
+        };
+        let stagingRoot = null;
         try {
-            emit("[step] 正在准备提取任务…", "step");
-            const isPdf = filename.toLowerCase().endsWith(".pdf");
-            const isMd = filename.toLowerCase().endsWith(".md");
-            if (!isPdf && !isMd)
-                throw new LLMError("仅支持 PDF 或 Markdown 文件导入");
+            emitStep("正在准备提取任务…");
+            const fmt = detectSourceFormat(filename);
+            const isPdf = fmt === "pdf";
+            const isLineRange = ["md", "txt", "json", "html", "htm"].includes(fmt);
+            const isWholeDoc = fmt === "docx";
+            const isExcel = ["xlsx", "xls", "csv"].includes(fmt);
+            if (!isPdf && !isLineRange && !isWholeDoc && !isExcel)
+                throw new LLMError(`不支持的文件类型: ${fmt}`);
             const pdfVlmCfg = ctx.modelsStore.getSlot("pdf_vlm");
             const vlmPrompt = ctx.promptsStore.effectivePdfVlmPrompt();
+            const multiRange = ranges.length > 1 && (isPdf || isLineRange);
+            if (multiRange) {
+                stagingRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kr-extract-"));
+                emitStep(`共 ${ranges.length} 段范围，将合并为单个 Markdown…`);
+            }
             let combined = {};
-            for (const [rangeStart, rangeEnd] of ranges) {
-                if (isMd) {
-                    const [, , stats] = await extractMarkdownRange({
+            const extractParts = [];
+            const allWarnings = [];
+            const rangeList = isWholeDoc ? [[1, 1]] : ranges;
+            for (const [rangeStart, rangeEnd] of rangeList) {
+                const rangeOutDir = multiRange
+                    ? path.join(stagingRoot, `${isPdf ? "p" : "l"}${rangeStart}-${rangeEnd}`)
+                    : undefined;
+                if (rangeOutDir)
+                    fs.mkdirSync(rangeOutDir, { recursive: true });
+                let mergedMd;
+                let moduleOut;
+                let stats;
+                if (isWholeDoc) {
+                    emitStep("开始转换 Word 文档…");
+                    [mergedMd, moduleOut, stats] = await extractSourceToMarkdown({
                         filesRoot: ctx.settings.filesRoot,
                         sourcePath,
-                        lineStart: rangeStart,
-                        lineEnd: rangeEnd,
-                        onProgress: (msg) => emit(msg, "log"),
+                        filename,
+                        ranges: [[1, 1]],
+                        onProgress: forwardProgress,
+                        outputModulesDir: rangeOutDir,
+                        settings: ctx.settings,
+                        modelsStore: ctx.modelsStore,
+                        promptsStore: ctx.promptsStore,
+                        useVlmRefine,
                     });
-                    combined = mergeExtractStats(combined, stats);
                 }
-                else {
-                    const [, , stats] = await extractPdfToMarkdown({
+                else if (isExcel) {
+                    emitStep(`开始转换 Excel 第 ${rangeStart}-${rangeEnd} 行…`);
+                    [mergedMd, moduleOut, stats] = await extractSourceToMarkdown({
+                        filesRoot: ctx.settings.filesRoot,
+                        sourcePath,
+                        filename,
+                        ranges: [[rangeStart, rangeEnd]],
+                        sheetName,
+                        onProgress: forwardProgress,
+                        outputModulesDir: rangeOutDir,
+                        settings: ctx.settings,
+                        modelsStore: ctx.modelsStore,
+                        promptsStore: ctx.promptsStore,
+                        useVlmRefine,
+                    });
+                }
+                else if (isPdf) {
+                    emitStep(`开始提取第 ${rangeStart}-${rangeEnd} 页…`);
+                    [mergedMd, moduleOut, stats] = await extractPdfToMarkdown({
                         filesRoot: ctx.settings.filesRoot,
                         sourcePath,
                         pageStart: rangeStart,
                         pageEnd: rangeEnd,
                         vlmModel: pdfVlmCfg.model,
                         vlmSystemPrompt: vlmPrompt,
-                        onProgress: (msg) => emit(msg, "log"),
+                        outputModulesDir: rangeOutDir,
+                        onProgress: forwardProgress,
                     });
-                    combined = mergeExtractStats(combined, stats);
                 }
+                else {
+                    if (["html", "htm"].includes(fmt) && useVlmRefine) {
+                        emitStep(`开始转换 HTML 第 ${rangeStart}-${rangeEnd} 行…`);
+                        [mergedMd, moduleOut, stats] = await extractSourceToMarkdown({
+                            filesRoot: ctx.settings.filesRoot,
+                            sourcePath,
+                            filename,
+                            ranges: [[rangeStart, rangeEnd]],
+                            onProgress: forwardProgress,
+                            outputModulesDir: rangeOutDir,
+                            settings: ctx.settings,
+                            modelsStore: ctx.modelsStore,
+                            promptsStore: ctx.promptsStore,
+                            useVlmRefine,
+                        });
+                    }
+                    else {
+                        [mergedMd, moduleOut, stats] = await extractMarkdownRange({
+                            filesRoot: ctx.settings.filesRoot,
+                            sourcePath,
+                            lineStart: rangeStart,
+                            lineEnd: rangeEnd,
+                            outputModulesDir: rangeOutDir,
+                            onProgress: forwardProgress,
+                        });
+                    }
+                }
+                if (stats.warnings?.length)
+                    allWarnings.push(...stats.warnings);
+                extractParts.push({
+                    label: isPdf ? `pages ${rangeStart}-${rangeEnd}` : `lines ${rangeStart}-${rangeEnd}`,
+                    md: mergedMd,
+                    modulePath: stats.module_path,
+                    absPath: moduleOut,
+                });
+                combined = mergeExtractStats(combined, stats);
             }
-            res.write(sseEvent("done", combined));
+            if (multiRange) {
+                emitStep(`正在合并 ${ranges.length} 段为单个 Markdown…`);
+            }
+            const result = finalizeCombinedExtract(
+                ctx.settings.filesRoot,
+                filename,
+                isWholeDoc ? [[1, 1]] : ranges,
+                isPdf,
+                extractParts,
+                combined,
+            );
+            if (allWarnings.length)
+                result.warnings = [...new Set(allWarnings)];
+            emitStep(`已写入 ${result.path}`);
+            res.write(sseEvent("done", result));
+            flushSse();
         }
         catch (e) {
             res.write(sseEvent("error", { detail: e instanceof Error ? e.message : String(e) }));
+        }
+        finally {
+            clearInterval(keepAlive);
+            if (stagingRoot && fs.existsSync(stagingRoot))
+                fs.rmSync(stagingRoot, { recursive: true, force: true });
         }
         res.end();
     });
@@ -733,7 +922,10 @@ export function createApp(ctx, clientDist) {
             }
 
             if (targets.includes("rag")) {
-                const ragStore = ctx.ragCtx.getRagQuestionsStore(kid);
+                const ragKid = String(req.body.rag_kb_id ?? kid).trim();
+                if (!ctx.ragCtx.ragKbStore.get(ragKid))
+                    throw httpError(404, `RAG 知识库 ${ragKid} 不存在`);
+                const ragStore = ctx.ragCtx.getRagQuestionsStore(ragKid);
                 const existing = ragStore.getDocument().items;
                 const withIds = assignAndMerge(ragStore, existing);
                 results.rag = withIds.length;
@@ -741,13 +933,13 @@ export function createApp(ctx, clientDist) {
                     results.items = withIds;
                 if (req.body.auto_rebuild_rag !== false) {
                     try {
-                        await rebuildIndex(kid, ctx.ragCtx);
+                        await rebuildIndex(ragKid, ctx.ragCtx);
                     }
                     catch (err) {
                         console.warn(`[import] rag rebuild failed: ${err}`);
                     }
                 }
-                ctx.opLog.append({ module: "generate", action: "commit-rag", kb_id: kid, detail: `imported ${withIds.length} items` });
+                ctx.opLog.append({ module: "generate", action: "commit-rag", kb_id: ragKid, detail: `imported ${withIds.length} items` });
             }
 
             res.json(results);

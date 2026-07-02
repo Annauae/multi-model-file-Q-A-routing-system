@@ -4,19 +4,35 @@ import type { LogEntry } from "../types";
 import { useKnowledgeBases } from "../hooks/useKnowledgeBases";
 import { useAppUi } from "../context/AppUiContext";
 
-const MODULES = ["", "debug", "manage", "files", "generate", "settings"] as const;
-const MODULE_LABELS: Record<string, string> = { "": "全部", debug: "调试", manage: "问题管理", files: "文件管理", generate: "问题生成", settings: "设置" };
+const MODULES = ["", "llm", "rag", "manage", "files", "generate", "settings"] as const;
+const MODULE_LABELS: Record<string, string> = {
+  "": "全部",
+  llm: "问答模型",
+  rag: "RAG",
+  manage: "问题管理",
+  files: "文件管理",
+  generate: "问题生成",
+  settings: "设置",
+};
+
+const MODULE_FILTER: Record<string, string> = {
+  llm: "debug",
+  rag: "rag-debug,rag-manage,rag",
+};
 
 function renderLogEntry(entry: LogEntry) {
   const kind = (entry as { kind?: string }).kind || entry.action || "log";
   const ts = (entry.ts || "").replace("T", " ").replace("Z", "");
   const mod = entry.module ? `[${entry.module}]` : "";
+  const action = entry.action && entry.action !== kind ? `[${entry.action}]` : "";
   const kb = entry.kb_id ? ` kb=${entry.kb_id}` : "";
   let detail = entry.detail || "";
-  if (detail.length > 800) detail = `${detail.slice(0, 800)}…（已截断）`;
+  const isRag = (entry.module || "").startsWith("rag");
+  const maxLen = isRag ? 4000 : 800;
+  if (detail.length > maxLen) detail = `${detail.slice(0, maxLen)}…（已截断）`;
   return (
-    <div key={ts + detail} className={`logBlock ${kind}`}>
-      <span className="logLine">{ts} {mod}{kb} {detail}</span>
+    <div key={`${ts}-${entry.action}-${detail.slice(0, 40)}`} className={`logBlock ${kind}`}>
+      <span className="logLine">{ts} {mod}{action}{kb} {detail}</span>
     </div>
   );
 }
@@ -32,7 +48,8 @@ export function LogsView() {
 
   const fetchLogs = async (mod = module) => {
     const qs = new URLSearchParams({ limit: "500" });
-    if (mod) qs.set("module", mod);
+    const modulesParam = mod ? MODULE_FILTER[mod] ?? mod : "";
+    if (modulesParam) qs.set("modules", modulesParam);
     if (kbId) qs.set("kb_id", kbId);
     try {
       const data = await apiJson<{ items: LogEntry[] }>(`/logs?${qs}`);

@@ -26,7 +26,7 @@ export class MatchProfilesStore {
             this.profiles = [
                 {
                     id: DEFAULT_PROFILE_ID,
-                    name: "默认回答模型",
+                    name: "默认问答模型",
                     api_base_url: cfg?.api_base_url ?? "",
                     api_key: cfg?.api_key ?? "",
                     model: cfg?.model ?? "",
@@ -71,7 +71,7 @@ export class MatchProfilesStore {
         this.profiles = [
             {
                 id: DEFAULT_PROFILE_ID,
-                name: "默认回答模型",
+                name: "默认问答模型",
                 api_base_url: cfg?.api_base_url ?? "",
                 api_key: cfg?.api_key ?? "",
                 model: cfg?.model ?? "",

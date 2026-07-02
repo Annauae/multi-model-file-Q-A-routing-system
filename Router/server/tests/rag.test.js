@@ -37,6 +37,10 @@ beforeAll(() => {
       items: [{ id: "q001", question: "RAG 曝光补偿", variants: ["怎么调曝光"], answer: "RAG 预存回答", enabled: true, updated_at: "2026-06-23T00:00:00Z" }],
     }),
   );
+  fs.writeFileSync(
+    path.join(configPath, "rag_knowledge_bases.json"),
+    JSON.stringify({}),
+  );
   fs.writeFileSync(path.join(configPath, "match_profiles.json"), JSON.stringify({ default_id: "default", profiles: [{ id: "default", name: "default", model: "test", api_base_url: "http://localhost", api_key: "test" }] }));
   fs.writeFileSync(path.join(configPath, "models.json"), JSON.stringify({ match: { model: "test", api_base_url: "http://localhost", api_key: "test" }, import: { model: "test", api_base_url: "http://localhost", api_key: "test" }, pdf_vlm: { model: "test", api_base_url: "http://localhost", api_key: "test" } }));
   fs.writeFileSync(path.join(configPath, "prompts.json"), JSON.stringify({ confidence_match_prompt: "test", faq_generation_prompt: "test", pdf_vlm_prompt: "test" }));
@@ -44,6 +48,7 @@ beforeAll(() => {
   process.env.DATA_ROOT = tmpRoot;
   process.env.FILES_ROOT = filesRoot;
   process.env.KB_CONFIG_PATH = path.join(configPath, "knowledge_bases.json");
+  process.env.RAG_KB_CONFIG_PATH = path.join(configPath, "rag_knowledge_bases.json");
   process.env.MOCK_LLM = "1";
   process.env.MOCK_WEAVIATE = "1";
   process.env.API_KEY = "test";
@@ -58,6 +63,14 @@ describe("rag health", () => {
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.weaviate.mock).toBe(true);
+  });
+});
+
+describe("rag knowledge bases", () => {
+  it("lists rag knowledge bases after legacy migration", async () => {
+    const res = await request(app).get("/rag/knowledge-bases");
+    expect(res.status).toBe(200);
+    expect(res.body.items.some((x) => x.kb_id === "1")).toBe(true);
   });
 });
 
@@ -78,6 +91,30 @@ describe("rag questions CRUD", () => {
     });
     expect(res.status).toBe(200);
     expect(res.body.id).toBe("q002");
+  });
+});
+
+describe("rag import from llm", () => {
+  it("imports from llm faq", async () => {
+    const res = await request(app).post("/rag/knowledge-bases/1/import/from-llm").send({
+      llm_kb_id: "1",
+      append: false,
+      auto_rebuild: false,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(1);
+  });
+});
+
+describe("llm import from rag", () => {
+  it("imports from rag faq", async () => {
+    const res = await request(app).post("/knowledge-bases/1/import/from-rag").send({
+      rag_kb_id: "1",
+      append: false,
+      replace: true,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.imported).toBe(1);
   });
 });
 
@@ -107,6 +144,7 @@ describe("import dual target", () => {
       items: [{ question: "导入题", variants: ["变体"], answer: "导入答案", enabled: true }],
       append: true,
       targets: ["rag"],
+      rag_kb_id: "1",
       auto_rebuild_rag: false,
     });
     expect(res.status).toBe(200);

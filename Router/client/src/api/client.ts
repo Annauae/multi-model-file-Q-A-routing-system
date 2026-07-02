@@ -158,11 +158,27 @@ export async function streamDocumentExtract(
 ) {
   const resp = await fetch("/documents/extract/stream", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
     body: JSON.stringify(body),
   });
   if (!resp.ok) throw new Error(await resp.text());
   await consumeSseStream(resp, onEvent);
+}
+
+/** 从 SSE log 事件解析文本（兼容 line / message / detail） */
+export function sseLogText(data: Record<string, unknown>): string {
+  const line = data.line ?? data.message ?? data.detail;
+  return line != null ? stripAnsi(String(line).trim()) : "";
+}
+
+/** 提取进度：仅展示 kind=step 的步骤信息 */
+export function sseStepText(data: Record<string, unknown>): string {
+  if (data.kind && data.kind !== "step") return "";
+  return sseLogText(data);
+}
+
+export function stripAnsi(text: string): string {
+  return text.replace(/\x1b\[[0-9;]*m/g, "").replace(/\r/g, "");
 }
 
 export function formatQuestionId(n: number): string {

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { charNgrams, clipText } from "./textUtils.js";
+import { normalizeApiUsage, usageFromText } from "./tokenUtils.js";
 
 export function normalizeMatrix(vectors) {
     return vectors.map((row) => {
@@ -39,24 +40,26 @@ export class EmbeddingClient {
 
     async embedTexts(texts) {
         if (!texts.length)
-            return [];
+            return { vectors: [], usage: null };
         if (this.useApi) {
             try {
-                const vectors = await this.embedApi(texts);
+                const { vectors, usage } = await this.embedApi(texts);
                 if (vectors.length && vectors[0].length)
                     this.dimensionCache = vectors[0].length;
-                return vectors;
+                return { vectors, usage };
             }
             catch (err) {
                 console.warn(`[embedding] API embedding failed, using hash fallback: ${err}`);
             }
         }
-        return this.embedHash(texts);
+        return { vectors: this.embedHash(texts), usage: null };
     }
 
     async embedQuery(text) {
-        const [vec] = await this.embedTexts([text]);
-        return vec ?? [];
+        const { vectors, usage } = await this.embedTexts([text]);
+        const vector = vectors[0] ?? [];
+        const resolved = usage || usageFromText(text);
+        return { vector, usage: resolved };
     }
 
     async embedApi(texts) {
@@ -67,6 +70,7 @@ export class EmbeddingClient {
             "Content-Type": "application/json",
         };
         const out = [];
+        let usageTotal = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
         const step = Math.max(1, this.settings.embeddingBatchSize);
         for (let start = 0; start < texts.length; start += step) {
             const batch = texts.slice(start, start + step).map((t) => clipText(t.replace(/\x00/g, " "), this.settings.embeddingMaxChars) || " ");
@@ -79,6 +83,12 @@ export class EmbeddingClient {
             if (!resp.ok)
                 throw new Error(await resp.text());
             const data = await resp.json();
+            const batchUsage = normalizeApiUsage(data.usage);
+            if (batchUsage) {
+                usageTotal.prompt_tokens += batchUsage.prompt_tokens || 0;
+                usageTotal.completion_tokens += batchUsage.completion_tokens || 0;
+                usageTotal.total_tokens += batchUsage.total_tokens || 0;
+            }
             const ordered = new Array(batch.length).fill(null);
             for (const item of data.data ?? []) {
                 ordered[item.index] = item.embedding.map(Number);
@@ -90,7 +100,8 @@ export class EmbeddingClient {
                 await new Promise((r) => setTimeout(r, this.settings.embeddingSleepSec * 1000));
             }
         }
-        return normalizeMatrix(out);
+        const usage = usageTotal.total_tokens || usageTotal.prompt_tokens ? usageTotal : null;
+        return { vectors: normalizeMatrix(out), usage };
     }
 
     embedHash(texts) {

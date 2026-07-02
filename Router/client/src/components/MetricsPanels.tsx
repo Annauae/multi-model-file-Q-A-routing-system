@@ -43,7 +43,23 @@ export function TimingsPanel({
   );
 }
 
-export function TokenPanel({ timings, emptyText = "提问后显示" }: { timings: AskTimings | null; emptyText?: string }) {
+export const RAG_PHASE_LABELS: Record<string, string> = {
+  embedding: "Embedding",
+  rerank: "Rerank",
+  generate: "RAG 问答模型",
+};
+
+export function TokenPanel({
+  timings,
+  emptyText = "提问后显示",
+  phaseLabels,
+  hint,
+}: {
+  timings: AskTimings | null;
+  emptyText?: string;
+  phaseLabels?: Record<string, string>;
+  hint?: string;
+}) {
   if (!timings?.tokens) {
     return <div className="empty">{emptyText}</div>;
   }
@@ -55,6 +71,7 @@ export function TokenPanel({ timings, emptyText = "提问后显示" }: { timings
   ];
   return (
     <>
+      {hint ? <p className="muted tokenModeHint">{hint}</p> : null}
       {chips.map(([label, val]) => (
         <div key={String(label)} className="tokenChip">
           <span>{label}</span>
@@ -66,10 +83,15 @@ export function TokenPanel({ timings, emptyText = "提问后显示" }: { timings
           <div className="muted tokenBreakdownHead">细分（各阶段）</div>
           {timings.token_breakdown.map((row) => {
             const u = row.usage || {};
+            const phaseLabel = phaseLabels?.[row.phase] || row.phase;
             return (
               <div key={row.phase} className="tokenBreakdownRow">
-                <div className="tokenBreakdownPhase">{row.phase}</div>
+                <div className="tokenBreakdownPhase">{phaseLabel}</div>
                 <div className="tokenBreakdownStats">
+                  <div className="tokenChip">
+                    <span>总 Token</span>
+                    <strong>{u.total_tokens ?? (u.prompt_tokens ?? 0) + (u.completion_tokens ?? 0)}</strong>
+                  </div>
                   <div className="tokenChip">
                     <span>输入 Token</span>
                     <strong>{u.prompt_tokens ?? 0}</strong>

@@ -13,18 +13,20 @@ import {
 import { TimingsPanel, TokenPanel, TimeoutMetrics } from "../components/MetricsPanels";
 import { Dropdown } from "../components/Dropdown";
 import { useAppUi } from "../context/AppUiContext";
-import { useKnowledgeBases, useMatchProfiles } from "../hooks/useKnowledgeBases";
+import { useKnowledgeBases, useMatchProfiles, useRagKnowledgeBases } from "../hooks/useKnowledgeBases";
 import { RecallAnswerModalContent } from "./DebugViews";
 import { ModeBar } from "../components/ModeBar";
 import { IndexStatusPill } from "../components/IndexStatusPill";
-import { RagEvalModal } from "../components/RagEvalModal";
-import type { AskMode, RagSearchResult } from "../types";
+import { MarkdownPreview } from "../components/MarkdownPreview";
+import type { AskMode, RagChatResponse, RagSearchResult } from "../types";
 
 type RecallRow = RecallTestRow & {
   answers?: CandidateAnswer[];
   timings?: AskTimings;
   candidates?: CandidateAnswer[];
   rag_sources?: RagSearchResult[];
+  rag_answer?: string;
+  rag_mode?: string;
   expected_id?: string;
 };
 
@@ -78,9 +80,12 @@ function buildRecallStat(rows: RecallRow[]): string {
 export function RecallModule() {
   const { showToast, showModal } = useAppUi();
   const { kbMap, kbDisplayName } = useKnowledgeBases();
+  const { kbMap: ragKbMap, kbDisplayName: ragKbDisplayName } = useRagKnowledgeBases();
   const { data: profilesData } = useMatchProfiles();
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
+  const ragKbIds = Object.keys(ragKbMap).sort((a, b) => Number(a) - Number(b));
   const [kbId, setKbId] = useState("");
+  const [ragKbId, setRagKbId] = useState("");
   const [topK, setTopK] = useState(5);
   const [profileId, setProfileId] = useState("");
   const [rows, setRows] = useState<RecallRow[]>([]);
@@ -97,7 +102,8 @@ export function RecallModule() {
   const [batchMetrics, setBatchMetrics] = useState<AskTimings | null>(null);
   const [timedOut, setTimedOut] = useState(false);
 
-  const effectiveKb = kbId || kbIds[0] || "";
+  const effectiveKb = recallMode === "rag" ? (ragKbId || ragKbIds[0] || "") : (kbId || kbIds[0] || "");
+  const displayKbName = recallMode === "rag" ? ragKbDisplayName : kbDisplayName;
   const profiles = profilesData?.profiles || [];
   const effectiveProfile = profileId || profilesData?.default_id || profiles[0]?.id || "";
   const profileLabel = profiles.find((p) => p.id === effectiveProfile)?.name || effectiveProfile;
@@ -129,18 +135,20 @@ export function RecallModule() {
     const q = (row.question || "").trim();
     if (!q || !effectiveKb) return row;
     if (recallMode === "rag") {
-      const data = await apiJson<{ results: RagSearchResult[]; timing?: AskTimings }>("/rag/search", {
+      const data = await apiJson<RagChatResponse>("/rag/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: q, kb_id: effectiveKb, top_k: topK }),
+        body: JSON.stringify({ query: q, kb_id: effectiveKb, top_n: topK }),
       });
-      const sources = data.results || [];
+      const sources = data.sources || [];
       const topId = sources[0]?.id || "";
       const recalled = row.expected_id ? (topId === row.expected_id ? "yes" : "no") : "";
       const updated: RecallRow = {
         ...row,
         run_at: new Date().toISOString(),
         rag_sources: sources,
+        rag_answer: data.answer || "",
+        rag_mode: data.mode || "",
         timings: data.timing,
         last_top_id: topId,
         recalled: recalled || row.recalled,
@@ -229,24 +237,26 @@ export function RecallModule() {
         },
         true,
       );
-    } else if (action === "sampleFromFaq" && recallMode === "rag") {
-      void apiJson<{ items: { id: string; question: string; variants?: string[] }[] }>(
-        `/rag/knowledge-bases/${encodeURIComponent(effectiveKb)}/questions`,
-      ).then((doc) => {
+    } else if (action === "sampleFromFaq") {
+      const qPath = recallMode === "rag"
+        ? `/rag/knowledge-bases/${encodeURIComponent(effectiveKb)}/questions`
+        : `/knowledge-bases/${encodeURIComponent(effectiveKb)}/questions`;
+      void apiJson<{ items: { id: string; question: string; variants?: string[] }[] }>(qPath).then((doc) => {
         const items = (doc.items || []).filter((it) => it.question?.trim());
-        if (!items.length) return showToast("RAG FAQ 为空", "error");
+        if (!items.length) return showToast("FAQ 为空", "error");
         const sampled = items.sort(() => Math.random() - 0.5).slice(0, Math.min(10, items.length));
-        setRows([...rows, ...sampled.map((it) => newRecallRow({ question: it.question, expected_id: it.id }))]);
-        showToast(`已从 RAG FAQ 采样 ${sampled.length} 条`);
+        setRows([...rows, ...sampled.map((it) => newRecallRow({
+          question: it.question,
+          ...(recallMode === "rag" ? { expected_id: it.id } : {}),
+        }))]);
+        showToast(`已从 FAQ 采样 ${sampled.length} 条`);
       }).catch((e) => showToast(e.message, "error"));
-    } else if (action === "runEval" && recallMode === "rag") {
-      showModal("Recall@K 批量评测", <RagEvalModal kbId={effectiveKb} topK={topK} />, async () => {}, true);
     } else if (action === "export") {
       const labeled = rows.filter((r) => r.recalled === "yes" || r.recalled === "no");
       const yes = rows.filter((r) => r.recalled === "yes").length;
       const recallRate = labeled.length ? `${((yes / labeled.length) * 100).toFixed(1)}% (${yes}/${labeled.length})` : "—";
       const modeLabel = recallMode === "rag" ? "RAG" : profileLabel;
-      let md = `# 召回度测试报告\n\n- 知识库：${kbDisplayName(effectiveKb)} (${effectiveKb})\n- 模式：${modeLabel}\n- Top K：${topK}\n\n## 汇总\n\n| 指标 | 值 |\n|------|-----|\n| 召回率 | ${recallRate} |\n\n## 明细\n\n`;
+      let md = `# 召回度测试报告\n\n- 知识库：${displayKbName(effectiveKb)} (${recallMode === "rag" ? "rag_kb" : "kb"}_${effectiveKb})\n- 模式：${modeLabel}\n- Top K：${topK}\n\n## 汇总\n\n| 指标 | 值 |\n|------|-----|\n| 召回率 | ${recallRate} |\n\n## 明细\n\n`;
       rows.forEach((row, i) => {
         const top = recallMode === "rag" ? row.rag_sources?.[0] : row.answers?.[0];
         const topId = recallMode === "rag" ? top?.id : top?.id;
@@ -278,14 +288,14 @@ export function RecallModule() {
         <div className="rightTabBody">
           <div id="rightTabAsk" className={`rightTabPane ${rightTab === "ask" ? "active" : ""}`}>
             <div className="moduleSide recall stripBody qBody">
-              <label className="kbSelectLabel">知识库<select id="recallKbSelect" className="kbSelect" value={effectiveKb} onChange={(e) => setKbId(e.target.value)}>{kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>)}</select></label>
+              <label className="kbSelectLabel">知识库<select id="recallKbSelect" className="kbSelect" value={effectiveKb} onChange={(e) => { if (recallMode === "rag") setRagKbId(e.target.value); else setKbId(e.target.value); }}>{(recallMode === "rag" ? ragKbIds : kbIds).map((id) => <option key={id} value={id}>{(recallMode === "rag" ? ragKbMap : kbMap)[id]?.name || id}</option>)}</select></label>
               <label className="kbSelectLabel">Top K<input id="recallTopK" type="number" className="topKInput" min={1} max={20} value={topK} onChange={(e) => setTopK(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 5)))} /></label>
               {recallMode === "llm" && (
-                <label className="kbSelectLabel">回答模型<select id="recallMatchProfileSelect" className="kbSelect" value={effectiveProfile} onChange={(e) => setProfileId(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
+                <label className="kbSelectLabel">问答模型<select id="recallMatchProfileSelect" className="kbSelect" value={effectiveProfile} onChange={(e) => setProfileId(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
               )}
               {recallMode === "rag" && <IndexStatusPill kbId={effectiveKb} onRebuild={() => void loadTests(effectiveKb)} />}
               <div className="qActions recallSideActions">
-                <button id="recallRunBtn" type="button" className="btn btnXs primary" disabled={running} onClick={() => void batchRun()}>{running ? "运行中…" : "批量运行"}</button>
+                <button id="recallRunBtn" type="button" className="btn btnXs primary" disabled={running} onClick={() => void batchRun()}>{running ? "批量运行中…" : "批量运行"}</button>
               </div>
             </div>
           </div>
@@ -313,7 +323,6 @@ export function RecallModule() {
               <span>召回度测试</span>
               <span id="recallStat" className="recallStat muted">{statText}</span>
             </div>
-            <ModeBar mode={recallMode} onChange={(m) => { setRecallMode(m); setRows([]); }} />
             <div className="recallToolbar">
               <label className="recallPageSizeLabel">
                 显示条数
@@ -328,23 +337,22 @@ export function RecallModule() {
                 }} /> 全选
               </label>
               <span className="recallToolbarActions">
+                <button type="button" className="btn btnXs primary" onClick={() => handleRecallAction("save")}>保存</button>
                 <Dropdown label="操作">
                   <button type="button" className="dropdownItem" data-recall-action="addRow" onClick={() => handleRecallAction("addRow")}>+ 添加问题</button>
                   <button type="button" className="dropdownItem" data-recall-action="delete" onClick={() => handleRecallAction("delete")}>删除选中</button>
-                  <div className="dropdownDivider" />
-                  <button type="button" className="dropdownItem" data-recall-action="save" onClick={() => handleRecallAction("save")}>保存</button>
                   {recallMode === "llm" && (
                     <>
                       <div className="dropdownDivider" />
                       <button type="button" className="dropdownItem" data-recall-action="import" onClick={() => handleRecallAction("import")}>批量导入问题</button>
+                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("sampleFromFaq")}>从 FAQ 采样</button>
                     </>
                   )}
                   {recallMode === "rag" && (
                     <>
                       <div className="dropdownDivider" />
                       <button type="button" className="dropdownItem" onClick={() => handleRecallAction("import")}>批量导入问题</button>
-                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("sampleFromFaq")}>从 RAG FAQ 采样</button>
-                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("runEval")}>运行 Recall@K 评测</button>
+                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("sampleFromFaq")}>从 FAQ 采样</button>
                     </>
                   )}
                   <button type="button" className="dropdownItem" data-recall-action="export" onClick={() => handleRecallAction("export")}>导出 Markdown</button>
@@ -369,19 +377,34 @@ export function RecallModule() {
                         <textarea className="recallQ" data-id={row.id} rows={1} placeholder="输入人工问题…" value={row.question} onChange={(e) => updateRow(row.id, { question: e.target.value })} />
                       </div>
                       <div className="recallField recallFieldView">
-                        <span className="recallFieldLabel">{recallMode === "rag" ? "检索结果" : "模型回答"}</span>
-                        <button type="button" className="btn btnXs recallViewBtn" data-id={row.id} disabled={recallMode === "rag" ? !row.rag_sources?.length : !row.answers?.length} onClick={() => {
+                        <span className="recallFieldLabel">{recallMode === "rag" ? "RAG 回答" : "模型回答"}</span>
+                        <button type="button" className="btn btnXs recallViewBtn" data-id={row.id} disabled={recallMode === "rag" ? !row.rag_sources?.length && !row.rag_answer : !row.answers?.length} onClick={() => {
                           if (recallMode === "rag") {
-                            if (!row.rag_sources?.length) return showToast("请先运行该行", "error");
-                            showModal("RAG 检索来源", (
+                            if (!row.rag_sources?.length && !row.rag_answer) return showToast("请先运行该行", "error");
+                            showModal("RAG 回答", (
                               <div className="ragSourceList">
-                                {row.rag_sources.map((s, i) => (
+                                {row.rag_answer && (
+                                  <div className="answerCard ragAnswerCard">
+                                    <div className="confidenceCardHead">
+                                      <span className="pill">{row.rag_mode || "回答"}</span>
+                                    </div>
+                                    <div className="answerCardBody mdPreview">
+                                      <MarkdownPreview md={row.rag_answer} kbId={effectiveKb} />
+                                    </div>
+                                  </div>
+                                )}
+                                {row.rag_sources?.map((s, i) => (
                                   <div key={i} className="confidenceCard ragSourceCard">
                                     <div className="confidenceCardHead">
                                       <span className="pill">{s.id}</span>
                                       {s.rerank_score != null && <span className="pill muted">rerank {Number(s.rerank_score).toFixed(3)}</span>}
                                     </div>
                                     <p className="muted">{s.question}</p>
+                                    {s.answer && (
+                                      <div className="answerCardBody mdPreview">
+                                        <MarkdownPreview md={s.answer} kbId={effectiveKb} />
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>

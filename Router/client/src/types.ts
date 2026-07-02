@@ -74,8 +74,15 @@ export interface FileTreeNode {
   name: string;
   path?: string;
   kind?: string;
+  format?: string;
   line_count?: number;
   children?: FileTreeNode[];
+  capabilities?: {
+    editable?: boolean;
+    preview_only?: boolean;
+    can_convert?: boolean;
+    direct_question_gen?: boolean;
+  };
 }
 
 export interface ImportSelection {
@@ -134,6 +141,8 @@ export interface RagChatResponse {
   sources: RagSearchResult[];
   images?: { src: string; url: string; alt?: string }[];
   timing?: RagTimings;
+  tokens?: TokenUsage;
+  token_breakdown?: { phase: string; usage: TokenUsage }[];
 }
 
 export interface RagModelSlot {

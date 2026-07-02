@@ -404,9 +404,123 @@ body {
   color: var(--text-secondary);
   font-weight: 500;
 }
+.modalTall { width: min(960px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.modalTall .modalBody {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 .itemEditBody .editorBody {
-  max-height: 60vh;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.itemEditBody .editorPane.active {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.itemEditBody .markdownEditor {
+  flex: 1;
+  min-height: 280px;
+}
+.markdownEditorSplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-height: 280px;
+}
+.markdownEditorPane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.markdownEditorPaneHead {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: #fafbfc;
+}
+.markdownEditorSource .mdSourceEditor,
+.markdownEditorSource .mdSourceTextarea,
+.markdownEditorNarrow .mdSourceEditor,
+.markdownEditorNarrow .mdSourceTextarea {
+  flex: 1;
+  min-height: 240px;
+}
+.markdownEditorPreview,
+.markdownEditorPreviewPane .markdownEditorPreview {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+.markdownEditorNarrow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mdSourceEditor {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafbfc;
+}
+.mdSourceGutter {
+  flex: 0 0 48px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.03);
+  border-right: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 12px;
+  user-select: none;
+}
+.mdSourceLineNo {
+  height: 20px;
+  line-height: 20px;
+  text-align: right;
+  padding: 0 8px;
+  color: var(--text-muted);
+}
+.mdSourceTextarea {
+  flex: 1;
+  width: 100%;
+  min-height: 240px;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 20px;
+  background: transparent;
+  box-sizing: border-box;
+}
+.mdSourceTextareaWithGutter {
+  min-height: 0;
+}
+.filesEditBody .mdSourceEditor {
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}
+.filesEditBody .mdSourceTextarea {
+  min-height: 0;
+  height: 100%;
 }
 .workflowMetrics {
   margin-top: 16px;
@@ -417,13 +531,13 @@ body {
   font-size: 12px;
   margin: 8px 0 6px;
 }
-.modalTall .modalBody {
-  max-height: 85vh;
-  overflow: auto;
-}
 .generateModalLayout {
-  min-height: 320px;
-  max-height: 50vh;
+  flex: 1;
+  min-height: 280px;
+  max-height: none;
+}
+#generateModalOverlay .modal {
+  width: min(1120px, 98vw);
 }
 .filesSelectedLabel {
   font-size: 13px;
@@ -587,18 +701,25 @@ body {
 .uploadToolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .uploadPageBody { flex: 1; min-height: 0; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 .uploadCurrentFile { font-size: 14px; font-weight: 500; }
-.settingsSaveFloat {
+.settingsStickyHead {
   position: sticky;
-  top: 12px;
-  float: right;
-  z-index: 20;
-  margin-bottom: 8px;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  margin: -16px -20px 8px;
+  padding: 0 20px;
+}
+.settingsHeadActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 .settingsMain { overflow: auto; padding: 16px 20px; min-height: 0; position: relative; }
 .profileNameField { flex: 1; min-width: 200px; margin: 0; }
 .profileCardHead { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
 
-.importProgress { font-family: var(--mono); font-size: 12px; max-height: 240px; overflow: auto; background: #f8fafc; padding: 10px; border-radius: 6px; }
+.importProgress { font-family: var(--font); font-size: 13px; max-height: 240px; overflow: auto; background: #f8fafc; padding: 10px; border-radius: 6px; }
 .importProgressModal { margin-top: 12px; min-height: 72px; border: 1px solid var(--border); }
 .importProgressModal:not(.hidden)::before {
   content: "提取进度";
@@ -609,7 +730,8 @@ body {
   color: var(--text-secondary);
   margin-bottom: 8px;
 }
-.importLogLine { padding: 4px 0; border-bottom: 1px solid #eef2f7; line-height: 1.5; word-break: break-word; }
+.importLogLine { padding: 4px 0; border-bottom: 1px solid #eef2f7; line-height: 1.5; word-break: break-word; color: var(--text); }
+.importLogLine:last-child { border-bottom: none; }
 .importLogLine:last-child { border-bottom: none; }
 .importLogLine.step { color: var(--accent); }
 .importLogLine.error { color: var(--danger); }
@@ -742,15 +864,40 @@ body {
 .mdLineActive { background: rgba(37, 99, 235, 0.14); }
 .mdLineSelected { background: rgba(37, 99, 235, 0.08); }
 .mdLineDimmed { opacity: 0.45; }
-.uploadSelectionsList { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.uploadSelectionsList { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; flex: 1; min-height: 0; overflow: auto; }
 .uploadSelectionCard {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 12px 14px;
   background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-.uploadSelectionCard.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12); }
-.uploadSelectionHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.uploadSelectionCard.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  background: var(--accent-light);
+}
+.uploadSelectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.uploadSelectionTitle { font-size: 13px; font-weight: 600; color: var(--text); }
+.uploadSelectionActions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.uploadSelectionField { margin: 0; font-size: 12px; }
+.uploadSelectionField .settingsInput,
+.uploadSelectionField .settingsTextarea {
+  margin-top: 4px;
+  width: 100%;
+  font-size: 13px;
+}
+.importSelQuestion { font-size: 13px; }
+.importSelVariants { min-height: 72px; font-size: 13px; line-height: 1.5; resize: vertical; }
+.uploadSelectLeft { display: flex; flex-direction: column; min-height: 0; }
 .uploadCommitRow { margin-top: 8px; }
 .btnRunning { opacity: 0.85; cursor: wait; }
 
@@ -833,6 +980,9 @@ body {
 .recallToolbarActions {
   margin-left: auto;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .recallPageSizeLabel,
 .recallSelectAllLabel {
@@ -1142,6 +1292,8 @@ body {
 }
 .logBlock.match { border-left-color: #0891b2; }
 .logBlock.step { border-left-color: var(--accent); }
+.logBlock.timing { border-left-color: #8b5cf6; }
+.logBlock.result { border-left-color: #059669; }
 .logBlock.error { border-left-color: var(--danger); }
 .logLine { font-family: var(--mono); font-size: 11px; white-space: pre-wrap; }
 
@@ -1234,6 +1386,20 @@ body {
 .filesEditorCol { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .filesEditBody { flex: 1; min-height: 0; }
 .filesPdfHint { padding: 12px 16px; font-size: 13px; }
+.filesPdfPreview { width: 100%; height: min(70vh, 720px); border: 0; background: var(--bg-muted); }
+.docPreviewHtml { padding: 16px; overflow: auto; max-height: 100%; }
+.docPreviewHtml table.docPreviewTable { border-collapse: collapse; width: 100%; font-size: 13px; }
+.docPreviewHtml table.docPreviewTable th,
+.docPreviewHtml table.docPreviewTable td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.docPreviewHtml table.docPreviewTable th { background: var(--bg-muted); }
+.jsonPreview { margin: 0; padding: 16px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; overflow: auto; max-height: 100%; }
+.extractFidelityNote { font-size: 12px; margin: 0 0 8px; }
+.extractVlmToggle { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; }
+.extractVlmNote { font-size: 12px; margin: 4px 0 8px; }
+.extractWarnings { margin-top: 8px; font-size: 12px; color: var(--danger); }
+.generateDocxHint { font-size: 12px; margin: 0 0 8px; }
+.filesPreviewHint { padding: 16px; }
+.filesEmptyHint { padding: 24px; text-align: center; }
 .filesSidePanel { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; min-height: 0; }
 .filesSideSelected { font-size: 13px; font-weight: 500; word-break: break-all; }
 .filesSideToolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -1280,12 +1446,43 @@ body {
 .generateFileLabel { flex: 1; min-width: 120px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .generateLayout {
   display: grid;
-  grid-template-columns: minmax(180px, 220px) minmax(280px, 360px) 1fr;
+  grid-template-columns: minmax(160px, 190px) minmax(260px, 300px) minmax(440px, 1.4fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 .generateLayout .uploadSelectLeft { border-right: 1px solid var(--border); }
+.generateMdCol {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  background: var(--bg-surface);
+}
+.generateMdHead {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.generateMdTabs { margin-left: auto; }
+.generateMdViewer {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px;
+  background: #fafbfc;
+}
+.generateMdViewer .mdLineViewer {
+  max-height: none;
+  border: 1px solid var(--border);
+  overflow: visible;
+}
+.generateMdPreview {
+  padding: 4px 2px 16px;
+  min-height: min-content;
+}
 .fileTree { font-size: 13px; }
 .fileTreeToggle {
   display: block; width: 100%; text-align: left; border: none; background: transparent;
@@ -1362,13 +1559,33 @@ body {
   transition: transform 0.15s;
 }
 .toggleSwitch.on .toggleThumb { transform: translateX(18px); }
-.indexStatusWrap { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.indexStatusWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.manageItemsHeadActions .indexStatusWrap {
+  flex-shrink: 0;
+}
 .indexStatusPill.ready { background: rgba(109, 175, 120, 0.15); color: #2d6a3e; border: 1px solid rgba(109, 175, 120, 0.35); }
 .indexStatusPill.stale { background: rgba(245, 158, 11, 0.12); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.35); }
 .indexStatusPill.missing { background: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.3); }
+.viewPane.active > .ragQaColumns {
+  flex: 1;
+  min-height: 0;
+}
+.ragSourcesSectionHead {
+  font-size: 12px;
+  padding: 4px 0 0;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
 .ragQaColumns {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 220px;
+  grid-template-columns: 1fr 220px;
   gap: 12px;
   height: 100%;
   min-height: 0;
@@ -1376,7 +1593,23 @@ body {
 }
 .ragCol { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .ragColBody { flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.ragAnswerList { display: flex; flex-direction: column; gap: 12px; }
+.ragAnswerList > .answerCard,
+.ragAnswerList > article {
+  flex-shrink: 0;
+}
+.ragAnswerList .answerCard.ragAnswerCard {
+  overflow: visible;
+  margin-bottom: 0;
+}
+.ragAnswerList .answerCardBody {
+  overflow: visible;
+  max-height: none;
+}
+.ragAnswerCard { cursor: pointer; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.ragAnswerCard.active { outline: 2px solid var(--sidebar-active); outline-offset: -1px; }
 .ragSourceCard.active { outline: 2px solid var(--sidebar-active); outline-offset: -1px; }
+.timingLabelZh { font-size: 12px; margin-left: 4px; }
 .ragScorePills { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
 .ragSourceSummary { font-size: 12px; margin-top: 4px; }
 .ragTimingChips { font-size: 12px; padding: 8px 0 0; }
@@ -1400,9 +1633,10 @@ body {
 .timingRow { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
 .recallPage .modeBar { padding: 8px 16px; }
 .manageItemsMain .modeBar { border-bottom: none; }
-.settingsMain > .modeBar { position: sticky; top: 0; z-index: 2; background: var(--bg); margin-bottom: 8px; }
+.settingsStickyHead .modeBar { margin-bottom: 0; }
 
-.ragEvalModal { display: flex; flex-direction: column; gap: 12px; min-width: 420px; }
+.multiItemBlock { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.multiItemBlockHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .ragEvalModeHint { font-size: 12px; margin: 0; }
 .ragEvalSizeBtns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ragEvalSummary { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
@@ -1413,4 +1647,4 @@ body {
 .ragEvalHistory { display: flex; flex-direction: column; gap: 4px; }
 .ragEvalHistoryBtn { justify-content: flex-start; text-align: left; }
 .ragSourceList { display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow: auto; }
-.indexStatusWrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tokenModeHint { font-size: 12px; margin: 0 0 8px; line-height: 1.5; }

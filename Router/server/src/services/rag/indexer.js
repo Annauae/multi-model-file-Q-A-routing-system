@@ -1,12 +1,12 @@
 import { loadFaqItems, dataHashFromFile } from "./dataLoader.js";
 import { buildAllSearchDocs } from "./searchDocBuilder.js";
 import { writeIndexMeta, readIndexMeta } from "./indexStatus.js";
-import { kbAssetsDirPath, ragQuestionsJsonPath } from "../paths.js";
+import { ragQuestionsJsonPath, ragKbAssetsDirPath } from "../paths.js";
 
 export async function rebuildIndex(kbId, ctx) {
     const { settings, ragModelsStore, weaviateStore } = ctx;
     const filePath = ragQuestionsJsonPath(settings.filesRoot, kbId);
-    const assetsDir = kbAssetsDirPath(settings.filesRoot, kbId);
+    const assetsDir = ragKbAssetsDirPath(settings.filesRoot, kbId);
     const items = loadFaqItems(filePath, assetsDir);
     const holdoutPerItem = settings.ragEvalHoldoutPerItem;
     const { allDocs, indexedDocs, holdoutVariantsByItem } = buildAllSearchDocs(items, holdoutPerItem);
@@ -14,7 +14,7 @@ export async function rebuildIndex(kbId, ctx) {
     const embedder = ctx.embeddingClient;
     const texts = indexedDocs.map((d) => d.text);
     console.log(`[rag/index] kb=${kbId} embedding ${texts.length} docs…`);
-    const vectors = texts.length ? await embedder.embedTexts(texts) : [];
+    const { vectors } = texts.length ? await embedder.embedTexts(texts) : { vectors: [] };
 
     await weaviateStore.deleteByKbId(kbId);
     const rows = indexedDocs.map((doc, i) => ({

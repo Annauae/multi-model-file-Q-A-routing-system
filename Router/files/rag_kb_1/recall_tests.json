@@ -1,0 +1,203 @@
+{
+  "items": [
+    {
+      "id": "r_1782872895595_50rqv",
+      "question": "怎么调光圈？",
+      "recalled": "",
+      "answers": [],
+      "candidates": [],
+      "timings": {
+        "embedding_ms": 280.1,
+        "vector_lookup_ms": 3,
+        "keyword_search_ms": 1.6,
+        "fusion_ms": 0,
+        "rerank_ms": 518,
+        "search_ms": 802.9,
+        "total_ms": 802.9
+      },
+      "run_at": "2026-07-01T02:28:23.736Z",
+      "model_label": "RAG",
+      "rag_sources": [
+        {
+          "id": "q143",
+          "question": "光圈优先自动模式（A）如何调整光圈？",
+          "answer": "## A（光圈优先自动）\n- 在光圈优先自动模式下，由您选择光圈，而照相机会自动调整快门速度以获得良好曝光。\n\n![A模式显示屏与拨盘图示](assets/knowledge_p119-124_006.png)\n\n- 旋转副指令拨盘可调整光圈。\n- 光圈的最小值和最大值根据镜头的不同而异。",
+          "answer_summary": "A（光圈优先自动） 在光圈优先自动模式下，由您选择光圈，而照相机会自动调整快门速度以获得良好曝光。 A模式显示屏与拨盘图示 assets/knowledge p119 124 006.png 旋转副指令拨盘可调整光圈。 光圈的最小值和最大值根据镜头的不同而异。",
+          "updated_at": "2026-06-23T08:31:08Z",
+          "images": [
+            {
+              "alt": "A模式显示屏与拨盘图示",
+              "src": "assets/knowledge_p119-124_006.png",
+              "url": "/assets/knowledge_p119-124_006.png",
+              "exists": true,
+              "kind": "markdown"
+            }
+          ],
+          "variants": [
+            "A档怎么调光圈？",
+            "光圈优先模式下光圈怎么设置？",
+            "在A模式中如何改变光圈大小？"
+          ],
+          "vector_score": 0.8985820393074982,
+          "keyword_score": 1,
+          "rrf_score": 0.06406743265548132,
+          "rerank_score": 0.9701547622680664,
+          "matched_doc_types": [
+            "question",
+            "variant"
+          ],
+          "matched_doc_ids": [
+            "q143::variant::0",
+            "q143::question",
+            "q143::variant::2"
+          ]
+        },
+        {
+          "id": "q145",
+          "question": "手动模式（M）如何调整快门速度和光圈？",
+          "answer": "## M（手动）\n- 快门速度和光圈都由您控制。选择此模式可对烟花或夜空等拍摄对象进行长时间曝光（“B门”或“遥控B门”拍摄，🗋158）。\n- 您可根据曝光指示（①）调整快门速度（②）和光圈（③）。\n\n![M模式显示屏与拨盘图示](assets/knowledge_p119-124_007.png) ![M模式拨盘图示](assets/knowledge_p119-124_008.png)\n\n### 快门速度\n- 旋转快门速度拨盘可设定快门速度。\n- 若要选择[X]或[T]，或者要从[1/3STEP]、[X]、[T]或[B]开始进行更改，请在按住快门速度拨盘锁定解除时旋转拨盘。\n- 若将快门速度拨盘设为[1/3STEP]，您可以使用主指令拨盘更改快门速度。快门速度也可设为15秒或30秒（🗋154）。\n\n![M模式快门速度拨盘图示](assets/knowledge_p119-124_009.png)\n\n| 编号 | 说明 | 编号 | 说明 |\n| --- | --- | --- | --- |\n| 1 | 1/4000秒–1/2秒 | 4 | T（遥控B门）（🗋158） |\n| 2 | 1-4秒（红色文字） | 5 | X（闪光同步）（🗋411） |\n| 3 | B（B门）（🗋158） | 6 | 1/3STEP（1/3步长）（🗋154） |\n\n### 光圈\n- 旋转副指令拨盘可调整光圈。\n- 光圈的最小值和最大值根据镜头的不同而异。",
+          "answer_summary": "M（手动） 快门速度和光圈都由您控制。选择此模式可对烟花或夜空等拍摄对象进行长时间曝光（“B门”或“遥控B门”拍摄，🗋158）。 您可根据曝光指示（①）调整快门速度（②）和光圈（③）。 M模式显示屏与拨盘图示 assets/knowledge p119 124 007.png M模式拨盘图示 assets/knowledge p119 124 008.png 快门速度 旋转快门速度拨盘可设定快门速度。 若要选择[X]或[T]，或者要从[1/3STEP]、[X]、[T]或[B]开始进行更改，请在按住快门速度拨盘锁定解除时旋转拨盘。 若将快门速度拨盘设为[1/3STEP]，您可以使用主指令拨盘更改快门速度。快门速度也可设为15秒或30秒（🗋154）。 M模式快门速度拨盘图示 assets/knowledge p119 124 009.png 编号 说明 编号 说明 1 1/4000秒–1/2秒 4 T（遥控B门）（🗋158） 2 1 4秒（红色文字） 5 X（闪光同步）（🗋411） 3 B（B门）（🗋158） 6 1/3STEP（1/3步长）（🗋154） 光圈 旋转副指令拨盘可调整光圈。 光圈的最小值和最大值根据镜头的不同而异。",
+          "updated_at": "2026-06-23T08:31:08Z",
+          "images": [
+            {
+              "alt": "M模式显示屏与拨盘图示",
+              "src": "assets/knowledge_p119-124_007.png",
+              "url": "/assets/knowledge_p119-124_007.png",
+              "exists": true,
+              "kind": "markdown"
+            },
+            {
+              "alt": "M模式拨盘图示",
+              "src": "assets/knowledge_p119-124_008.png",
+              "url": "/assets/knowledge_p119-124_008.png",
+              "exists": true,
+              "kind": "markdown"
+            },
+            {
+              "alt": "M模式快门速度拨盘图示",
+              "src": "assets/knowledge_p119-124_009.png",
+              "url": "/assets/knowledge_p119-124_009.png",
+              "exists": true,
+              "kind": "markdown"
+            }
+          ],
+          "variants": [
+            "M档怎么调快门和光圈？",
+            "手动模式下快门和光圈如何设置？",
+            "M模式调整曝光参数的方法是什么？"
+          ],
+          "vector_score": 0.6301806911908527,
+          "keyword_score": 0.060000000000000005,
+          "rrf_score": 0.06191276241679467,
+          "rerank_score": 0.9463926553726196,
+          "matched_doc_types": [
+            "question",
+            "variant"
+          ],
+          "matched_doc_ids": [
+            "q145::variant::1",
+            "q145::variant::0",
+            "q145::question"
+          ]
+        },
+        {
+          "id": "q144",
+          "question": "视频模式下的曝光设定有哪些区别？",
+          "answer": "🖋️ **视频模式曝光设定**\n以下视频设定可在视频录制过程中进行调整：\n\n| 模式 | 光圈 | 速度 | ISO感光度 |\n| --- | --- | --- | --- |\n| P、S¹ | — | — | —² |\n| A | ✓ | — | —² |\n| M | ✓ | ✓ | ✓³ |\n\n1. 拍摄模式S中的曝光控制与模式P中的相同。\n2. 使用视频拍摄菜单中的[ISO感光度设定]>[最大感光度]项目可选择ISO感光度的上限值。\n3. 当视频拍摄菜单中的[ISO感光度设定]>[自动ISO控制(M模式)]选为[开启]时，使用[最大感光度]可选择ISO感光度的上限值。",
+          "answer_summary": "🖋️ 视频模式曝光设定 以下视频设定可在视频录制过程中进行调整： 模式 光圈 速度 ISO感光度 P、S¹ — — —² A ✓ — —² M ✓ ✓ ✓³ 1. 拍摄模式S中的曝光控制与模式P中的相同。 2. 使用视频拍摄菜单中的[ISO感光度设定] [最大感光度]项目可选择ISO感光度的上限值。 3. 当视频拍摄菜单中的[ISO感光度设定] [自动ISO控制(M模式)]选为[开启]时，使用[最大感光度]可选择ISO感光度的上限值。",
+          "updated_at": "2026-06-23T08:31:08Z",
+          "images": [],
+          "variants": [
+            "视频录制时怎么调曝光？",
+            "视频模式下光圈、快门和ISO怎么设置？",
+            "拍视频时曝光控制有什么不同？"
+          ],
+          "vector_score": 0.5777333607688023,
+          "keyword_score": 0.05,
+          "rrf_score": 0.028985507246376812,
+          "rerank_score": 0.5984194278717041,
+          "matched_doc_types": [
+            "variant"
+          ],
+          "matched_doc_ids": [
+            "q144::variant::0"
+          ]
+        },
+        {
+          "id": "q004",
+          "question": "如何使用ISO感光度拨盘调节ISO感光度？",
+          "answer": "# ISO感光度拨盘\n照相机对光线的灵敏度（ISO感光度）可根据可用光线量进行调整。一般情况下，选择的值越高，在相同光圈下可使用的快门速度越快。\n\n在按住ISO感光度拨盘锁定解除的同时旋转ISO感光度拨盘，可根据可用的光量调节照相机对光的敏感度（ISO感光度）。\n\n![ISO感光度拨盘示意图](assets/knowledge_p28-30_004.png)\n\n拍摄过程中，当前所选项显示在屏幕中。\n\n![ISO感光度屏幕显示示例](assets/knowledge_p130-135_002.png)",
+          "answer_summary": "ISO感光度拨盘 照相机对光线的灵敏度（ISO感光度）可根据可用光线量进行调整。一般情况下，选择的值越高，在相同光圈下可使用的快门速度越快。 在按住ISO感光度拨盘锁定解除的同时旋转ISO感光度拨盘，可根据可用的光量调节照相机对光的敏感度（ISO感光度）。 ISO感光度拨盘示意图 assets/knowledge p28 30 004.png 拍摄过程中，当前所选项显示在屏幕中。 ISO感光度屏幕显示示例 assets/knowledge p130 135 002.png",
+          "updated_at": "2026-06-26T01:56:56Z",
+          "images": [
+            {
+              "alt": "ISO感光度拨盘示意图",
+              "src": "assets/knowledge_p28-30_004.png",
+              "url": "/assets/knowledge_p28-30_004.png",
+              "exists": true,
+              "kind": "markdown"
+            },
+            {
+              "alt": "ISO感光度屏幕显示示例",
+              "src": "assets/knowledge_p130-135_002.png",
+              "url": "/assets/knowledge_p130-135_002.png",
+              "exists": true,
+              "kind": "markdown"
+            }
+          ],
+          "variants": [
+            "ISO感光度拨盘怎么调？",
+            "怎么用ISO拨盘设置感光度？",
+            "ISO感光度拨盘有什么用？",
+            "怎么设置ISO感光度？",
+            "如何调整相机的ISO感光度？"
+          ],
+          "vector_score": 0.558039446911097,
+          "keyword_score": 0.05,
+          "rrf_score": 0.054085429892013585,
+          "rerank_score": 0.2249375283718109,
+          "matched_doc_types": [
+            "variant"
+          ],
+          "matched_doc_ids": [
+            "q004::variant::4",
+            "q004::variant::0",
+            "q004::variant::1"
+          ]
+        },
+        {
+          "id": "q098",
+          "question": "控制面板有什么用？",
+          "answer": "# 控制面板\n照相机开启时，控制面板也会开启。\n光圈（0 154、0 155）在控制面板中显示。\n\n![控制面板光圈显示示例](assets/knowledge_p20-21_002.png)\n\n- 如果将光圈设为F0.95，则控制面板中将显示[.95]。\n- 若将[扩展快门速度范围(M)]设为[开启]，当以60秒或更长时间的快门速度开始拍摄时，显示会切换以指示快门已打开。\n- 根据镜头安装方式的不同，可能会显示警告[--]（0 593）。\n- 当连接到计算机或智能手机时，可能会显示[PC]以指示连接正在进行中。",
+          "answer_summary": "控制面板 照相机开启时，控制面板也会开启。 光圈（0 154、0 155）在控制面板中显示。 控制面板光圈显示示例 assets/knowledge p20 21 002.png 如果将光圈设为F0.95，则控制面板中将显示[.95]。 若将[扩展快门速度范围(M)]设为[开启]，当以60秒或更长时间的快门速度开始拍摄时，显示会切换以指示快门已打开。 根据镜头安装方式的不同，可能会显示警告[ ]（0 593）。 当连接到计算机或智能手机时，可能会显示[PC]以指示连接正在进行中。",
+          "updated_at": "2026-06-26T07:01:47Z",
+          "images": [
+            {
+              "alt": "控制面板光圈显示示例",
+              "src": "assets/knowledge_p20-21_002.png",
+              "url": "/assets/knowledge_p20-21_002.png",
+              "exists": true,
+              "kind": "markdown"
+            }
+          ],
+          "variants": [
+            "相机控制面板显示了哪些信息？",
+            "光圈和快门速度在控制面板上怎么看？",
+            "控制面板长什么样？"
+          ],
+          "vector_score": 0.5671473175205244,
+          "keyword_score": 0.05,
+          "rrf_score": 0.028484848484848488,
+          "rerank_score": 0.19935692846775055,
+          "matched_doc_types": [
+            "variant"
+          ],
+          "matched_doc_ids": [
+            "q098::variant::1"
+          ]
+        }
+      ],
+      "last_top_id": "q143"
+    }
+  ]
+}

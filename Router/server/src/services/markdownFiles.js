@@ -1,24 +1,27 @@
 import fs from "node:fs";
 import path from "node:path";
 import { LLMError } from "./llmClient.js";
+import {
+    fileKind,
+    isEditableKind,
+    capabilitiesForKind,
+    formatFromFilename,
+    isAllowedSourceExtension,
+} from "./documentTypes.js";
+import {
+    convertDocxToMarkdown,
+    convertExcelToMarkdown,
+    convertHtmlFileToPreview,
+    extractTextLinesFromContent,
+    listExcelSheets,
+} from "./documentConverters.js";
 import { DOCUMENTS_FOLDER, documentsDirPath, documentsModulesDirPath, documentsSourcesDirPath, } from "./paths.js";
-function fileKind(name, parent) {
-    const lower = name.toLowerCase();
-    if (parent === "sources") {
-        if (lower.endsWith(".pdf"))
-            return "source_pdf";
-        if (lower.endsWith(".md"))
-            return "source_md";
-        return null;
-    }
-    if (parent === "modules" && lower.endsWith(".md"))
-        return "module_md";
-    return null;
-}
+
 function fileMeta(filePath, filesRoot, kind) {
     const stat = fs.statSync(filePath);
     let lineCount = 0;
-    if (kind !== "source_pdf") {
+    const caps = capabilitiesForKind(kind);
+    if (caps?.isTextFile !== false && kind !== "source_pdf") {
         try {
             lineCount = fs.readFileSync(filePath, "utf-8").split(/\r?\n/).length;
         }
@@ -31,14 +34,18 @@ function fileMeta(filePath, filesRoot, kind) {
         name: path.basename(filePath),
         path: path.relative(filesRoot, filePath).replace(/\\/g, "/"),
         kind,
+        format: formatFromFilename(path.basename(filePath)),
+        capabilities: caps,
         size: stat.size,
         line_count: lineCount,
         updated_at: new Date(stat.mtimeMs).toISOString(),
     };
 }
+
 function folderNode(name, children) {
     return { type: "folder", name, children };
 }
+
 export function buildMarkdownFilesTree(filesRoot) {
     const root = path.resolve(filesRoot);
     const children = [];
@@ -69,6 +76,7 @@ export function buildMarkdownFilesTree(filesRoot) {
     const tree = children.length ? [folderNode(DOCUMENTS_FOLDER, children)] : [];
     return { tree };
 }
+
 export function resolveDocumentPath(filesRoot, relPath) {
     const rel = (relPath || "").trim().replace(/\\/g, "/").replace(/^\//, "");
     if (!rel)
@@ -94,25 +102,101 @@ export function resolveDocumentPath(filesRoot, relPath) {
     }
     throw new LLMError("无效路径");
 }
-export function readMarkdownContent(filesRoot, relPath) {
+
+export async function readDocumentContent(filesRoot, relPath) {
     const [dest, kind] = resolveDocumentPath(filesRoot, relPath);
-    if (kind === "source_pdf")
-        throw new LLMError("PDF 文件不可作为 Markdown 读取");
     if (!fs.existsSync(dest))
         throw new LLMError("文件不存在");
-    const text = fs.readFileSync(dest, "utf-8");
-    return {
+    const caps = capabilitiesForKind(kind);
+    const format = formatFromFilename(path.basename(dest));
+    const base = {
         path: relPath.replace(/\\/g, "/"),
         kind,
-        markdown: text,
-        line_count: text ? text.split(/\r?\n/).length : 0,
+        format,
+        editable: caps?.editable ?? false,
+        capabilities: caps,
         size: fs.statSync(dest).size,
     };
+
+    if (kind === "source_pdf") {
+        throw new LLMError("PDF 请使用预览接口");
+    }
+
+    if (kind === "source_docx") {
+        const { markdown, warnings, text_lines } = await convertDocxToMarkdown(filesRoot, dest);
+        const lines = text_lines?.length ? text_lines : markdown.split(/\r?\n/);
+        return {
+            ...base,
+            content: null,
+            markdown,
+            preview_html: null,
+            text_lines: lines,
+            line_count: lines.length,
+            warnings,
+        };
+    }
+
+    if (kind === "source_xlsx" || kind === "source_xls" || kind === "source_csv") {
+        const sheets = kind === "source_csv" ? ["CSV"] : listExcelSheets(dest);
+        const { preview_html, markdown } = convertExcelToMarkdown(dest, {});
+        const lines = markdown ? markdown.split(/\r?\n/) : [];
+        return {
+            ...base,
+            content: null,
+            markdown: markdown || "",
+            preview_html,
+            text_lines: lines,
+            line_count: lines.length,
+            sheet_names: sheets,
+        };
+    }
+
+    const text = fs.readFileSync(dest, "utf-8");
+    const lines = extractTextLinesFromContent(text, kind);
+    const content = kind === "source_json"
+        ? (() => { try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; } })()
+        : text;
+
+    let preview_html = null;
+    if (kind === "source_html") {
+        preview_html = convertHtmlFileToPreview(text, filesRoot).preview_html;
+    }
+
+    return {
+        ...base,
+        content,
+        markdown: content,
+        preview_html,
+        text_lines: lines,
+        line_count: lines.length,
+    };
 }
+
+/** @deprecated use readDocumentContent */
+export async function readMarkdownContent(filesRoot, relPath) {
+    const doc = await readDocumentContent(filesRoot, relPath);
+    return {
+        path: doc.path,
+        kind: doc.kind,
+        markdown: doc.markdown ?? doc.content ?? "",
+        line_count: doc.line_count,
+        size: doc.size,
+        ...doc,
+    };
+}
+
 export function saveMarkdownContent(filesRoot, relPath, markdown) {
     const [dest, kind] = resolveDocumentPath(filesRoot, relPath);
-    if (kind === "source_pdf")
-        throw new LLMError("PDF 文件不可编辑为 Markdown");
+    if (!isEditableKind(kind))
+        throw new LLMError("该文件类型不可编辑，请转 Markdown 后编辑");
+    if (kind === "source_json") {
+        try {
+            JSON.parse(markdown || "{}");
+        }
+        catch {
+            throw new LLMError("JSON 格式无效");
+        }
+    }
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, markdown || "", "utf-8");
     return {
@@ -122,6 +206,7 @@ export function saveMarkdownContent(filesRoot, relPath, markdown) {
         size: fs.statSync(dest).size,
     };
 }
+
 export function deleteDocumentFile(filesRoot, relPath) {
     const [dest, kind] = resolveDocumentPath(filesRoot, relPath);
     if (!fs.existsSync(dest))
@@ -129,6 +214,7 @@ export function deleteDocumentFile(filesRoot, relPath) {
     fs.unlinkSync(dest);
     return { path: relPath.replace(/\\/g, "/"), kind, deleted: true };
 }
+
 export function renameDocumentFile(filesRoot, relPath, newName) {
     const [dest, kind] = resolveDocumentPath(filesRoot, relPath);
     if (!fs.existsSync(dest))
@@ -139,13 +225,20 @@ export function renameDocumentFile(filesRoot, relPath, newName) {
     if (safe !== path.basename(safe) || safe.includes("/") || safe.includes("\\") || safe.includes("..")) {
         throw new LLMError("无效文件名");
     }
+    if (!isAllowedSourceExtension(safe) && kind.startsWith("source_") && !safe.toLowerCase().endsWith(".md")) {
+        const newKind = fileKind(safe, "sources");
+        if (!newKind && kind !== "module_md")
+            throw new LLMError("不支持的文件扩展名");
+    }
     const newDest = path.join(path.dirname(dest), safe);
     if (fs.existsSync(newDest))
         throw new LLMError("目标文件名已存在");
     fs.renameSync(dest, newDest);
-    const meta = fileMeta(newDest, path.resolve(filesRoot), kind);
+    const newKind = fileKind(path.basename(newDest), path.basename(path.dirname(newDest)) === "modules" ? "modules" : "sources") || kind;
+    const meta = fileMeta(newDest, path.resolve(filesRoot), newKind);
     return { ...meta, old_path: relPath.replace(/\\/g, "/") };
 }
+
 export function createModuleMarkdown(filesRoot, name, markdown = "") {
     let safe = (name || "").trim();
     if (!safe)
@@ -169,9 +262,23 @@ export function createModuleMarkdown(filesRoot, name, markdown = "") {
         size: fs.statSync(dest).size,
     };
 }
+
 export function documentsSourcePath(filesRoot, filename) {
     const safe = path.basename(filename);
     if (!safe || safe !== filename)
         throw new LLMError("无效文件名");
+    if (!isAllowedSourceExtension(safe) && !safe.toLowerCase().endsWith(".md"))
+        throw new LLMError("不支持的文件类型");
     return path.join(documentsSourcesDirPath(filesRoot), safe);
 }
+
+export function resolvePreviewFilePath(filesRoot, relPath) {
+    const [dest, kind] = resolveDocumentPath(filesRoot, relPath);
+    if (kind !== "source_pdf")
+        throw new LLMError("仅 PDF 支持文件预览流");
+    if (!fs.existsSync(dest))
+        throw new LLMError("文件不存在");
+    return dest;
+}
+
+export { convertDocxToMarkdown, convertExcelToMarkdown, listExcelSheets };

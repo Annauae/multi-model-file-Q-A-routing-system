@@ -1,5 +1,8 @@
 import { stableHash, keywordText } from "./textUtils.js";
 
+/** 参与向量/BM25 检索的文档类型（不含答案摘要） */
+export const SEARCHABLE_DOC_TYPES = new Set(["question", "variant"]);
+
 export function holdoutVariants(item, count) {
     if (count <= 0 || !item.variants?.length)
         return new Set();
@@ -9,13 +12,12 @@ export function holdoutVariants(item, count) {
 
 export function buildSearchDocs(item, holdouts) {
     const docs = [];
-    const questionText = `问题：${item.question}\n答案摘要：${item.answer_summary}`;
     docs.push({
         doc_id: `${item.id}::question`,
         item_id: item.id,
         doc_type: "question",
-        text: questionText,
-        keyword_text: keywordText([item.question, item.answer_summary]),
+        text: item.question,
+        keyword_text: keywordText([item.question]),
         is_eval_holdout: false,
     });
     for (let idx = 0; idx < item.variants.length; idx++) {
@@ -25,19 +27,11 @@ export function buildSearchDocs(item, holdouts) {
             doc_id: `${item.id}::variant::${idx}`,
             item_id: item.id,
             doc_type: "variant",
-            text: `相似问法：${variant}\n主问题：${item.question}\n答案摘要：${item.answer_summary}`,
-            keyword_text: keywordText([variant, item.question, item.answer_summary]),
+            text: variant,
+            keyword_text: keywordText([variant, item.question]),
             is_eval_holdout: isHoldout,
         });
     }
-    docs.push({
-        doc_id: `${item.id}::answer_summary`,
-        item_id: item.id,
-        doc_type: "answer_summary",
-        text: `主问题：${item.question}\n答案摘要：${item.answer_summary}`,
-        keyword_text: keywordText([item.question, item.answer_summary]),
-        is_eval_holdout: false,
-    });
     return docs;
 }
 

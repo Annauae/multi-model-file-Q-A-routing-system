@@ -1,4 +1,7 @@
+import path from "node:path";
+import { RagKbStore } from "./ragKbStore.js";
 import { RagModelsStore } from "./ragModelsStore.js";
+import { RagPromptsStore } from "./ragPromptsStore.js";
 import { RagQuestionsStore } from "./ragQuestionsStore.js";
 import { RagRecallTestsStore } from "./ragRecallTestsStore.js";
 import { RagRuntimeConfigStore } from "./ragRuntimeConfigStore.js";
@@ -9,15 +12,20 @@ import {
     ragQuestionsJsonPath,
     ragRecallTestsJsonPath,
     ragRuntimeConfigPath,
+    migrateLegacyRagKbData,
 } from "./paths.js";
 import { markIndexStale } from "./rag/indexer.js";
 
 export function createRagContext(baseCtx) {
-    const { settings, kbStore, opLog } = baseCtx;
+    const { settings, opLog } = baseCtx;
+    const ragKbStore = new RagKbStore(settings.ragKbConfigPath);
+    migrateLegacyRagKbData(settings.filesRoot, ragKbStore);
+
     const ragModelsStore = RagModelsStore.fromSettings(settings);
+    const ragPromptsStore = RagPromptsStore.open(path.join(settings.dataRoot, "config", "rag_prompts.json"));
     const weaviateStore = createWeaviateStore(settings);
     const embeddingClient = new EmbeddingClient(settings, ragModelsStore);
-    const ragLlmClient = new RagLlmClient(ragModelsStore);
+    const ragLlmClient = new RagLlmClient(ragModelsStore, ragPromptsStore);
 
     const ragQuestionStores = new Map();
     const onRagChange = (kbId) => {
@@ -46,9 +54,10 @@ export function createRagContext(baseCtx) {
 
     return {
         settings,
-        kbStore,
         opLog,
+        ragKbStore,
         ragModelsStore,
+        ragPromptsStore,
         weaviateStore,
         embeddingClient,
         ragLlmClient,

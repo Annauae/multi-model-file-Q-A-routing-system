@@ -2,6 +2,8 @@ import { rebuildIndex } from "../services/rag/indexer.js";
 import { indexStatus } from "../services/rag/indexStatus.js";
 import { RagRetriever } from "../services/rag/retriever.js";
 import { startEvalRun, getEvalRun, listEvalRuns } from "../services/rag/evaluator.js";
+import { ensureRagKbStructure, importLlmFaqToRag } from "../services/ragImport.js";
+import { allDefaultRagPrompts, DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../services/ragPromptsStore.js";
 
 function httpError(status, detail) {
     const e = new Error(detail);
@@ -10,20 +12,29 @@ function httpError(status, detail) {
     return e;
 }
 
-function validateKbId(ctx, kbId) {
+function validateRagKbId(ragCtx, kbId) {
     const kid = (kbId || "").trim();
     if (!kid)
         throw httpError(400, "kb_id 不能为空");
-    if (!ctx.kbStore.get(kid))
-        throw httpError(404, "kb_id 不存在");
+    if (!ragCtx.ragKbStore.get(kid))
+        throw httpError(404, "RAG 知识库不存在");
     return kid;
+}
+
+function ragEnabledCount(ragCtx, kbId) {
+    try {
+        return ragCtx.getRagQuestionsStore(kbId).getDocument().items.filter((it) => it.enabled !== false).length;
+    }
+    catch {
+        return 0;
+    }
 }
 
 export function registerRagRoutes(app, ctx, ragCtx) {
     app.get("/rag/health", async (_req, res) => {
         try {
             const ping = await ragCtx.weaviateStore.ping();
-            const kbs = Object.keys(ctx.kbStore.getAll());
+            const kbs = Object.keys(ragCtx.ragKbStore.getAll());
             const indexes = {};
             for (const kid of kbs) {
                 indexes[kid] = indexStatus(ragCtx.settings, kid, ragCtx.ragModelsStore);
@@ -32,6 +43,88 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
         catch (e) {
             res.status(503).json({ ok: false, detail: e instanceof Error ? e.message : String(e) });
+        }
+    });
+
+    app.get("/rag/knowledge-bases", (_req, res) => {
+        const items = Object.entries(ragCtx.ragKbStore.getAll()).map(([kb_id, cfg]) => ({
+            kb_id,
+            ...cfg,
+            enabled_count: ragEnabledCount(ragCtx, kb_id),
+        }));
+        res.json({ items });
+    });
+
+    app.post("/rag/knowledge-bases", (req, res) => {
+        try {
+            const kbId = String(req.body.kb_id ?? "").trim() || ragCtx.ragKbStore.nextAvailableKbId();
+            const name = String(req.body.name ?? "").trim();
+            if (!name)
+                throw httpError(400, "name 不能为空");
+            const cfg = ragCtx.ragKbStore.createKb(kbId, name);
+            ensureRagKbStructure(ragCtx.settings, kbId);
+            ragCtx.opLog.append({ module: "rag-manage", action: "kb-create", kb_id: kbId, detail: name });
+            res.json({ kb_id: kbId, ...cfg });
+        }
+        catch (e) {
+            res.status(e.status || 400).json({ detail: e.detail ?? e.message });
+        }
+    });
+
+    app.delete("/rag/knowledge-bases/:kbId", async (req, res) => {
+        try {
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
+            const cfg = ragCtx.ragKbStore.deleteKb(kid);
+            ragCtx.ragKbStore.deleteKbFiles(kid, ragCtx.settings.filesRoot);
+            try {
+                await ragCtx.weaviateStore.deleteByKbId(kid);
+            }
+            catch (err) {
+                console.warn(`[rag] delete weaviate kb=${kid}: ${err}`);
+            }
+            ragCtx.opLog.append({ module: "rag-manage", action: "kb-delete", kb_id: kid });
+            res.json({ kb_id: kid, ...cfg });
+        }
+        catch (e) {
+            res.status(e.status || 404).json({ detail: e.detail ?? e.message });
+        }
+    });
+
+    app.post("/rag/knowledge-bases/:kbId/rename", (req, res) => {
+        try {
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
+            const cfg = ragCtx.ragKbStore.renameKb(kid, String(req.body.name ?? "").trim());
+            res.json({ kb_id: kid, ...cfg });
+        }
+        catch (e) {
+            res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
+        }
+    });
+
+    app.post("/rag/knowledge-bases/:ragKbId/import/from-llm", async (req, res) => {
+        try {
+            const ragKbId = validateRagKbId(ragCtx, req.params.ragKbId);
+            const llmKbId = String(req.body.llm_kb_id ?? "").trim();
+            if (!llmKbId)
+                throw httpError(400, "llm_kb_id 必填");
+            const result = importLlmFaqToRag(ctx, ragKbId, llmKbId, {
+                append: req.body.append !== false,
+                replace: Boolean(req.body.replace),
+            });
+            let meta = null;
+            if (req.body.auto_rebuild !== false) {
+                meta = await rebuildIndex(ragKbId, ragCtx);
+            }
+            ragCtx.opLog.append({
+                module: "rag-manage",
+                action: "import-from-llm",
+                kb_id: ragKbId,
+                detail: `from llm ${llmKbId}, ${result.imported} items`,
+            });
+            res.json({ ok: true, ...result, meta });
+        }
+        catch (e) {
+            res.status(e.status || 400).json({ detail: e.detail ?? e.message });
         }
     });
 
@@ -51,9 +144,39 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    app.get("/settings/rag-prompts", (_req, res) => {
+        const gp = ragCtx.ragPromptsStore.get();
+        res.json({
+            embedding_prompt: gp.embedding_prompt,
+            rerank_prompt: gp.rerank_prompt,
+            llm_prompt: gp.llm_prompt,
+            judge_prompt: gp.judge_prompt,
+            updated_at: gp.updated_at,
+            defaults: allDefaultRagPrompts(),
+            llm_system_preview: gp.llm_prompt.trim() || DEFAULT_RAG_LLM_PROMPT,
+            judge_system_preview: gp.judge_prompt.trim() || DEFAULT_RAG_JUDGE_PROMPT,
+        });
+    });
+
+    app.put("/settings/rag-prompts", (req, res) => {
+        try {
+            const gp = ragCtx.ragPromptsStore.set({
+                embedding_prompt: "embedding_prompt" in req.body ? req.body.embedding_prompt : undefined,
+                rerank_prompt: "rerank_prompt" in req.body ? req.body.rerank_prompt : undefined,
+                llm_prompt: "llm_prompt" in req.body ? req.body.llm_prompt : undefined,
+                judge_prompt: "judge_prompt" in req.body ? req.body.judge_prompt : undefined,
+            });
+            ragCtx.opLog.append({ module: "settings", action: "update_rag_prompts", detail: "更新 RAG 模型提示词" });
+            res.json({ ...gp, defaults: allDefaultRagPrompts() });
+        }
+        catch (e) {
+            res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
+        }
+    });
+
     app.get("/rag/knowledge-bases/:kbId/runtime-config", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             res.json(ragCtx.getRuntimeConfig(kid));
         }
         catch (e) {
@@ -63,7 +186,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.put("/rag/knowledge-bases/:kbId/runtime-config", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             res.json(ragCtx.updateRuntimeConfig(kid, req.body ?? {}));
         }
         catch (e) {
@@ -73,7 +196,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.get("/rag/knowledge-bases/:kbId/questions", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             res.json(ragCtx.getRagQuestionsStore(kid).getDocument());
         }
         catch (e) {
@@ -83,7 +206,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.put("/rag/knowledge-bases/:kbId/questions", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             const store = ragCtx.getRagQuestionsStore(kid);
             const version = Number(req.body?.version ?? 1);
             const items = Array.isArray(req.body?.items) ? req.body.items : [];
@@ -96,7 +219,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.post("/rag/knowledge-bases/:kbId/questions/items", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             const item = ragCtx.getRagQuestionsStore(kid).upsertItem(req.body ?? {});
             ragCtx.opLog.append({ module: "rag-manage", action: "create", kb_id: kid, detail: item.id });
             res.json(item);
@@ -108,7 +231,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.put("/rag/knowledge-bases/:kbId/questions/items/:itemId", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             const body = { ...req.body, id: req.params.itemId };
             const item = ragCtx.getRagQuestionsStore(kid).upsertItem(body);
             ragCtx.opLog.append({ module: "rag-manage", action: "update", kb_id: kid, detail: item.id });
@@ -121,7 +244,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.delete("/rag/knowledge-bases/:kbId/questions/items/:itemId", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             const deleted = ragCtx.getRagQuestionsStore(kid).deleteItem(req.params.itemId);
             ragCtx.opLog.append({ module: "rag-manage", action: "delete", kb_id: kid, detail: req.params.itemId });
             res.json(deleted);
@@ -133,9 +256,16 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.post("/rag/knowledge-bases/:kbId/index/rebuild", async (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             const meta = await rebuildIndex(kid, ragCtx);
-            ragCtx.opLog.append({ module: "rag", action: "rebuild", kb_id: kid, detail: `docs=${meta.search_docs}` });
+            ragCtx.opLog.append({
+                module: "rag",
+                action: "rebuild",
+                kb_id: kid,
+                kind: "result",
+                detail: `索引重建完成 items=${meta.items} search_docs=${meta.search_docs} holdout=${meta.holdout_docs} `
+                    + `embedding=${meta.embedding_model} dim=${meta.embedding_dim} built_at=${meta.built_at}`,
+            });
             res.json({ ok: true, meta });
         }
         catch (e) {
@@ -145,7 +275,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.get("/rag/knowledge-bases/:kbId/index/status", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             res.json(indexStatus(ragCtx.settings, kid, ragCtx.ragModelsStore));
         }
         catch (e) {
@@ -158,15 +288,22 @@ export function registerRagRoutes(app, ctx, ragCtx) {
             const query = String(req.body?.query ?? req.query?.q ?? "").trim();
             if (!query)
                 throw httpError(400, "query 不能为空");
-            const kbId = validateKbId(ctx, req.body?.kb_id ?? req.query?.kb_id);
+            const kbId = validateRagKbId(ragCtx, req.body?.kb_id ?? req.query?.kb_id);
             const status = indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
             if (!status.ready)
                 return res.status(409).json({ detail: status.reason || "索引不存在，请先重建索引" });
             const topK = Math.max(1, Math.min(50, Number(req.body?.top_k ?? req.query?.top_k ?? 8)));
             const runtime = ragCtx.getRuntimeConfig(kbId);
             const retriever = new RagRetriever(kbId, ragCtx, runtime);
-            const { results, timing } = await retriever.search(query, topK);
-            res.json({ query, results, timing });
+            const { results, timing, tokens, token_breakdown } = await retriever.search(query, topK);
+            ragCtx.opLog.append({
+                module: "rag-debug",
+                action: "search",
+                kb_id: kbId,
+                kind: "result",
+                detail: `query="${query.slice(0, 80)}" hits=${results.length} total_ms=${Number(timing.total_ms || 0).toFixed(1)}`,
+            });
+            res.json({ query, results, timing, tokens, token_breakdown });
         }
         catch (e) {
             if (e.status)
@@ -183,7 +320,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
             const query = String(req.body?.query ?? "").trim();
             if (!query)
                 throw httpError(400, "query 不能为空");
-            const kbId = validateKbId(ctx, req.body?.kb_id);
+            const kbId = validateRagKbId(ragCtx, req.body?.kb_id);
             const status = indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
             if (!status.ready)
                 return res.status(409).json({ detail: status.reason || "索引不存在，请先重建索引" });
@@ -193,7 +330,14 @@ export function registerRagRoutes(app, ctx, ragCtx) {
                 topN: req.body?.top_n,
                 useLlmAnswer: req.body?.use_llm_answer,
             });
-            ragCtx.opLog.append({ module: "rag-debug", action: "chat", kb_id: kbId, detail: query.slice(0, 80) });
+            ragCtx.opLog.append({
+                module: "rag-debug",
+                action: "chat",
+                kb_id: kbId,
+                kind: "result",
+                detail: `query="${query.slice(0, 80)}" mode=${out.mode} confidence=${Number(out.confidence || 0).toFixed(4)} `
+                    + `sources=${out.sources?.length ?? 0} total_ms=${Number(out.timing?.total_ms || 0).toFixed(1)}`,
+            });
             res.json({ query, ...out });
         }
         catch (e) {
@@ -205,7 +349,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.get("/rag/knowledge-bases/:kbId/recall-tests", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             res.json(ragCtx.getRecallTestsStore(kid).getDocument());
         }
         catch (e) {
@@ -215,7 +359,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.put("/rag/knowledge-bases/:kbId/recall-tests", (req, res) => {
         try {
-            const kid = validateKbId(ctx, req.params.kbId);
+            const kid = validateRagKbId(ragCtx, req.params.kbId);
             res.json(ragCtx.getRecallTestsStore(kid).replaceAll(req.body ?? {}));
         }
         catch (e) {
@@ -225,7 +369,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.post("/rag/eval/run", (req, res) => {
         try {
-            const kbId = validateKbId(ctx, req.body?.kb_id);
+            const kbId = validateRagKbId(ragCtx, req.body?.kb_id);
             const size = [10, 50, 100].includes(Number(req.body?.size)) ? Number(req.body.size) : 10;
             const mode = String(req.body?.mode ?? "mixed");
             const top_k = Math.max(1, Math.min(20, Number(req.body?.top_k ?? 5)));
@@ -239,7 +383,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.get("/rag/eval/runs", (req, res) => {
         try {
-            const kbId = validateKbId(ctx, req.query?.kb_id);
+            const kbId = validateRagKbId(ragCtx, req.query?.kb_id);
             const limit = Math.max(1, Math.min(50, Number(req.query?.limit ?? 10)));
             res.json({ runs: listEvalRuns(ragCtx.settings.filesRoot, kbId, limit) });
         }
@@ -250,7 +394,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.get("/rag/eval/runs/:runId", (req, res) => {
         try {
-            const kbId = validateKbId(ctx, req.query?.kb_id);
+            const kbId = validateRagKbId(ragCtx, req.query?.kb_id);
             const run = getEvalRun(ragCtx.settings.filesRoot, kbId, req.params.runId);
             if (!run)
                 return res.status(404).json({ detail: "eval run not found" });

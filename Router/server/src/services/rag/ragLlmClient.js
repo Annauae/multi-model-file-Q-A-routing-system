@@ -1,11 +1,33 @@
 import { clipText, stripMarkdown } from "./textUtils.js";
+import { normalizeApiUsage, usageFromRerankInput, usageFromText, estimateTextTokens } from "./tokenUtils.js";
 import { activeTemplate } from "../ragRuntimeConfigStore.js";
+import { DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../ragPromptsStore.js";
 
 export class RagLlmClient {
     ragModelsStore;
+    ragPromptsStore;
 
-    constructor(ragModelsStore) {
+    constructor(ragModelsStore, ragPromptsStore = null) {
         this.ragModelsStore = ragModelsStore;
+        this.ragPromptsStore = ragPromptsStore;
+    }
+
+    llmPromptTemplate(runtimeConfig) {
+        const kbTemplate = activeTemplate(runtimeConfig).content?.trim();
+        if (kbTemplate)
+            return kbTemplate;
+        return this.ragPromptsStore?.effectiveLlmPrompt() || DEFAULT_RAG_LLM_PROMPT;
+    }
+
+    judgePromptTemplate() {
+        return this.ragPromptsStore?.effectiveJudgePrompt() || DEFAULT_RAG_JUDGE_PROMPT;
+    }
+
+    fillPrompt(template, vars) {
+        let out = template;
+        for (const [key, val] of Object.entries(vars))
+            out = out.replaceAll(`{${key}}`, String(val ?? ""));
+        return out;
     }
 
     slotEnabled(slot) {
@@ -22,11 +44,14 @@ export class RagLlmClient {
 
     async rerank(query, documents, topN) {
         if (!documents.length)
-            return [];
+            return { ranked: [], usage: null };
         const cfg = this.ragModelsStore.getSlot("rerank");
-        if (!cfg.api_key?.trim()) {
-            return documents.slice(0, topN).map((_, i) => [i, 1 / (i + 1)]);
-        }
+        const fallbackRanked = (estimate = false) => ({
+            ranked: documents.slice(0, topN).map((_, i) => [i, 1 / (i + 1)]),
+            usage: estimate ? usageFromRerankInput(query, documents) : null,
+        });
+        if (!cfg.api_key?.trim())
+            return fallbackRanked(false);
         try {
             const url = `${cfg.api_base_url.replace(/\/$/, "")}/rerank`;
             const resp = await fetch(url, {
@@ -43,36 +68,31 @@ export class RagLlmClient {
             });
             if (!resp.ok)
                 throw new Error(await resp.text());
-            const ranked = (await resp.json()).results ?? [];
-            const out = ranked.map((item) => [Number(item.index), Number(item.relevance_score ?? 0)]);
-            if (out.length)
-                return out;
+            const data = await resp.json();
+            const ranked = (data.results ?? []).map((item) => [Number(item.index), Number(item.relevance_score ?? 0)]);
+            const usage = normalizeApiUsage(data.usage)
+                || usageFromRerankInput(query, documents);
+            if (ranked.length)
+                return { ranked, usage };
         }
         catch (err) {
             console.warn(`[rerank] rerank skipped: ${err}`);
         }
-        return documents.slice(0, topN).map((_, i) => [i, 1 / (i + 1)]);
+        return fallbackRanked(true);
     }
 
     async generateAnswer(query, sources, runtimeConfig) {
         const cfg = this.ragModelsStore.getSlot("llm");
         if (!sources.length)
-            return "未找到高置信答案。";
+            return { content: "未找到高置信答案。", usage: null };
         if (!cfg.api_key?.trim())
-            return sources[0].answer;
+            return { content: sources[0].answer, usage: null };
         const context = sources
             .map((src, i) => `[来源 ${i + 1}] 主问题：${src.question}\n答案全文：${stripMarkdown(src.answer)}`)
             .join("\n\n");
-        const template = activeTemplate(runtimeConfig).content
-            || "用户问题：{query}\n\nFAQ 来源：\n{context}";
+        const template = this.llmPromptTemplate(runtimeConfig);
         const temperature = Number(runtimeConfig?.temperature ?? cfg.temperature ?? 0.1);
-        let prompt;
-        try {
-            prompt = template.replace("{query}", query).replace("{context}", context);
-        }
-        catch {
-            prompt = `${template}\n\n用户问题：${query}\n\nFAQ 来源：\n${context}`;
-        }
+        const prompt = this.fillPrompt(template, { query, context });
         try {
             const url = `${cfg.api_base_url.replace(/\/$/, "")}/chat/completions`;
             const resp = await fetch(url, {
@@ -88,15 +108,19 @@ export class RagLlmClient {
             });
             if (!resp.ok)
                 throw new Error(await resp.text());
-            const choices = (await resp.json()).choices ?? [];
-            const content = choices[0]?.message?.content;
-            if (content)
-                return content;
+            const data = await resp.json();
+            const content = data.choices?.[0]?.message?.content;
+            let usage = normalizeApiUsage(data.usage);
+            if (content) {
+                if (!usage)
+                    usage = usageFromText(prompt, { completion: estimateTextTokens(content) });
+                return { content, usage };
+            }
         }
         catch (err) {
             console.warn(`[llm] generation skipped: ${err}`);
         }
-        return sources[0].answer;
+        return { content: sources[0].answer, usage: null };
     }
 
     fallbackJudge(expectedAnswer, actualAnswer) {
@@ -127,11 +151,12 @@ export class RagLlmClient {
             .slice(0, 5)
             .map((src) => `- ${src.id}: ${src.question}`)
             .join("\n");
-        const prompt = "你是 RAG 评测裁判。请比较标准答案和系统答案，输出严格 JSON，不要输出额外文本。\n"
-            + "JSON 字段：quality_score, confidence, groundedness, image_support, reason。\n"
-            + "所有分数范围 0 到 1。\n\n"
-            + `用户问题：${query}\n\n标准答案：${clipText(stripMarkdown(expectedAnswer), 1800)}\n\n`
-            + `系统答案：${clipText(stripMarkdown(actualAnswer), 1800)}\n\n检索来源：\n${sourceText}`;
+        const prompt = this.fillPrompt(this.judgePromptTemplate(), {
+            query,
+            expected: clipText(stripMarkdown(expectedAnswer), 1800),
+            actual: clipText(stripMarkdown(actualAnswer), 1800),
+            sources: sourceText,
+        });
         try {
             const url = `${cfg.api_base_url.replace(/\/$/, "")}/chat/completions`;
             const resp = await fetch(url, {

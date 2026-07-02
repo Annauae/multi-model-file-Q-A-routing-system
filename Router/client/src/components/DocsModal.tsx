@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
-const MANUAL_VERSION = 8;
+const MANUAL_VERSION = 9;
 
 export function DocsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [html, setHtml] = useState("");

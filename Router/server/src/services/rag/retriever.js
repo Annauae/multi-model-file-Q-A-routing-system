@@ -1,8 +1,10 @@
-import { charNgrams, msSince } from "./textUtils.js";
+import { charNgrams, msSince, clipText } from "./textUtils.js";
 import { loadFaqItems, buildItemMap, itemToResult } from "./dataLoader.js";
 import { readIndexMeta } from "./indexStatus.js";
-import { kbAssetsDirPath, ragQuestionsJsonPath } from "../paths.js";
-
+import { ragQuestionsJsonPath, ragKbAssetsDirPath } from "../paths.js";
+import { SEARCHABLE_DOC_TYPES } from "./searchDocBuilder.js";
+import { aggregateTokens } from "./tokenUtils.js";
+import { RagLogSink, formatRagSearchSummary } from "./ragLogger.js";
 export class RagRetriever {
     settings;
     kbId;
@@ -12,8 +14,9 @@ export class RagRetriever {
     ragLlmClient;
     runtimeConfig;
     itemMap = null;
+    log;
 
-    constructor(kbId, ctx, runtimeConfig) {
+    constructor(kbId, ctx, runtimeConfig, logModule = "rag-debug") {
         this.kbId = kbId;
         this.settings = ctx.settings;
         this.ragModelsStore = ctx.ragModelsStore;
@@ -21,6 +24,7 @@ export class RagRetriever {
         this.embeddingClient = ctx.embeddingClient;
         this.ragLlmClient = ctx.ragLlmClient;
         this.runtimeConfig = runtimeConfig;
+        this.log = new RagLogSink(ctx.opLog, logModule, kbId);
     }
 
     rt(name, defaultVal) {
@@ -33,7 +37,7 @@ export class RagRetriever {
         if (this.itemMap)
             return this.itemMap;
         const filePath = ragQuestionsJsonPath(this.settings.filesRoot, this.kbId);
-        const assetsDir = kbAssetsDirPath(this.settings.filesRoot, this.kbId);
+        const assetsDir = ragKbAssetsDirPath(this.settings.filesRoot, this.kbId);
         this.itemMap = buildItemMap(loadFaqItems(filePath, assetsDir));
         return this.itemMap;
     }
@@ -42,56 +46,87 @@ export class RagRetriever {
         const top_k = topK ?? this.rt("top_k", 8);
         const timing = {};
         const tTotal = performance.now();
+        this.log.log(`[search] 开始 query="${clipText(query, 120)}" top_k=${top_k} use_rerank=${this.rt("use_rerank", true)}`, "step", "search");
 
         const tEmb = performance.now();
-        const qVec = await this.embeddingClient.embedQuery(query);
+        const { vector: qVec, usage: embUsage } = await this.embeddingClient.embedQuery(query);
         timing.embedding_ms = msSince(tEmb);
+        this.log.timing("embedding", timing.embedding_ms);
+        if (embUsage)
+            this.log.log(`[search] embedding tokens prompt=${embUsage.prompt_tokens ?? 0} total=${embUsage.total_tokens ?? 0}`, "step", "embedding");
+        const tokenBreakdown = [];
+        if (embUsage)
+            tokenBreakdown.push({ phase: "embedding", usage: embUsage });
 
         const tVec = performance.now();
-        const vectorHits = await this.weaviateStore.hybridSearch(
+        const vectorHits = this._filterSearchHits(await this.weaviateStore.hybridSearch(
             this.kbId, query, qVec, this.settings.ragVectorTopK, 0.75,
-        );
+        ));
         timing.vector_lookup_ms = msSince(tVec);
+        this.log.log(`[search] 向量检索 ${vectorHits.length} 条 (top ${this.settings.ragVectorTopK})`, "step", "vector");
+        if (vectorHits.length)
+            this.log.log(`[search] 向量 Top3: ${vectorHits.slice(0, 3).map((h, i) => `#${i + 1} ${h.item_id} score=${Number(h.score || 0).toFixed(3)}`).join(" | ")}`, "step", "vector-top");
 
         const tKw = performance.now();
-        const keywordHits = await this._keywordSearch(query, this.settings.ragKeywordTopK);
+        const keywordHits = this._filterSearchHits(await this._keywordSearch(query, this.settings.ragKeywordTopK));
         timing.keyword_search_ms = msSince(tKw);
+        this.log.log(`[search] 关键词检索 ${keywordHits.length} 条`, "step", "keyword");
+        if (keywordHits.length)
+            this.log.log(`[search] 关键词 Top3: ${keywordHits.slice(0, 3).map((h, i) => `#${i + 1} ${h.item_id} score=${Number(h.score || 0).toFixed(3)}`).join(" | ")}`, "step", "keyword-top");
 
         const tFus = performance.now();
         const candidates = this._fuseAndGroup(vectorHits, keywordHits);
         timing.fusion_ms = msSince(tFus);
+        this.log.log(`[search] RRF 融合 ${candidates.length} 候选 (rrf_k=${this.settings.ragRrfK})`, "step", "fusion");
+        if (candidates.length)
+            this.log.log(`[search] 融合 Top3: ${candidates.slice(0, 3).map((c, i) => `#${i + 1} ${c.item_id} rrf=${c.rrf_score.toFixed(4)} vec=${c.vector_score.toFixed(3)} kw=${c.keyword_score.toFixed(3)}`).join(" | ")}`, "step", "fusion-top");
 
         let results;
         if (!this.rt("use_rerank", true)) {
             candidates.sort((a, b) => b.rrf_score - a.rrf_score);
             timing.rerank_ms = 0;
             results = candidates.slice(0, top_k).map((c) => this._candidateToResult(c));
+            this.log.log("[search] rerank 已关闭，按 RRF 排序", "step", "rerank-skip");
         }
         else {
             const tRr = performance.now();
-            const ranked = await this._rerank(query, candidates, Math.max(top_k, 8));
+            const { output, usage: rerankUsage } = await this._rerank(query, candidates, Math.max(top_k, 8));
             timing.rerank_ms = msSince(tRr);
-            results = ranked.slice(0, top_k).map((c) => this._candidateToResult(c));
+            results = output.slice(0, top_k).map((c) => this._candidateToResult(c));
+            this.log.timing("rerank", timing.rerank_ms);
+            this.log.log(`[search] rerank 完成，返回 ${results.length} 条`, "step", "rerank");
+            if (rerankUsage)
+                tokenBreakdown.push({ phase: "rerank", usage: rerankUsage });
         }
 
         timing.search_ms = msSince(tTotal);
         timing.total_ms = timing.search_ms;
-        return { results, timing };
+        const { tokens, token_breakdown } = aggregateTokens(tokenBreakdown);
+        this.log.timing("search_total", timing.search_ms);
+        this.log.log(`[search] 完成 ${formatRagSearchSummary(results)}`, "result", "search-done");
+        return { results, timing, tokens, token_breakdown };
     }
 
     async chat(query, { topN, useLlmAnswer } = {}) {
         const tTotal = performance.now();
         const top_n = topN ?? this.rt("top_n", 3);
-        const { results, timing } = await this.search(query, Math.max(top_n, 8));
+        const rtMode = this.rt("answer_mode", "direct");
         const minConf = this.rt("min_confidence_score", 0.05);
+        this.log.log(`[chat] 开始 query="${clipText(query, 120)}" top_n=${top_n} answer_mode=${rtMode} min_confidence=${minConf}`, "step", "chat");
+
+        const { results, timing, token_breakdown: searchBreakdown } = await this.search(query, Math.max(top_n, 8));
+        const tokenBreakdown = [...(searchBreakdown || [])];
         const topScore = results.length
             ? Number(results[0].rerank_score || results[0].rrf_score || 0)
             : 0;
         const highConf = results.length > 0 && topScore >= minConf;
+        this.log.log(`[chat] 置信判定 top_score=${topScore.toFixed(4)} min=${minConf} high_conf=${highConf}`, "step", "confidence");
 
         if (!highConf) {
             timing.generate_ms = 0;
             timing.total_ms = msSince(tTotal);
+            const { tokens, token_breakdown } = aggregateTokens(tokenBreakdown);
+            this.log.log("[chat] 未达置信阈值，返回低置信提示", "result", "chat-low-conf");
             return {
                 answer: "未找到高置信答案。你可以换一种问法，或查看下方候选结果。",
                 confidence: 0,
@@ -99,27 +134,40 @@ export class RagRetriever {
                 images: [],
                 mode: "no_high_confidence",
                 timing,
+                tokens,
+                token_breakdown,
             };
         }
 
         const sources = results.slice(0, top_n);
-        const rtMode = this.rt("answer_mode", "direct");
         const shouldGenerate = rtMode === "generated" || Boolean(useLlmAnswer);
         let answer;
         let mode;
         if (shouldGenerate) {
             const tGen = performance.now();
-            answer = await this.ragLlmClient.generateAnswer(query, sources, this.runtimeConfig);
+            this.log.log(`[chat] LLM 合成回答，来源 ${sources.length} 条: ${sources.map((s) => s.id).join(", ")}`, "step", "generate");
+            const gen = await this.ragLlmClient.generateAnswer(query, sources, this.runtimeConfig);
+            answer = gen.content;
+            if (gen.usage) {
+                tokenBreakdown.push({ phase: "generate", usage: gen.usage });
+                this.log.log(`[chat] 生成 tokens prompt=${gen.usage.prompt_tokens ?? 0} completion=${gen.usage.completion_tokens ?? 0}`, "step", "generate-tokens");
+            }
             timing.generate_ms = msSince(tGen);
             mode = "generated";
+            this.log.timing("generate", timing.generate_ms);
+            this.log.log(`[chat] 合成回答 ${clipText(answer, 200)}`, "step", "generate-done");
         }
         else {
             answer = sources[0].answer;
             timing.generate_ms = 0;
             mode = "direct";
+            this.log.log(`[chat] 直出模式 top1=${sources[0]?.id} answer_len=${(answer || "").length}`, "step", "direct");
         }
 
         timing.total_ms = msSince(tTotal);
+        const { tokens, token_breakdown } = aggregateTokens(tokenBreakdown);
+        this.log.timing("chat_total", timing.total_ms);
+        this.log.log(`[chat] 完成 mode=${mode} confidence=${topScore.toFixed(4)} sources=${sources.length}`, "result", "chat-done");
         return {
             answer,
             confidence: topScore,
@@ -127,6 +175,8 @@ export class RagRetriever {
             images: this._dedupeImages(sources),
             mode,
             timing,
+            tokens,
+            token_breakdown,
         };
     }
 
@@ -137,6 +187,8 @@ export class RagRetriever {
         const scored = [];
         for (const row of index) {
             if (row.is_eval_holdout)
+                continue;
+            if (!SEARCHABLE_DOC_TYPES.has(String(row.doc_type || "")))
                 continue;
             const text = String(row.keyword_text || "");
             let score = 0;
@@ -203,6 +255,10 @@ export class RagRetriever {
         return [...byItem.values()].sort((a, b) => b.rrf_score - a.rrf_score);
     }
 
+    _filterSearchHits(hits) {
+        return hits.filter((h) => SEARCHABLE_DOC_TYPES.has(String(h.doc_type || "")));
+    }
+
     async _rerank(query, candidates, topK) {
         const items = this.loadItems();
         const docs = [];
@@ -216,8 +272,8 @@ export class RagRetriever {
             kept.push(cand);
         }
         if (!kept.length)
-            return [];
-        const ranked = await this.ragLlmClient.rerank(query, docs, Math.min(topK, kept.length));
+            return { output: [], usage: null };
+        const { ranked, usage } = await this.ragLlmClient.rerank(query, docs, Math.min(topK, kept.length));
         const output = [];
         const used = new Set();
         for (const [idx, score] of ranked) {
@@ -237,7 +293,7 @@ export class RagRetriever {
                     break;
             }
         }
-        return output;
+        return { output, usage };
     }
 
     _candidateToResult(cand) {

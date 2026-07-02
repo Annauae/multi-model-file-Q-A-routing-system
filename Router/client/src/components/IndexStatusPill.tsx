@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { apiJson } from "../api/client";
+import { useAppUi } from "../context/AppUiContext";
 
 export function IndexStatusPill({ kbId, onRebuild }: { kbId: string; onRebuild?: () => void }) {
+  const { showToast } = useAppUi();
   const [status, setStatus] = useState<{ ready?: boolean; stale?: boolean; reason?: string } | null>(null);
+  const [rebuilding, setRebuilding] = useState(false);
 
   const load = async () => {
     if (!kbId) { setStatus(null); return; }
@@ -26,12 +29,20 @@ export function IndexStatusPill({ kbId, onRebuild }: { kbId: string; onRebuild?:
     <span className="indexStatusWrap">
       <span className={`pill indexStatusPill ${cls}`}>{text}</span>
       {onRebuild && (
-        <button type="button" className="btn btnXs ghost" onClick={() => void (async () => {
-          await apiJson(`/rag/knowledge-bases/${encodeURIComponent(kbId)}/index/rebuild`, { method: "POST" });
-          await load();
-          onRebuild();
+        <button type="button" className="btn btnXs ghost" disabled={rebuilding} onClick={() => void (async () => {
+          setRebuilding(true);
+          try {
+            await apiJson(`/rag/knowledge-bases/${encodeURIComponent(kbId)}/index/rebuild`, { method: "POST" });
+            showToast("索引重建成功");
+            await load();
+            onRebuild();
+          } catch (e) {
+            showToast((e as Error).message, "error");
+          } finally {
+            setRebuilding(false);
+          }
         })()}>
-          重建索引
+          {rebuilding ? "重建中…" : "重建索引"}
         </button>
       )}
     </span>

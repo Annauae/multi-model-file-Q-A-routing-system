@@ -38,7 +38,7 @@ export class RagModelsStore {
                 temperature: 0,
             },
             llm: {
-                label: "RAG 回答模型",
+                label: "RAG 问答模型",
                 api_base_url: baseUrl,
                 api_key: apiKey,
                 model: settings.ragLlmModel,
