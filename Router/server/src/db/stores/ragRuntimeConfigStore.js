@@ -1,5 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
+import * as ragMetaRepo from "../repositories/ragMetaRepo.js";
 
 export const DEFAULT_TEMPLATES = [
     {
@@ -46,50 +45,42 @@ export function activeTemplate(config) {
 }
 
 export class RagRuntimeConfigStore {
-    filePath;
+    kbId;
 
-    constructor(filePath) {
-        this.filePath = filePath;
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir))
-            fs.mkdirSync(dir, { recursive: true });
+    constructor(kbId) {
+        this.kbId = kbId;
     }
 
-    static open(filePath) {
-        return new RagRuntimeConfigStore(filePath);
+    static open(kbId) {
+        return new RagRuntimeConfigStore(kbId);
     }
 
-    load() {
-        if (!fs.existsSync(this.filePath))
+    async load() {
+        const data = await ragMetaRepo.getRuntimeConfig(this.kbId);
+        if (!data)
             return defaultRuntimeConfig();
-        try {
-            const data = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
-            const templates = Array.isArray(data.templates)
-                ? data.templates
-                : DEFAULT_TEMPLATES.map((t) => ({ ...t }));
-            return {
-                temperature: Number(data.temperature ?? 0.1),
-                top_k: Number(data.top_k ?? 8),
-                top_n: Number(data.top_n ?? 3),
-                answer_mode: String(data.answer_mode ?? "direct"),
-                use_rerank: data.use_rerank !== false,
-                min_confidence_score: Number(data.min_confidence_score ?? 0.05),
-                active_template_id: String(data.active_template_id ?? "default"),
-                templates,
-            };
-        }
-        catch {
-            return defaultRuntimeConfig();
-        }
+        const templates = Array.isArray(data.templates)
+            ? data.templates
+            : DEFAULT_TEMPLATES.map((t) => ({ ...t }));
+        return {
+            temperature: Number(data.temperature ?? 0.1),
+            top_k: Number(data.top_k ?? 8),
+            top_n: Number(data.top_n ?? 3),
+            answer_mode: String(data.answer_mode ?? "direct"),
+            use_rerank: data.use_rerank !== false,
+            min_confidence_score: Number(data.min_confidence_score ?? 0.05),
+            active_template_id: String(data.active_template_id ?? "default"),
+            templates,
+        };
     }
 
-    save(config) {
-        fs.writeFileSync(this.filePath, JSON.stringify(config, null, 2), "utf-8");
+    async save(config) {
+        await ragMetaRepo.saveRuntimeConfig(this.kbId, config);
         return config;
     }
 
-    update(patch) {
-        const rc = this.load();
+    async update(patch) {
+        const rc = await this.load();
         if ("temperature" in patch)
             rc.temperature = Math.max(0, Math.min(2, Number(patch.temperature)));
         if ("top_k" in patch)
@@ -108,10 +99,10 @@ export class RagRuntimeConfigStore {
             rc.templates = patch.templates
                 .filter((t) => t && t.id)
                 .map((t) => ({
-                id: String(t.id),
-                name: String(t.name ?? ""),
-                content: String(t.content ?? ""),
-            }));
+                    id: String(t.id),
+                    name: String(t.name ?? ""),
+                    content: String(t.content ?? ""),
+                }));
         }
         return this.save(rc);
     }

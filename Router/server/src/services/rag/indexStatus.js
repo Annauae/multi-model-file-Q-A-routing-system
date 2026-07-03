@@ -1,38 +1,29 @@
-import fs from "node:fs";
-import path from "node:path";
-import { dataHashFromFile } from "./dataLoader.js";
-import { ragIndexMetaPath, ragQuestionsJsonPath } from "../paths.js";
+import * as ragMetaRepo from "../../db/repositories/ragMetaRepo.js";
+import * as kbRepo from "../../db/repositories/kbRepo.js";
+import * as qaRepo from "../../db/repositories/qaRepo.js";
+import { dataHashFromContent } from "./dataLoader.js";
 
-export function readIndexMeta(filesRoot, kbId) {
-    const p = ragIndexMetaPath(filesRoot, kbId);
-    if (!fs.existsSync(p))
-        return null;
-    try {
-        return JSON.parse(fs.readFileSync(p, "utf-8"));
-    }
-    catch {
-        return null;
-    }
+export async function readIndexMeta(_filesRoot, kbId) {
+    return ragMetaRepo.getIndexMeta(kbId);
 }
 
-export function writeIndexMeta(filesRoot, kbId, meta) {
-    const p = ragIndexMetaPath(filesRoot, kbId);
-    const dir = path.dirname(p);
-    if (!fs.existsSync(dir))
-        fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(p, JSON.stringify(meta, null, 2), "utf-8");
+export async function writeIndexMeta(_filesRoot, kbId, meta) {
+    await ragMetaRepo.saveIndexMeta(kbId, meta);
 }
 
-export function indexStatus(settings, kbId, ragModelsStore) {
-    const qPath = ragQuestionsJsonPath(settings.filesRoot, kbId);
-    if (!fs.existsSync(qPath))
-        return { ready: false, stale: true, reason: "RAG FAQ 不存在" };
-    const meta = readIndexMeta(settings.filesRoot, kbId);
+export async function indexStatus(settings, kbId, ragModelsStore) {
+    const doc = await qaRepo.getDocument("rag", kbId);
+    if (!doc.items.length) {
+        const hasKb = await kbRepo.getRagKb(kbId);
+        if (!hasKb)
+            return { ready: false, stale: true, reason: "RAG FAQ 不存在" };
+    }
+    const meta = await readIndexMeta(settings.filesRoot, kbId);
     if (!meta?.built_at)
         return { ready: false, stale: true, reason: "索引不存在" };
     let currentHash;
     try {
-        currentHash = dataHashFromFile(qPath);
+        currentHash = dataHashFromContent(JSON.stringify({ version: doc.version, items: doc.items }));
     }
     catch {
         return { ready: false, stale: true, reason: "RAG FAQ 读取失败" };

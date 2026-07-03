@@ -1,10 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
-function nowIso() {
-    return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-}
+import * as settingsRepo from "../repositories/settingsRepo.js";
+import { nowIso } from "../utils.js";
+
+const SETTINGS_KEY = "prompts";
+
 export class PromptsStore {
-    filePath;
     onChange;
     data = {
         confidence_match_prompt: "",
@@ -12,64 +11,66 @@ export class PromptsStore {
         pdf_vlm_prompt: "",
         updated_at: "",
     };
-    constructor(filePath, onChange) {
-        this.filePath = filePath;
+
+    constructor(onChange) {
         this.onChange = onChange;
-        this.loadOrSeed();
     }
-    static open(filePath, onChange) {
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir))
-            fs.mkdirSync(dir, { recursive: true });
-        return new PromptsStore(filePath, onChange);
+
+    static open(onChange) {
+        return new PromptsStore(onChange);
     }
-    loadOrSeed() {
-        if (!fs.existsSync(this.filePath)) {
+
+    async init() {
+        const row = await settingsRepo.getSetting(SETTINGS_KEY);
+        if (!row) {
             this.data = {
                 confidence_match_prompt: "",
                 faq_generation_prompt: "",
                 pdf_vlm_prompt: "",
                 updated_at: nowIso(),
             };
-            this.save();
+            await this.save();
             return;
         }
-        const raw = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
+        const raw = row.value;
         this.data = {
             confidence_match_prompt: String(raw.confidence_match_prompt ?? ""),
             faq_generation_prompt: String(raw.faq_generation_prompt ?? ""),
             pdf_vlm_prompt: String(raw.pdf_vlm_prompt ?? ""),
-            updated_at: String(raw.updated_at ?? ""),
+            updated_at: String(raw.updated_at ?? row.updated_at ?? ""),
         };
     }
-    save() {
-        fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2), "utf-8");
+
+    async save() {
+        await settingsRepo.setSetting(SETTINGS_KEY, this.data);
     }
+
     get() {
         return { ...this.data };
     }
-    set(patch) {
-        if (patch.confidence_match_prompt != null) {
+
+    async set(patch) {
+        if (patch.confidence_match_prompt != null)
             this.data.confidence_match_prompt = patch.confidence_match_prompt || "";
-        }
-        if (patch.faq_generation_prompt != null) {
+        if (patch.faq_generation_prompt != null)
             this.data.faq_generation_prompt = patch.faq_generation_prompt || "";
-        }
-        if (patch.pdf_vlm_prompt != null) {
+        if (patch.pdf_vlm_prompt != null)
             this.data.pdf_vlm_prompt = patch.pdf_vlm_prompt || "";
-        }
         this.data.updated_at = nowIso();
-        this.save();
+        await this.save();
         const out = { ...this.data };
         this.onChange?.();
         return out;
     }
+
     effectiveConfidencePrompt() {
         return this.get().confidence_match_prompt.trim();
     }
+
     effectiveFaqPrompt() {
         return this.get().faq_generation_prompt.trim();
     }
+
     effectivePdfVlmPrompt() {
         return this.get().pdf_vlm_prompt.trim();
     }

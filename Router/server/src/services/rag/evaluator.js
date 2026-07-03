@@ -1,18 +1,10 @@
-import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { RagRetriever } from "./retriever.js";
-import { ragEvalRunsDir } from "../paths.js";
+import * as ragMetaRepo from "../../db/repositories/ragMetaRepo.js";
+import { readIndexMeta } from "./indexStatus.js";
 
 function nowIso() {
     return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-}
-
-function evalRunPath(filesRoot, kbId, runId) {
-    const dir = ragEvalRunsDir(filesRoot, kbId);
-    if (!fs.existsSync(dir))
-        fs.mkdirSync(dir, { recursive: true });
-    return path.join(dir, `${runId}.json`);
 }
 
 function sampleRows(mode, size, items, meta) {
@@ -74,7 +66,7 @@ function summarize(results) {
     };
 }
 
-export function startEvalRun(kbId, opts, ctx) {
+export async function startEvalRun(kbId, opts, ctx) {
     const runId = randomUUID().slice(0, 12);
     const run = {
         run_id: runId,
@@ -88,8 +80,7 @@ export function startEvalRun(kbId, opts, ctx) {
         summary: {},
         results: [],
     };
-    const filePath = evalRunPath(ctx.settings.filesRoot, kbId, runId);
-    fs.writeFileSync(filePath, JSON.stringify(run, null, 2), "utf-8");
+    await ragMetaRepo.saveEvalRun(kbId, runId, run);
 
     setImmediate(() => {
         void runEvalAsync(kbId, runId, opts, ctx).catch((err) => {
@@ -100,20 +91,18 @@ export function startEvalRun(kbId, opts, ctx) {
 }
 
 async function runEvalAsync(kbId, runId, opts, ctx) {
-    const filePath = evalRunPath(ctx.settings.filesRoot, kbId, runId);
-    const readRun = () => JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    const writeRun = (data) => fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+    const readRun = async () => ragMetaRepo.getEvalRun(kbId, runId);
+    const writeRun = async (data) => ragMetaRepo.saveEvalRun(kbId, runId, data);
 
-    let run = readRun();
+    let run = await readRun();
     run.status = "running";
     run.updated_at = nowIso();
-    writeRun(run);
+    await writeRun(run);
 
     const store = ctx.getRagQuestionsStore(kbId);
-    const doc = store.getDocument();
-    const { readIndexMeta } = await import("./indexStatus.js");
-    const meta = readIndexMeta(ctx.settings.filesRoot, kbId);
-    const runtime = ctx.getRuntimeConfig(kbId);
+    const doc = await store.getDocument();
+    const meta = await readIndexMeta(ctx.settings.filesRoot, kbId);
+    const runtime = await ctx.getRuntimeConfig(kbId);
     const retriever = new RagRetriever(kbId, ctx, runtime);
     const samples = sampleRows(opts.mode, opts.size, doc.items, meta);
 
@@ -154,52 +143,25 @@ async function runEvalAsync(kbId, runId, opts, ctx) {
                 recall_at: { 1: false, 3: false, 5: false },
             });
         }
-        run = readRun();
+        run = await readRun();
         run.results = results;
         run.summary = summarize(results);
         run.updated_at = nowIso();
-        writeRun(run);
+        await writeRun(run);
     }
 
-    run = readRun();
+    run = await readRun();
     run.status = "completed";
     run.completed_at = nowIso();
     run.summary = summarize(results);
     run.updated_at = nowIso();
-    writeRun(run);
+    await writeRun(run);
 }
 
-export function getEvalRun(filesRoot, kbId, runId) {
-    const filePath = evalRunPath(filesRoot, kbId, runId);
-    if (!fs.existsSync(filePath))
-        return null;
-    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+export async function getEvalRun(kbId, runId) {
+    return ragMetaRepo.getEvalRun(kbId, runId);
 }
 
-export function listEvalRuns(filesRoot, kbId, limit = 10) {
-    const dir = ragEvalRunsDir(filesRoot, kbId);
-    if (!fs.existsSync(dir))
-        return [];
-    return fs.readdirSync(dir)
-        .filter((f) => f.endsWith(".json"))
-        .map((f) => {
-            try {
-                const raw = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
-                return {
-                    run_id: raw.run_id,
-                    status: raw.status,
-                    size: raw.size,
-                    mode: raw.mode,
-                    created_at: raw.created_at,
-                    updated_at: raw.updated_at,
-                    summary: raw.summary,
-                };
-            }
-            catch {
-                return null;
-            }
-        })
-        .filter(Boolean)
-        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
-        .slice(0, limit);
+export async function listEvalRuns(kbId, limit = 10) {
+    return ragMetaRepo.listEvalRuns(kbId, limit);
 }

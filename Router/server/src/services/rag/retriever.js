@@ -1,7 +1,7 @@
 import { charNgrams, msSince, clipText } from "./textUtils.js";
-import { loadFaqItems, buildItemMap, itemToResult } from "./dataLoader.js";
+import { loadFaqItemsFromRows, buildItemMap, itemToResult } from "./dataLoader.js";
 import { readIndexMeta } from "./indexStatus.js";
-import { ragQuestionsJsonPath, ragKbAssetsDirPath } from "../paths.js";
+import { ragKbAssetsDirPath } from "../paths.js";
 import { SEARCHABLE_DOC_TYPES } from "./searchDocBuilder.js";
 import { aggregateTokens } from "./tokenUtils.js";
 import { RagLogSink, formatRagSearchSummary } from "./ragLogger.js";
@@ -15,9 +15,11 @@ export class RagRetriever {
     runtimeConfig;
     itemMap = null;
     log;
+    ragCtx;
 
     constructor(kbId, ctx, runtimeConfig, logModule = "rag-debug") {
         this.kbId = kbId;
+        this.ragCtx = ctx;
         this.settings = ctx.settings;
         this.ragModelsStore = ctx.ragModelsStore;
         this.weaviateStore = ctx.weaviateStore;
@@ -33,12 +35,13 @@ export class RagRetriever {
         return defaultVal;
     }
 
-    loadItems() {
+    async loadItems() {
         if (this.itemMap)
             return this.itemMap;
-        const filePath = ragQuestionsJsonPath(this.settings.filesRoot, this.kbId);
+        const store = this.ragCtx.getRagQuestionsStore(this.kbId);
+        const doc = await store.getDocument();
         const assetsDir = ragKbAssetsDirPath(this.settings.filesRoot, this.kbId);
-        this.itemMap = buildItemMap(loadFaqItems(filePath, assetsDir));
+        this.itemMap = buildItemMap(loadFaqItemsFromRows(doc.items, assetsDir));
         return this.itemMap;
     }
 
@@ -85,14 +88,14 @@ export class RagRetriever {
         if (!this.rt("use_rerank", true)) {
             candidates.sort((a, b) => b.rrf_score - a.rrf_score);
             timing.rerank_ms = 0;
-            results = candidates.slice(0, top_k).map((c) => this._candidateToResult(c));
+            results = await Promise.all(candidates.slice(0, top_k).map((c) => this._candidateToResult(c)));
             this.log.log("[search] rerank 已关闭，按 RRF 排序", "step", "rerank-skip");
         }
         else {
             const tRr = performance.now();
             const { output, usage: rerankUsage } = await this._rerank(query, candidates, Math.max(top_k, 8));
             timing.rerank_ms = msSince(tRr);
-            results = output.slice(0, top_k).map((c) => this._candidateToResult(c));
+            results = await Promise.all(output.slice(0, top_k).map((c) => this._candidateToResult(c)));
             this.log.timing("rerank", timing.rerank_ms);
             this.log.log(`[search] rerank 完成，返回 ${results.length} 条`, "step", "rerank");
             if (rerankUsage)
@@ -181,7 +184,7 @@ export class RagRetriever {
     }
 
     async _keywordSearch(query, limit) {
-        const meta = readIndexMeta(this.settings.filesRoot, this.kbId);
+        const meta = await readIndexMeta(this.settings.filesRoot, this.kbId);
         const index = meta?.keyword_index ?? [];
         const qTokens = [...new Set(charNgrams(query, 2, 3))].slice(0, 48);
         const scored = [];
@@ -260,7 +263,7 @@ export class RagRetriever {
     }
 
     async _rerank(query, candidates, topK) {
-        const items = this.loadItems();
+        const items = await this.loadItems();
         const docs = [];
         const kept = [];
         for (const cand of candidates.slice(0, Math.max(topK * 3, topK))) {
@@ -296,8 +299,8 @@ export class RagRetriever {
         return { output, usage };
     }
 
-    _candidateToResult(cand) {
-        const items = this.loadItems();
+    async _candidateToResult(cand) {
+        const items = await this.loadItems();
         const item = items.get(cand.item_id);
         if (!item)
             return { id: cand.item_id };

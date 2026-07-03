@@ -4,15 +4,15 @@ import os from "node:os";
 import path from "node:path";
 import multer from "multer";
 import { APP_ROOT, loadSettings } from "./config.js";
-import { KbStore } from "./services/kbStore.js";
+import { KbStore } from "./db/stores/kbStore.js";
 import { QuestionsCache } from "./services/questionsCache.js";
-import { ModelsStore } from "./services/modelsStore.js";
-import { MatchProfilesStore } from "./services/matchProfilesStore.js";
-import { PromptsStore } from "./services/promptsStore.js";
-import { OperationLog } from "./services/operationLog.js";
+import { ModelsStore } from "./db/stores/modelsStore.js";
+import { MatchProfilesStore } from "./db/stores/matchProfilesStore.js";
+import { PromptsStore } from "./db/stores/promptsStore.js";
+import { OperationLog } from "./db/stores/operationLog.js";
 import { LLMClient, LLMError } from "./services/llmClient.js";
 import { AskLogSink, runConfidenceMatch, sseEvent, } from "./services/confidenceMatch.js";
-import { kbAssetsDirPath, kbDirPath, questionsJsonPath, recallTestsJsonPath, documentsAssetsDirPath, documentsSourcesDirPath, } from "./services/paths.js";
+import { kbAssetsDirPath, kbDirPath, documentsAssetsDirPath, documentsSourcesDirPath, } from "./services/paths.js";
 import { buildMarkdownFilesTree, readDocumentContent, saveMarkdownContent, deleteDocumentFile, renameDocumentFile, createModuleMarkdown, documentsSourcePath, resolvePreviewFilePath, listExcelSheets, } from "./services/markdownFiles.js";
 import { extractMarkdownRange, extractPdfToMarkdown, extractSourceToMarkdown, mergeExtractStats, finalizeCombinedExtract, detectSourceFormat, } from "./services/fileProcessor.js";
 import { isAllowedSourceExtension, fileKind as docFileKind, capabilitiesForKind, formatFromFilename, listCapabilitiesPayload, } from "./services/documentTypes.js";
@@ -94,19 +94,21 @@ function firstKbId(ctx) {
     });
     return ids[0] ?? "";
 }
-export function createAppContext() {
+export async function createAppContext() {
     const settings = loadSettings();
-    const kbStore = new KbStore(settings.kbConfigPath);
+    const kbStore = new KbStore();
+    await kbStore.init();
     const modelsStore = ModelsStore.fromSettings(settings);
-    const opLog = new OperationLog(5000, path.join(settings.dataRoot, "logs", "operations.jsonl"));
-    const promptsPath = path.join(settings.dataRoot, "config", "prompts.json");
+    await modelsStore.init();
+    const opLog = new OperationLog();
     let cache;
-    const promptsStore = PromptsStore.open(promptsPath, () => cache?.reloadAll());
-    cache = new QuestionsCache(kbStore, settings.filesRoot, settings.confidenceTopK, promptsStore);
-    cache.loadAll();
-    const profilesPath = path.join(settings.dataRoot, "config", "match_profiles.json");
-    const matchProfilesStore = MatchProfilesStore.open(profilesPath, modelsStore);
-    const ragCtx = createRagContext({ settings, kbStore, opLog });
+    const promptsStore = PromptsStore.open(() => { void cache?.reloadAll(); });
+    await promptsStore.init();
+    cache = new QuestionsCache(kbStore, settings.confidenceTopK, promptsStore);
+    await cache.loadAll();
+    const matchProfilesStore = MatchProfilesStore.open(modelsStore);
+    await matchProfilesStore.init();
+    const ragCtx = await createRagContext({ settings, kbStore, opLog });
     return { settings, kbStore, cache, modelsStore, matchProfilesStore, promptsStore, opLog, ragCtx };
 }
 export function createApp(ctx, clientDist) {
@@ -223,7 +225,7 @@ export function createApp(ctx, clientDist) {
         res.write(sseEvent("candidates", {
             raw_output: match.raw_output,
             candidates: match.candidates,
-            enabled_count: ctx.cache.getEnabledCount(kbId),
+            enabled_count: (await ctx.cache.getEnabledCount(kbId)),
             messages: messagesDict,
         }));
         res.write(sseEvent("done", {
@@ -237,46 +239,48 @@ export function createApp(ctx, clientDist) {
         }));
         res.end();
     });
-    app.get("/knowledge-bases", (_req, res) => {
-        const items = Object.entries(ctx.kbStore.getAll()).map(([kb_id, cfg]) => ({
-            kb_id,
-            ...cfg,
-            enabled_count: ctx.cache.getIndex(kb_id)?.enabledItems.length ?? 0,
-        }));
+    app.get("/knowledge-bases", async (_req, res) => {
+        const items = [];
+        for (const [kb_id, cfg] of Object.entries(ctx.kbStore.getAll())) {
+            let enabled_count = 0;
+            try {
+                enabled_count = await ctx.cache.getEnabledCount(kb_id);
+            }
+            catch {
+                enabled_count = ctx.cache.getIndex(kb_id)?.enabledItems.length ?? 0;
+            }
+            items.push({ kb_id, ...cfg, enabled_count });
+        }
         res.json({ items });
     });
-    app.post("/knowledge-bases", (req, res) => {
-        const kbId = String(req.body.kb_id ?? "").trim() || ctx.kbStore.nextAvailableKbId();
+    app.post("/knowledge-bases", async (req, res) => {
+        const kbId = String(req.body.kb_id ?? "").trim() || (await ctx.kbStore.nextAvailableKbId());
         const name = String(req.body.name ?? "").trim();
         try {
-            const cfg = ctx.kbStore.createKb(kbId, name);
+            const cfg = await ctx.kbStore.createKb(kbId, name);
             fs.mkdirSync(kbDirPath(ctx.settings.filesRoot, kbId), { recursive: true });
             fs.mkdirSync(kbAssetsDirPath(ctx.settings.filesRoot, kbId), { recursive: true });
-            const qpath = questionsJsonPath(ctx.settings.filesRoot, kbId);
-            if (!fs.existsSync(qpath)) {
-                fs.writeFileSync(qpath, JSON.stringify({ version: 1, items: [] }, null, 2), "utf-8");
-            }
-            ctx.cache.loadKb(kbId);
+            await ctx.cache.loadKb(kbId);
             res.json({ kb_id: kbId, ...cfg });
         }
         catch (e) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
-    app.get("/knowledge-bases/:kbId", (req, res) => {
+    app.get("/knowledge-bases/:kbId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
             const cfg = ctx.kbStore.get(kid);
-            res.json({ kb_id: kid, ...cfg, enabled_count: ctx.cache.getEnabledCount(kid) });
+            res.json({ kb_id: kid, ...cfg, enabled_count: await ctx.cache.getEnabledCount(kid) });
         }
         catch (e) {
             res.status(e.status).json({ detail: e.detail });
         }
     });
-    app.delete("/knowledge-bases/:kbId", (req, res) => {
+    app.delete("/knowledge-bases/:kbId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            const cfg = ctx.kbStore.deleteKb(kid);
+            const cfg = await ctx.kbStore.deleteKb(kid);
             ctx.cache.evictKb(kid);
             ctx.kbStore.deleteKbFiles(kid, ctx.settings.filesRoot);
             res.json({ kb_id: kid, ...cfg });
@@ -285,21 +289,21 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
-    app.post("/knowledge-bases/:kbId/rename", (req, res) => {
+    app.post("/knowledge-bases/:kbId/rename", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            const cfg = ctx.kbStore.renameKb(kid, String(req.body.name ?? "").trim());
+            const cfg = await ctx.kbStore.renameKb(kid, String(req.body.name ?? "").trim());
             res.json({ kb_id: kid, ...cfg });
         }
         catch (e) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
-    app.get("/knowledge-bases/:kbId/confidence-prompt-preview", (req, res) => {
+    app.get("/knowledge-bases/:kbId/confidence-prompt-preview", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
             const topK = Math.max(1, Math.min(20, Number(req.query.top_k ?? 5)));
-            const [confRules, systemPrompt, enabledCount] = ctx.cache.previewConfidenceSystemPrompt(kid, topK);
+            const [confRules, systemPrompt, enabledCount] = await ctx.cache.previewConfidenceSystemPrompt(kid, topK);
             res.json({
                 kb_id: kid,
                 confidence_match_prompt: confRules,
@@ -311,10 +315,10 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
-    app.post("/knowledge-bases/:kbId/reload", (req, res) => {
+    app.post("/knowledge-bases/:kbId/reload", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            const idx = ctx.cache.reloadKb(kid);
+            const idx = await ctx.cache.reloadKb(kid);
             res.json({ kb_id: kid, loaded_at: idx.loadedAt, enabled_count: idx.enabledItems.length });
         }
         catch (e) {
@@ -327,7 +331,7 @@ export function createApp(ctx, clientDist) {
             const ragKbId = String(req.body.rag_kb_id ?? "").trim();
             if (!ragKbId)
                 throw httpError(400, "rag_kb_id 必填");
-            const result = importRagFaqToLlm(ctx, llmKbId, ragKbId, {
+            const result = await importRagFaqToLlm(ctx, llmKbId, ragKbId, {
                 append: req.body.append !== false,
                 replace: Boolean(req.body.replace),
             });
@@ -343,34 +347,34 @@ export function createApp(ctx, clientDist) {
             res.status(e.status || 400).json({ detail: e.detail ?? (e instanceof Error ? e.message : String(e)) });
         }
     });
-    app.get("/knowledge-bases/:kbId/questions", (req, res) => {
+    app.get("/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            res.json(ctx.cache.store(kid).getDocument());
+            res.json(await ctx.cache.store(kid).getDocument());
         }
         catch (e) {
             res.status(404).json({ detail: e.detail ?? String(e) });
         }
     });
-    app.put("/knowledge-bases/:kbId/questions", (req, res) => {
+    app.put("/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            const doc = ctx.cache.store(kid).replaceAll(Number(req.body.version ?? 1), req.body.items ?? []);
-            ctx.cache.reloadKb(kid);
+            const doc = await ctx.cache.store(kid).replaceAll(Number(req.body.version ?? 1), req.body.items ?? []);
+            await ctx.cache.reloadKb(kid);
             res.json(doc);
         }
         catch (e) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
-    app.post("/knowledge-bases/:kbId/questions/items", (req, res) => {
+    app.post("/knowledge-bases/:kbId/questions/items", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
             const store = ctx.cache.store(kid);
-            if (store.getItem(String(req.body.id ?? "")))
+            if (await store.getItem(String(req.body.id ?? "")))
                 throw httpError(400, "item id 已存在");
-            const item = store.upsertItem(req.body);
-            ctx.cache.reloadKb(kid);
+            const item = await store.upsertItem(req.body);
+            await ctx.cache.reloadKb(kid);
             ctx.opLog.append({ module: "manage", action: "create_item", kb_id: kid, detail: `item ${req.body.id}` });
             res.json(item);
         }
@@ -378,16 +382,16 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
-    app.put("/knowledge-bases/:kbId/questions/items/:itemId", (req, res) => {
+    app.put("/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
             if (req.body.id !== req.params.itemId)
                 throw httpError(400, "路径 item_id 与 body.id 不一致");
             const store = ctx.cache.store(kid);
-            if (!store.getItem(req.params.itemId))
+            if (!(await store.getItem(req.params.itemId)))
                 throw httpError(404, "item_id 不存在");
-            const item = store.upsertItem(req.body);
-            ctx.cache.reloadKb(kid);
+            const item = await store.upsertItem(req.body);
+            await ctx.cache.reloadKb(kid);
             ctx.opLog.append({ module: "manage", action: "update_item", kb_id: kid, detail: `item ${req.body.id}` });
             res.json(item);
         }
@@ -395,11 +399,11 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
-    app.delete("/knowledge-bases/:kbId/questions/items/:itemId", (req, res) => {
+    app.delete("/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            const item = ctx.cache.store(kid).deleteItem(req.params.itemId);
-            ctx.cache.reloadKb(kid);
+            const item = await ctx.cache.store(kid).deleteItem(req.params.itemId);
+            await ctx.cache.reloadKb(kid);
             ctx.opLog.append({ module: "manage", action: "delete_item", kb_id: kid, detail: `item ${req.params.itemId}` });
             res.json(item);
         }
@@ -450,8 +454,8 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
-    app.get("/logs", (req, res) => {
-        const items = ctx.opLog.listEntries({
+    app.get("/logs", async (req, res) => {
+        const items = await ctx.opLog.listEntries({
             limit: Number(req.query.limit ?? 500),
             modules: String(req.query.modules ?? req.query.module ?? ""),
             kb_id: String(req.query.kb_id ?? ""),
@@ -459,28 +463,25 @@ export function createApp(ctx, clientDist) {
         });
         res.json({ items });
     });
-    app.delete("/logs", (_req, res) => {
-        const n = ctx.opLog.clear();
-        ctx.opLog.append({ module: "logs", action: "clear", detail: `cleared ${n} entries` });
-        res.json({ cleared: n });
-    });
     app.get("/logs/stream", (req, res) => {
         let last = String(req.query.since ?? "");
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.flushHeaders?.();
         const interval = setInterval(() => {
-            const batch = ctx.opLog.listEntries({ limit: 500 });
-            for (const entry of batch) {
-                if (entry.ts > last) {
-                    res.write(sseEvent("log", entry));
-                    last = entry.ts;
+            void (async () => {
+                const batch = await ctx.opLog.listEntries({ since: last, limit: 500 });
+                for (const entry of batch) {
+                    if (entry.ts > last) {
+                        res.write(sseEvent("log", entry));
+                        last = entry.ts;
+                    }
                 }
-            }
+            })();
         }, 1000);
         req.on("close", () => clearInterval(interval));
     });
-    app.get("/settings/prompts", (req, res) => {
+    app.get("/settings/prompts", async (req, res) => {
         const gp = ctx.promptsStore.get();
         const previewKb = String(req.query.kb_id ?? "").trim() || firstKbId(ctx);
         const topK = ctx.settings.confidenceTopK;
@@ -492,7 +493,7 @@ export function createApp(ctx, clientDist) {
             try {
                 let idx = ctx.cache.getIndex(previewKb);
                 if (!idx)
-                    idx = ctx.cache.loadKb(previewKb);
+                    idx = await ctx.cache.loadKb(previewKb);
                 enabledCount = idx.enabledItems.length;
                 confQuestionsSection = buildQuestionListSection(idx.enabledItems);
                 let rules = gp.confidence_match_prompt.trim() || defaultConfidenceMatchPrompt(topK);
@@ -519,8 +520,8 @@ export function createApp(ctx, clientDist) {
             enabled_count: enabledCount,
         });
     });
-    app.put("/settings/prompts", (req, res) => {
-        const gp = ctx.promptsStore.set({
+    app.put("/settings/prompts", async (req, res) => {
+        const gp = await ctx.promptsStore.set({
             confidence_match_prompt: "confidence_match_prompt" in req.body ? req.body.confidence_match_prompt : undefined,
             faq_generation_prompt: "faq_generation_prompt" in req.body ? req.body.faq_generation_prompt : undefined,
             pdf_vlm_prompt: "pdf_vlm_prompt" in req.body ? req.body.pdf_vlm_prompt : undefined,
@@ -534,40 +535,35 @@ export function createApp(ctx, clientDist) {
             profiles: ctx.matchProfilesStore.listProfiles(false),
         });
     });
-    app.put("/settings/match-profiles", (req, res) => {
-        const updated = ctx.matchProfilesStore.updateAll(req.body);
+    app.put("/settings/match-profiles", async (req, res) => {
+        const updated = await ctx.matchProfilesStore.updateAll(req.body);
         ctx.opLog.append({ module: "settings", action: "update_match_profiles", detail: "更新问答模型配置" });
         res.json(updated);
     });
     app.get("/settings/models", (_req, res) => {
         res.json({ slots: ctx.modelsStore.getAll(false) });
     });
-    app.put("/settings/models", (req, res) => {
+    app.put("/settings/models", async (req, res) => {
         const slots = req.body.slots && typeof req.body.slots === "object" ? req.body.slots : req.body;
-        const updated = ctx.modelsStore.updateAll(slots ?? {});
+        const updated = await ctx.modelsStore.updateAll(slots ?? {});
         ctx.opLog.append({ module: "settings", action: "update_models", detail: "更新模型配置" });
         res.json({ slots: updated });
     });
-    app.get("/knowledge-bases/:kbId/recall-tests", (req, res) => {
+    app.get("/knowledge-bases/:kbId/recall-tests", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            const p = recallTestsJsonPath(ctx.settings.filesRoot, kid);
-            if (!fs.existsSync(p))
-                return res.json({ items: [] });
-            res.json(JSON.parse(fs.readFileSync(p, "utf-8")));
+            res.json(await ctx.ragCtx.getLlmRecallTestsStore(kid).getDocument());
         }
         catch (e) {
             res.status(404).json({ detail: e.detail ?? String(e) });
         }
     });
-    app.put("/knowledge-bases/:kbId/recall-tests", (req, res) => {
+    app.put("/knowledge-bases/:kbId/recall-tests", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
-            const p = recallTestsJsonPath(ctx.settings.filesRoot, kid);
-            fs.mkdirSync(path.dirname(p), { recursive: true });
-            fs.writeFileSync(p, JSON.stringify(req.body, null, 2), "utf-8");
+            const doc = await ctx.ragCtx.getLlmRecallTestsStore(kid).replaceAll(req.body);
             ctx.opLog.append({ module: "debug", action: "save_recall_tests", kb_id: kid, detail: `${(req.body.items ?? []).length} rows` });
-            res.json(req.body);
+            res.json(doc);
         }
         catch (e) {
             res.status(404).json({ detail: e.detail ?? String(e) });
@@ -919,7 +915,7 @@ export function createApp(ctx, clientDist) {
 
             const results = { llm: 0, rag: 0, kb_id: kid, items: [] };
 
-            const assignAndMerge = (store, existing) => {
+            const assignAndMerge = async (store, existing) => {
                 let startId = 1;
                 if (existing.length) {
                     const nums = existing.map((i) => parseInt(String(i.id).replace(/^q/, ""), 10)).filter((n) => !Number.isNaN(n));
@@ -928,19 +924,19 @@ export function createApp(ctx, clientDist) {
                 const withIds = assignQuestionIds(rawItems, startId);
                 if (append) {
                     for (const item of withIds)
-                        store.upsertItem(item);
+                        await store.upsertItem(item);
                 }
                 else {
-                    store.replaceAll(1, [...existing.map((i) => ({ ...i })), ...withIds]);
+                    await store.replaceAll(1, [...existing.map((i) => ({ ...i })), ...withIds]);
                 }
                 return withIds;
             };
 
             if (targets.includes("llm")) {
                 const store = ctx.cache.store(kid);
-                const existing = store.getDocument().items;
-                const withIds = assignAndMerge(store, existing);
-                ctx.cache.reloadKb(kid);
+                const existing = (await store.getDocument()).items;
+                const withIds = await assignAndMerge(store, existing);
+                await ctx.cache.reloadKb(kid);
                 results.llm = withIds.length;
                 results.items = withIds;
                 ctx.opLog.append({ module: "generate", action: "commit-llm", kb_id: kid, detail: `imported ${withIds.length} items` });
@@ -951,8 +947,8 @@ export function createApp(ctx, clientDist) {
                 if (!ctx.ragCtx.ragKbStore.get(ragKid))
                     throw httpError(404, `RAG 知识库 ${ragKid} 不存在`);
                 const ragStore = ctx.ragCtx.getRagQuestionsStore(ragKid);
-                const existing = ragStore.getDocument().items;
-                const withIds = assignAndMerge(ragStore, existing);
+                const existing = (await ragStore.getDocument()).items;
+                const withIds = await assignAndMerge(ragStore, existing);
                 results.rag = withIds.length;
                 if (!results.items.length)
                     results.items = withIds;

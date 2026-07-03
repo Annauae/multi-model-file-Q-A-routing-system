@@ -1,13 +1,14 @@
-import { loadFaqItems, dataHashFromFile } from "./dataLoader.js";
+import { loadFaqItemsFromRows, dataHashFromContent } from "./dataLoader.js";
 import { buildAllSearchDocs } from "./searchDocBuilder.js";
 import { writeIndexMeta, readIndexMeta } from "./indexStatus.js";
-import { ragQuestionsJsonPath, ragKbAssetsDirPath } from "../paths.js";
+import { ragKbAssetsDirPath } from "../paths.js";
+import * as qaRepo from "../../db/repositories/qaRepo.js";
 
 export async function rebuildIndex(kbId, ctx) {
     const { settings, ragModelsStore, weaviateStore } = ctx;
-    const filePath = ragQuestionsJsonPath(settings.filesRoot, kbId);
     const assetsDir = ragKbAssetsDirPath(settings.filesRoot, kbId);
-    const items = loadFaqItems(filePath, assetsDir);
+    const doc = await qaRepo.getDocument("rag", kbId);
+    const items = loadFaqItemsFromRows(doc.items, assetsDir);
     const holdoutPerItem = settings.ragEvalHoldoutPerItem;
     const { allDocs, indexedDocs, holdoutVariantsByItem } = buildAllSearchDocs(items, holdoutPerItem);
 
@@ -36,7 +37,7 @@ export async function rebuildIndex(kbId, ctx) {
     }));
 
     const meta = {
-        data_hash: dataHashFromFile(filePath),
+        data_hash: dataHashFromContent(JSON.stringify({ version: doc.version, items: doc.items })),
         embedding_model: backend,
         embedding_dim: String(vectors[0]?.length ?? 0),
         built_at: now,
@@ -48,15 +49,15 @@ export async function rebuildIndex(kbId, ctx) {
             [...holdoutVariantsByItem.entries()].map(([id, set]) => [id, [...set]]),
         ),
     };
-    writeIndexMeta(settings.filesRoot, kbId, meta);
+    await writeIndexMeta(settings.filesRoot, kbId, meta);
     console.log(`[rag/index] kb=${kbId} done: ${indexedDocs.length} docs`);
     return meta;
 }
 
-export function markIndexStale(settings, kbId) {
-    const meta = readIndexMeta(settings.filesRoot, kbId);
+export async function markIndexStale(settings, kbId) {
+    const meta = await readIndexMeta(settings.filesRoot, kbId);
     if (!meta)
         return;
     meta.stale_flag = true;
-    writeIndexMeta(settings.filesRoot, kbId, meta);
+    await writeIndexMeta(settings.filesRoot, kbId, meta);
 }

@@ -1,7 +1,7 @@
 import { clipText, stripMarkdown } from "./textUtils.js";
 import { normalizeApiUsage, usageFromRerankInput, usageFromText, estimateTextTokens } from "./tokenUtils.js";
-import { activeTemplate } from "../ragRuntimeConfigStore.js";
-import { DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../ragPromptsStore.js";
+import { activeTemplate } from "../../db/stores/ragRuntimeConfigStore.js";
+import { DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../../db/stores/ragPromptsStore.js";
 
 export class RagLlmClient {
     ragModelsStore;

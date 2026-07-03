@@ -17,39 +17,18 @@ export function ragKbDirPath(filesRoot, kbId) {
 export function ragKbAssetsDirPath(filesRoot, kbId) {
     return path.join(ragKbDirPath(filesRoot, kbId), "assets");
 }
-export function questionsJsonPath(filesRoot, kbId) {
-    return path.join(kbDirPath(filesRoot, kbId), "questions.json");
-}
 export function kbAssetsDirPath(filesRoot, kbId) {
     return path.join(kbDirPath(filesRoot, kbId), "assets");
 }
 export function kbModulesDirPath(filesRoot, kbId) {
     return path.join(kbDirPath(filesRoot, kbId), "modules");
 }
-export function recallTestsJsonPath(filesRoot, kbId) {
-    return path.join(kbDirPath(filesRoot, kbId), "recall_tests.json");
-}
 export function ragDirPath(filesRoot, kbId) {
     return ragKbDirPath(filesRoot, kbId);
 }
-export function ragQuestionsJsonPath(filesRoot, kbId) {
-    return path.join(ragKbDirPath(filesRoot, kbId), "questions.json");
-}
-export function ragRecallTestsJsonPath(filesRoot, kbId) {
-    return path.join(ragKbDirPath(filesRoot, kbId), "recall_tests.json");
-}
-export function ragRuntimeConfigPath(filesRoot, kbId) {
-    return path.join(ragKbDirPath(filesRoot, kbId), "runtime_config.json");
-}
-export function ragIndexMetaPath(filesRoot, kbId) {
-    return path.join(ragKbDirPath(filesRoot, kbId), "index_meta.json");
-}
-export function ragEvalRunsDir(filesRoot, kbId) {
-    return path.join(ragKbDirPath(filesRoot, kbId), "eval");
-}
 
 /** 将旧版 files/kb_{id}/rag/ 迁移到 files/rag_kb_{id}/ */
-export function migrateLegacyRagKbData(filesRoot, ragKbStore) {
+export async function migrateLegacyRagKbData(filesRoot, ragKbStore) {
     if (!fs.existsSync(filesRoot))
         return;
     for (const entry of fs.readdirSync(filesRoot)) {
@@ -63,7 +42,7 @@ export function migrateLegacyRagKbData(filesRoot, ragKbStore) {
             fs.cpSync(legacyDir, newDir, { recursive: true });
         }
         if (fs.existsSync(newDir) && !ragKbStore.get(kbId)) {
-            ragKbStore.createKb(kbId, `RAG 知识库 ${kbId}`);
+            await ragKbStore.createKb(kbId, `RAG 知识库 ${kbId}`);
         }
     }
 }

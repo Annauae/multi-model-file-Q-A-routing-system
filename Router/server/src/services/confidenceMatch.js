@@ -51,13 +51,13 @@ export async function runConfidenceMatch(opts) {
     let idx = opts.cache.getIndex(opts.kbId);
     if (!idx) {
         log("[cache] 内存索引未命中，执行 loadKb()", "cache");
-        idx = opts.cache.loadKb(opts.kbId);
+        idx = await opts.cache.loadKb(opts.kbId);
     }
     else {
         log(`[cache] 命中内存索引 loaded_at=${idx.loadedAt}`, "cache");
     }
     log(`[cache] enabled_items=${idx.enabledItems.length} prompt_lines=${countQuestionPromptLines(idx.enabledItems)}`, "cache");
-    const systemPrompt = opts.cache.getConfidenceSystemPrompt(opts.kbId, opts.topK);
+    const systemPrompt = await opts.cache.getConfidenceSystemPrompt(opts.kbId, opts.topK);
     const messagesDict = buildMatchMessages(systemPrompt, opts.question);
     const messages = messagesDict.map((m) => ({ role: m.role, content: m.content }));
     log(`[prompt] confidence system 长度=${systemPrompt.length} 字符`, "prompt");

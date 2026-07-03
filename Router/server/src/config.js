@@ -74,5 +74,7 @@ export function loadSettings() {
         embeddingSleepSec: Math.max(0, parseFloat(process.env.EMBEDDING_SLEEP_SEC || "0.25")),
         embeddingMaxChars: Math.max(256, parseInt(process.env.EMBEDDING_MAX_CHARS || "6000", 10)),
         mockWeaviate: truthy(process.env.MOCK_WEAVIATE),
+        databaseUrl: (process.env.DATABASE_URL || process.env.TEST_DATABASE_URL || "").trim(),
+        databasePoolSize: Math.max(1, parseInt(process.env.DATABASE_POOL_SIZE || "20", 10)),
     };
 }

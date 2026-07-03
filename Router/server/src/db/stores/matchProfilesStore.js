@@ -1,94 +1,81 @@
-import fs from "node:fs";
-import path from "node:path";
 import { v4 as uuidv4 } from "uuid";
-import { MASK, parseEnableThinking } from "./modelsStore.js";
+import * as settingsRepo from "../repositories/settingsRepo.js";
+import { MASK, parseEnableThinking } from "./modelUtils.js";
+
 export const DEFAULT_PROFILE_ID = "default";
+const SETTINGS_KEY = "match_profiles";
+
 export class MatchProfilesStore {
-    filePath;
     seedFrom;
     profiles = [];
     defaultId = DEFAULT_PROFILE_ID;
-    constructor(filePath, seedFrom) {
-        this.filePath = filePath;
+
+    constructor(seedFrom) {
         this.seedFrom = seedFrom;
-        this.loadOrSeed();
     }
-    static open(filePath, modelsStore) {
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir))
-            fs.mkdirSync(dir, { recursive: true });
+
+    static open(modelsStore) {
         const seed = modelsStore?.getSlot("match");
-        return new MatchProfilesStore(filePath, seed);
+        return new MatchProfilesStore(seed);
     }
-    loadOrSeed() {
-        if (!fs.existsSync(this.filePath)) {
-            const cfg = this.seedFrom;
-            this.profiles = [
-                {
-                    id: DEFAULT_PROFILE_ID,
-                    name: "默认问答模型",
-                    api_base_url: cfg?.api_base_url ?? "",
-                    api_key: cfg?.api_key ?? "",
-                    model: cfg?.model ?? "",
-                    max_tokens: cfg?.max_tokens ?? 4096,
-                    temperature: cfg?.temperature ?? 0,
-                    enable_thinking: cfg?.enable_thinking ?? null,
-                },
-            ];
-            this.defaultId = DEFAULT_PROFILE_ID;
-            this.save();
+
+    async init() {
+        const row = await settingsRepo.getSetting(SETTINGS_KEY);
+        if (!row) {
+            await this.seedEmpty();
             return;
         }
-        const raw = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
+        const raw = row.value;
         this.defaultId = String(raw.default_id ?? DEFAULT_PROFILE_ID);
         const rows = Array.isArray(raw.profiles) ? raw.profiles : [];
         this.profiles = [];
-        for (const row of rows) {
-            if (!row || typeof row !== "object")
+        for (const r of rows) {
+            if (!r || typeof r !== "object")
                 continue;
-            const pid = String(row.id ?? "").trim();
+            const pid = String(r.id ?? "").trim();
             if (!pid)
                 continue;
-            let key = String(row.api_key ?? "").trim();
+            let key = String(r.api_key ?? "").trim();
             if (key === MASK)
                 key = "";
             this.profiles.push({
                 id: pid,
-                name: String(row.name ?? pid).trim() || pid,
-                api_base_url: String(row.api_base_url ?? "").trim(),
+                name: String(r.name ?? pid).trim() || pid,
+                api_base_url: String(r.api_base_url ?? "").trim(),
                 api_key: key,
-                model: String(row.model ?? "").trim(),
-                max_tokens: Number(row.max_tokens ?? 4096),
-                temperature: Number(row.temperature ?? 0),
-                enable_thinking: parseEnableThinking(row.enable_thinking),
+                model: String(r.model ?? "").trim(),
+                max_tokens: Number(r.max_tokens ?? 4096),
+                temperature: Number(r.temperature ?? 0),
+                enable_thinking: parseEnableThinking(r.enable_thinking),
             });
         }
         if (!this.profiles.length)
-            this.seedEmpty();
+            await this.seedEmpty();
     }
-    seedEmpty() {
+
+    async seedEmpty() {
         const cfg = this.seedFrom;
-        this.profiles = [
-            {
-                id: DEFAULT_PROFILE_ID,
-                name: "默认问答模型",
-                api_base_url: cfg?.api_base_url ?? "",
-                api_key: cfg?.api_key ?? "",
-                model: cfg?.model ?? "",
-                max_tokens: cfg?.max_tokens ?? 4096,
-                temperature: cfg?.temperature ?? 0,
-                enable_thinking: cfg?.enable_thinking ?? null,
-            },
-        ];
+        this.profiles = [{
+            id: DEFAULT_PROFILE_ID,
+            name: "默认问答模型",
+            api_base_url: cfg?.api_base_url ?? "",
+            api_key: cfg?.api_key ?? "",
+            model: cfg?.model ?? "",
+            max_tokens: cfg?.max_tokens ?? 4096,
+            temperature: cfg?.temperature ?? 0,
+            enable_thinking: cfg?.enable_thinking ?? null,
+        }];
         this.defaultId = DEFAULT_PROFILE_ID;
-        this.save();
+        await this.save();
     }
-    save() {
-        fs.writeFileSync(this.filePath, JSON.stringify({
+
+    async save() {
+        await settingsRepo.setSetting(SETTINGS_KEY, {
             default_id: this.defaultId,
             profiles: this.profiles.map((p) => this.toDict(p, false)),
-        }, null, 2), "utf-8");
+        });
     }
+
     toDict(p, maskKey) {
         const out = {
             id: p.id,
@@ -103,23 +90,26 @@ export class MatchProfilesStore {
             out.enable_thinking = p.enable_thinking;
         return out;
     }
+
     listProfiles(maskKey = true) {
         return this.profiles.map((p) => this.toDict(p, maskKey));
     }
+
     getDefaultId() {
         return this.defaultId;
     }
+
     get(profileId = "") {
         const pid = (profileId || "").trim() || this.defaultId;
         let p = this.profiles.find((x) => x.id === pid);
-        if (!p && this.profiles.length) {
+        if (!p && this.profiles.length)
             p = this.profiles.find((x) => x.id === this.defaultId) ?? this.profiles[0];
-        }
         if (!p)
             throw new Error(`match profile not found: ${profileId}`);
         return { ...p };
     }
-    updateAll(body) {
+
+    async updateAll(body) {
         const rows = body.profiles;
         if (Array.isArray(rows)) {
             const updated = [];
@@ -151,10 +141,9 @@ export class MatchProfilesStore {
             if (updated.length)
                 this.profiles = updated;
         }
-        if (body.default_id && String(body.default_id).trim()) {
+        if (body.default_id && String(body.default_id).trim())
             this.defaultId = String(body.default_id).trim();
-        }
-        this.save();
+        await this.save();
         return {
             default_id: this.defaultId,
             profiles: this.profiles.map((p) => this.toDict(p, false)),

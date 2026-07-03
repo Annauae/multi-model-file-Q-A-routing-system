@@ -89,11 +89,10 @@ export function LogsView() {
             </label>
             <span className="headActions">
               <button id="logsPauseBtn" type="button" className="btn btnXs ghost" onClick={() => setPaused(!paused)}>{paused ? "继续" : "暂停"}</button>
-              <button id="logsClearBtn" type="button" className="btn btnXs ghost" onClick={async () => {
-                if (!confirm("确定清空全部操作日志？")) return;
-                await apiJson("/logs", { method: "DELETE" });
+              <button id="logsClearBtn" type="button" className="btn btnXs ghost" onClick={() => {
+                if (!confirm("确定清空当前页面显示的日志？（数据库中的日志不会被删除）")) return;
                 setItems([]);
-                showToast("日志已清空");
+                showToast("页面日志已清空");
               }}>清空</button>
               <button id="logsRefreshBtn" type="button" className="btn btnXs primary" onClick={() => void fetchLogs()}>刷新</button>
             </span>

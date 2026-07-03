@@ -1,10 +1,13 @@
 export declare const DOCUMENTS_FOLDER = "documents";
 export declare function kbFolderName(kbId: string): string;
+export declare function ragKbFolderName(kbId: string): string;
 export declare function kbDirPath(filesRoot: string, kbId: string): string;
-export declare function questionsJsonPath(filesRoot: string, kbId: string): string;
+export declare function ragKbDirPath(filesRoot: string, kbId: string): string;
+export declare function ragKbAssetsDirPath(filesRoot: string, kbId: string): string;
 export declare function kbAssetsDirPath(filesRoot: string, kbId: string): string;
 export declare function kbModulesDirPath(filesRoot: string, kbId: string): string;
-export declare function recallTestsJsonPath(filesRoot: string, kbId: string): string;
+export declare function ragDirPath(filesRoot: string, kbId: string): string;
+export declare function migrateLegacyRagKbData(filesRoot: string, ragKbStore: { get(kbId: string): unknown; createKb(kbId: string, name: string): Promise<unknown> }): Promise<void>;
 export declare function documentsDirPath(filesRoot: string): string;
 export declare function documentsSourcesDirPath(filesRoot: string): string;
 export declare function documentsModulesDirPath(filesRoot: string): string;

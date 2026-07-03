@@ -3,7 +3,7 @@ import { indexStatus } from "../services/rag/indexStatus.js";
 import { RagRetriever } from "../services/rag/retriever.js";
 import { startEvalRun, getEvalRun, listEvalRuns } from "../services/rag/evaluator.js";
 import { ensureRagKbStructure, importLlmFaqToRag } from "../services/ragImport.js";
-import { allDefaultRagPrompts, DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../services/ragPromptsStore.js";
+import { allDefaultRagPrompts, DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../db/stores/ragPromptsStore.js";
 
 function httpError(status, detail) {
     const e = new Error(detail);
@@ -21,9 +21,10 @@ function validateRagKbId(ragCtx, kbId) {
     return kid;
 }
 
-function ragEnabledCount(ragCtx, kbId) {
+async function ragEnabledCount(ragCtx, kbId) {
     try {
-        return ragCtx.getRagQuestionsStore(kbId).getDocument().items.filter((it) => it.enabled !== false).length;
+        const doc = await ragCtx.getRagQuestionsStore(kbId).getDocument();
+        return doc.items.filter((it) => it.enabled !== false).length;
     }
     catch {
         return 0;
@@ -37,7 +38,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
             const kbs = Object.keys(ragCtx.ragKbStore.getAll());
             const indexes = {};
             for (const kid of kbs) {
-                indexes[kid] = indexStatus(ragCtx.settings, kid, ragCtx.ragModelsStore);
+                indexes[kid] = await indexStatus(ragCtx.settings, kid, ragCtx.ragModelsStore);
             }
             res.json({ ok: true, weaviate: ping, indexes });
         }
@@ -46,22 +47,21 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.get("/rag/knowledge-bases", (_req, res) => {
-        const items = Object.entries(ragCtx.ragKbStore.getAll()).map(([kb_id, cfg]) => ({
-            kb_id,
-            ...cfg,
-            enabled_count: ragEnabledCount(ragCtx, kb_id),
-        }));
+    app.get("/rag/knowledge-bases", async (_req, res) => {
+        const items = [];
+        for (const [kb_id, cfg] of Object.entries(ragCtx.ragKbStore.getAll())) {
+            items.push({ kb_id, ...cfg, enabled_count: await ragEnabledCount(ragCtx, kb_id) });
+        }
         res.json({ items });
     });
 
-    app.post("/rag/knowledge-bases", (req, res) => {
+    app.post("/rag/knowledge-bases", async (req, res) => {
         try {
-            const kbId = String(req.body.kb_id ?? "").trim() || ragCtx.ragKbStore.nextAvailableKbId();
+            const kbId = String(req.body.kb_id ?? "").trim() || (await ragCtx.ragKbStore.nextAvailableKbId());
             const name = String(req.body.name ?? "").trim();
             if (!name)
                 throw httpError(400, "name 不能为空");
-            const cfg = ragCtx.ragKbStore.createKb(kbId, name);
+            const cfg = await ragCtx.ragKbStore.createKb(kbId, name);
             ensureRagKbStructure(ragCtx.settings, kbId);
             ragCtx.opLog.append({ module: "rag-manage", action: "kb-create", kb_id: kbId, detail: name });
             res.json({ kb_id: kbId, ...cfg });
@@ -74,7 +74,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
     app.delete("/rag/knowledge-bases/:kbId", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            const cfg = ragCtx.ragKbStore.deleteKb(kid);
+            const cfg = await ragCtx.ragKbStore.deleteKb(kid);
             ragCtx.ragKbStore.deleteKbFiles(kid, ragCtx.settings.filesRoot);
             try {
                 await ragCtx.weaviateStore.deleteByKbId(kid);
@@ -90,10 +90,10 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.post("/rag/knowledge-bases/:kbId/rename", (req, res) => {
+    app.post("/rag/knowledge-bases/:kbId/rename", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            const cfg = ragCtx.ragKbStore.renameKb(kid, String(req.body.name ?? "").trim());
+            const cfg = await ragCtx.ragKbStore.renameKb(kid, String(req.body.name ?? "").trim());
             res.json({ kb_id: kid, ...cfg });
         }
         catch (e) {
@@ -107,7 +107,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
             const llmKbId = String(req.body.llm_kb_id ?? "").trim();
             if (!llmKbId)
                 throw httpError(400, "llm_kb_id 必填");
-            const result = importLlmFaqToRag(ctx, ragKbId, llmKbId, {
+            const result = await importLlmFaqToRag(ctx, ragKbId, llmKbId, {
                 append: req.body.append !== false,
                 replace: Boolean(req.body.replace),
             });
@@ -132,9 +132,9 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         res.json({ slots: ragCtx.ragModelsStore.getAll(false) });
     });
 
-    app.put("/settings/rag-models", (req, res) => {
+    app.put("/settings/rag-models", async (req, res) => {
         try {
-            const slots = ragCtx.ragModelsStore.updateAll(req.body?.slots ?? req.body ?? {});
+            const slots = await ragCtx.ragModelsStore.updateAll(req.body?.slots ?? req.body ?? {});
             res.json({ slots });
         }
         catch (e) {
@@ -156,9 +156,9 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         });
     });
 
-    app.put("/settings/rag-prompts", (req, res) => {
+    app.put("/settings/rag-prompts", async (req, res) => {
         try {
-            const gp = ragCtx.ragPromptsStore.set({
+            const gp = await ragCtx.ragPromptsStore.set({
                 embedding_prompt: "embedding_prompt" in req.body ? req.body.embedding_prompt : undefined,
                 rerank_prompt: "rerank_prompt" in req.body ? req.body.rerank_prompt : undefined,
                 llm_prompt: "llm_prompt" in req.body ? req.body.llm_prompt : undefined,
@@ -172,53 +172,53 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.get("/rag/knowledge-bases/:kbId/runtime-config", (req, res) => {
+    app.get("/rag/knowledge-bases/:kbId/runtime-config", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            res.json(ragCtx.getRuntimeConfig(kid));
+            res.json(await ragCtx.getRuntimeConfig(kid));
         }
         catch (e) {
             res.status(e.status || 400).json({ detail: e.detail ?? e.message });
         }
     });
 
-    app.put("/rag/knowledge-bases/:kbId/runtime-config", (req, res) => {
+    app.put("/rag/knowledge-bases/:kbId/runtime-config", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            res.json(ragCtx.updateRuntimeConfig(kid, req.body ?? {}));
+            res.json(await ragCtx.updateRuntimeConfig(kid, req.body ?? {}));
         }
         catch (e) {
             res.status(e.status || 400).json({ detail: e.detail ?? e.message });
         }
     });
 
-    app.get("/rag/knowledge-bases/:kbId/questions", (req, res) => {
+    app.get("/rag/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            res.json(ragCtx.getRagQuestionsStore(kid).getDocument());
+            res.json(await ragCtx.getRagQuestionsStore(kid).getDocument());
         }
         catch (e) {
             res.status(e.status || 400).json({ detail: e.detail ?? e.message });
         }
     });
 
-    app.put("/rag/knowledge-bases/:kbId/questions", (req, res) => {
+    app.put("/rag/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
             const store = ragCtx.getRagQuestionsStore(kid);
             const version = Number(req.body?.version ?? 1);
             const items = Array.isArray(req.body?.items) ? req.body.items : [];
-            res.json(store.replaceAll(version, items));
+            res.json(await store.replaceAll(version, items));
         }
         catch (e) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
 
-    app.post("/rag/knowledge-bases/:kbId/questions/items", (req, res) => {
+    app.post("/rag/knowledge-bases/:kbId/questions/items", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            const item = ragCtx.getRagQuestionsStore(kid).upsertItem(req.body ?? {});
+            const item = await ragCtx.getRagQuestionsStore(kid).upsertItem(req.body ?? {});
             ragCtx.opLog.append({ module: "rag-manage", action: "create", kb_id: kid, detail: item.id });
             res.json(item);
         }
@@ -227,11 +227,11 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.put("/rag/knowledge-bases/:kbId/questions/items/:itemId", (req, res) => {
+    app.put("/rag/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
             const body = { ...req.body, id: req.params.itemId };
-            const item = ragCtx.getRagQuestionsStore(kid).upsertItem(body);
+            const item = await ragCtx.getRagQuestionsStore(kid).upsertItem(body);
             ragCtx.opLog.append({ module: "rag-manage", action: "update", kb_id: kid, detail: item.id });
             res.json(item);
         }
@@ -240,10 +240,10 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.delete("/rag/knowledge-bases/:kbId/questions/items/:itemId", (req, res) => {
+    app.delete("/rag/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            const deleted = ragCtx.getRagQuestionsStore(kid).deleteItem(req.params.itemId);
+            const deleted = await ragCtx.getRagQuestionsStore(kid).deleteItem(req.params.itemId);
             ragCtx.opLog.append({ module: "rag-manage", action: "delete", kb_id: kid, detail: req.params.itemId });
             res.json(deleted);
         }
@@ -271,10 +271,10 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.get("/rag/knowledge-bases/:kbId/index/status", (req, res) => {
+    app.get("/rag/knowledge-bases/:kbId/index/status", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            res.json(indexStatus(ragCtx.settings, kid, ragCtx.ragModelsStore));
+            res.json(await indexStatus(ragCtx.settings, kid, ragCtx.ragModelsStore));
         }
         catch (e) {
             res.status(e.status || 400).json({ detail: e.detail ?? e.message });
@@ -283,25 +283,25 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     async function handleSearch(req, res) {
         try {
-            const query = String(req.body?.query ?? req.query?.q ?? "").trim();
-            if (!query)
+            const queryText = String(req.body?.query ?? req.query?.q ?? "").trim();
+            if (!queryText)
                 throw httpError(400, "query 不能为空");
             const kbId = validateRagKbId(ragCtx, req.body?.kb_id ?? req.query?.kb_id);
-            const status = indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
+            const status = await indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
             if (!status.ready)
                 return res.status(409).json({ detail: status.reason || "索引不存在，请先重建索引" });
             const topK = Math.max(1, Math.min(50, Number(req.body?.top_k ?? req.query?.top_k ?? 8)));
-            const runtime = ragCtx.getRuntimeConfig(kbId);
+            const runtime = await ragCtx.getRuntimeConfig(kbId);
             const retriever = new RagRetriever(kbId, ragCtx, runtime);
-            const { results, timing, tokens, token_breakdown } = await retriever.search(query, topK);
+            const { results, timing, tokens, token_breakdown } = await retriever.search(queryText, topK);
             ragCtx.opLog.append({
                 module: "rag-debug",
                 action: "search",
                 kb_id: kbId,
                 kind: "result",
-                detail: `query="${query.slice(0, 80)}" hits=${results.length} total_ms=${Number(timing.total_ms || 0).toFixed(1)}`,
+                detail: `query="${queryText.slice(0, 80)}" hits=${results.length} total_ms=${Number(timing.total_ms || 0).toFixed(1)}`,
             });
-            res.json({ query, results, timing, tokens, token_breakdown });
+            res.json({ query: queryText, results, timing, tokens, token_breakdown });
         }
         catch (e) {
             if (e.status)
@@ -315,16 +315,16 @@ export function registerRagRoutes(app, ctx, ragCtx) {
 
     app.post("/rag/chat", async (req, res) => {
         try {
-            const query = String(req.body?.query ?? "").trim();
-            if (!query)
+            const queryText = String(req.body?.query ?? "").trim();
+            if (!queryText)
                 throw httpError(400, "query 不能为空");
             const kbId = validateRagKbId(ragCtx, req.body?.kb_id);
-            const status = indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
+            const status = await indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
             if (!status.ready)
                 return res.status(409).json({ detail: status.reason || "索引不存在，请先重建索引" });
-            const runtime = ragCtx.getRuntimeConfig(kbId);
+            const runtime = await ragCtx.getRuntimeConfig(kbId);
             const retriever = new RagRetriever(kbId, ragCtx, runtime);
-            const out = await retriever.chat(query, {
+            const out = await retriever.chat(queryText, {
                 topN: req.body?.top_n,
                 useLlmAnswer: req.body?.use_llm_answer,
             });
@@ -333,10 +333,10 @@ export function registerRagRoutes(app, ctx, ragCtx) {
                 action: "chat",
                 kb_id: kbId,
                 kind: "result",
-                detail: `query="${query.slice(0, 80)}" mode=${out.mode} confidence=${Number(out.confidence || 0).toFixed(4)} `
+                detail: `query="${queryText.slice(0, 80)}" mode=${out.mode} confidence=${Number(out.confidence || 0).toFixed(4)} `
                     + `sources=${out.sources?.length ?? 0} total_ms=${Number(out.timing?.total_ms || 0).toFixed(1)}`,
             });
-            res.json({ query, ...out });
+            res.json({ query: queryText, ...out });
         }
         catch (e) {
             if (e.status)
@@ -345,33 +345,33 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.get("/rag/knowledge-bases/:kbId/recall-tests", (req, res) => {
+    app.get("/rag/knowledge-bases/:kbId/recall-tests", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            res.json(ragCtx.getRecallTestsStore(kid).getDocument());
+            res.json(await ragCtx.getRecallTestsStore(kid).getDocument());
         }
         catch (e) {
             res.status(e.status || 400).json({ detail: e.detail ?? e.message });
         }
     });
 
-    app.put("/rag/knowledge-bases/:kbId/recall-tests", (req, res) => {
+    app.put("/rag/knowledge-bases/:kbId/recall-tests", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
-            res.json(ragCtx.getRecallTestsStore(kid).replaceAll(req.body ?? {}));
+            res.json(await ragCtx.getRecallTestsStore(kid).replaceAll(req.body ?? {}));
         }
         catch (e) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
 
-    app.post("/rag/eval/run", (req, res) => {
+    app.post("/rag/eval/run", async (req, res) => {
         try {
             const kbId = validateRagKbId(ragCtx, req.body?.kb_id);
             const size = [10, 50, 100].includes(Number(req.body?.size)) ? Number(req.body.size) : 10;
             const mode = String(req.body?.mode ?? "mixed");
             const top_k = Math.max(1, Math.min(20, Number(req.body?.top_k ?? 5)));
-            const runId = startEvalRun(kbId, { size, mode, top_k }, ragCtx);
+            const runId = await startEvalRun(kbId, { size, mode, top_k }, ragCtx);
             res.json({ run_id: runId, status: "queued" });
         }
         catch (e) {
@@ -379,21 +379,21 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.get("/rag/eval/runs", (req, res) => {
+    app.get("/rag/eval/runs", async (req, res) => {
         try {
             const kbId = validateRagKbId(ragCtx, req.query?.kb_id);
             const limit = Math.max(1, Math.min(50, Number(req.query?.limit ?? 10)));
-            res.json({ runs: listEvalRuns(ragCtx.settings.filesRoot, kbId, limit) });
+            res.json({ runs: await listEvalRuns(kbId, limit) });
         }
         catch (e) {
             res.status(e.status || 400).json({ detail: e.detail ?? e.message });
         }
     });
 
-    app.get("/rag/eval/runs/:runId", (req, res) => {
+    app.get("/rag/eval/runs/:runId", async (req, res) => {
         try {
             const kbId = validateRagKbId(ragCtx, req.query?.kb_id);
-            const run = getEvalRun(ragCtx.settings.filesRoot, kbId, req.params.runId);
+            const run = await getEvalRun(kbId, req.params.runId);
             if (!run)
                 return res.status(404).json({ detail: "eval run not found" });
             res.json(run);

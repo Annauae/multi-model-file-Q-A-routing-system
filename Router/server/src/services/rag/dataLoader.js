@@ -28,6 +28,17 @@ export function parseItem(raw, assetsDir) {
     };
 }
 
+export function loadFaqItemsFromRows(itemsRaw, assetsDir, { includeDisabled = false } = {}) {
+    if (!Array.isArray(itemsRaw))
+        throw new Error("items must be a list");
+    let items = itemsRaw
+        .filter((raw) => raw && typeof raw === "object")
+        .map((raw) => parseItem(raw, assetsDir));
+    if (!includeDisabled)
+        items = items.filter((item) => item.enabled);
+    return items;
+}
+
 export function loadFaqItems(filePath, assetsDir, { includeDisabled = false } = {}) {
     const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     const itemsRaw = data.items;

@@ -3,28 +3,34 @@
 与 [`knowledge_router`](../knowledge_router)（Python FastAPI + vanilla JS）功能对等的 Node.js 版本。
 
 - **前端**：React 18 + TypeScript + Vite
-- **后端**：Express（[`server/src/`](server/src/)）
+- **后端**：Express + **PostgreSQL**（[`server/src/`](server/src/)）
 - **默认端口**：8002（Python 版为 8001）
-- **数据**：独立目录 `config/`、`files/`（首次从 Python 版复制）
+- **结构化数据**：PostgreSQL（知识库、FAQ、配置、日志、召回测试、RAG 元数据）
+- **文件数据**：`files/` 文档 Markdown、上传源文件、图片 assets（保留在磁盘）
 
 ## 快速开始
 
 ```powershell
-# 1. 初始化数据（一次性，从 knowledge_router 复制）
+# 1. 初始化 JSON 数据（一次性，从 knowledge_router 复制，用于首次自动导入）
 .\scripts\init-data.ps1
 
 # 2. 安装依赖
 cd Router
 npm install
 
-# 3. 配置环境
-copy .env.example .env
-# 编辑 .env 填写 API_KEY（或使用 MOCK_LLM=1 本地调试）
+# 3. PostgreSQL：创建库并写入 .env
+#    需本机已安装 PostgreSQL 16+，并设置 postgres 用户密码
+$env:PGPASSWORD="你的密码"
+npm run db:setup -w server
 
-# 4. 开发模式（Express :8002 + Vite :5173）
+# 4. 配置 API（若 .env 尚无 API_KEY）
+#    编辑 .env 填写 API_KEY，或使用 MOCK_LLM=1 本地调试
+
+# 5. 开发模式（Express :8002 + Vite :5173）
+#    首次启动会自动将 config/、files/ 中的 JSON 导入 PostgreSQL（仅一次）
 npm run dev
 
-# 5. 生产模式
+# 6. 生产模式
 npm run build
 npm start
 ```
@@ -33,15 +39,27 @@ npm start
 - 开发：http://localhost:5173（API 代理到 8002）
 - 生产：http://localhost:8002
 
+## 数据库
+
+| 命令 | 说明 |
+|------|------|
+| `npm run db:setup -w server` | 创建 `router` 库并写入 `DATABASE_URL` |
+| `npm run db:migrate -w server` | 执行 SQL 迁移（启动时自动执行） |
+| `npm run db:seed -w server` | 手动重跑 JSON → PG 导入（幂等） |
+
+环境变量见 [`.env.example`](.env.example)：`DATABASE_URL`、`DATABASE_POOL_SIZE`、`SKIP_JSON_SEED`。
+
+原 `config/*.json`、`files/*/questions.json` 等**保留作备份**，运行时只读写数据库。
+
 ## 目录结构
 
 ```
 Router/
 ├── client/          # React 前端
-├── server/          # Express 后端
-├── config/          # 知识库配置（init-data 生成）
-├── files/           # FAQ 与文档数据
-├── logs/            # 操作日志
+├── server/          # Express 后端 + db/ 数据层
+├── config/          # JSON 备份（首次导入源）
+├── files/           # 文档与附件
+├── logs/            # 操作日志 JSONL 备份
 └── scripts/         # 初始化脚本
 ```
 
@@ -49,17 +67,19 @@ Router/
 
 ```powershell
 cd Router
+# 需配置 .env 中 DATABASE_URL（可与开发库相同）
 npm test
 ```
 
-使用 `MOCK_LLM=1` 运行 vitest，覆盖 health、knowledge-bases、ask/confidence 等核心 API。
+使用 `MOCK_LLM=1`、`MOCK_WEAVIATE=1` 运行 vitest；测试前会 `TRUNCATE` 相关表并种子数据。
 
 ## 与 Python 版差异
 
 | 项目 | Python 版 | Router 版 |
 |------|-----------|-----------|
 | 端口 | 8001 | 8002 |
-| 数据 | `knowledge_router/config` | `Router/config`（独立副本） |
+| 结构化存储 | JSON 文件 | PostgreSQL |
+| 文档/附件 | 文件系统 | 文件系统（不变） |
 | 召回度批量运行 | `isRecallLabeled` 未定义 bug | 已修复 |
 
 ## PDF 提取

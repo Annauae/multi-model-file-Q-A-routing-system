@@ -1,34 +1,17 @@
-import fs from "node:fs";
-import path from "node:path";
-export const SLOTS = ["match", "import", "pdf_vlm"];
-export const MASK = "***";
-export function parseEnableThinking(val) {
-    if (val == null)
-        return null;
-    if (typeof val === "boolean")
-        return val;
-    if (typeof val === "number")
-        return Boolean(val);
-    if (typeof val === "string") {
-        const s = val.trim().toLowerCase();
-        if (["1", "true", "yes"].includes(s))
-            return true;
-        if (["0", "false", "no"].includes(s))
-            return false;
-    }
-    return null;
-}
+import * as settingsRepo from "../repositories/settingsRepo.js";
+import { MASK, parseEnableThinking, SLOTS } from "./modelUtils.js";
+
+const SETTINGS_KEY = "models";
+
 export class ModelsStore {
-    filePath;
     defaults;
     slots = {};
-    constructor(filePath, defaults) {
-        this.filePath = filePath;
+
+    constructor(defaults) {
         this.defaults = defaults;
-        this.loadOrSeed();
     }
+
     static fromSettings(settings) {
-        const filePath = path.join(settings.dataRoot, "config", "models.json");
         const defaults = {
             match: {
                 label: "问答模型",
@@ -55,44 +38,44 @@ export class ModelsStore {
                 temperature: 0,
             },
         };
-        return new ModelsStore(filePath, defaults);
+        return new ModelsStore(defaults);
     }
-    loadOrSeed() {
-        const dir = path.dirname(this.filePath);
-        if (!fs.existsSync(dir))
-            fs.mkdirSync(dir, { recursive: true });
-        if (!fs.existsSync(this.filePath)) {
+
+    async init() {
+        const row = await settingsRepo.getSetting(SETTINGS_KEY);
+        if (!row) {
             this.slots = JSON.parse(JSON.stringify(this.defaults));
-            this.save();
+            await this.save();
             return;
         }
-        const raw = JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
+        const raw = row.value;
         this.slots = {};
         for (const slot of SLOTS) {
             const base = this.defaults[slot];
-            const row = raw?.[slot];
-            const r = row && typeof row === "object" ? row : {};
-            let key = String(r.api_key ?? "").trim();
+            const r = raw?.[slot];
+            const rowData = r && typeof r === "object" ? r : {};
+            let key = String(rowData.api_key ?? "").trim();
             if (key === MASK)
                 key = "";
             this.slots[slot] = {
-                label: String(r.label ?? base.label),
-                api_base_url: String(r.api_base_url ?? base.api_base_url).trim() || base.api_base_url,
+                label: String(rowData.label ?? base.label),
+                api_base_url: String(rowData.api_base_url ?? base.api_base_url).trim() || base.api_base_url,
                 api_key: key,
-                model: String(r.model ?? base.model).trim() || base.model,
-                max_tokens: Number(r.max_tokens ?? base.max_tokens),
-                temperature: Number(r.temperature ?? base.temperature),
-                enable_thinking: parseEnableThinking(r.enable_thinking ?? base.enable_thinking),
+                model: String(rowData.model ?? base.model).trim() || base.model,
+                max_tokens: Number(rowData.max_tokens ?? base.max_tokens),
+                temperature: Number(rowData.temperature ?? base.temperature),
+                enable_thinking: parseEnableThinking(rowData.enable_thinking ?? base.enable_thinking),
             };
         }
     }
-    save() {
+
+    async save() {
         const payload = {};
-        for (const slot of SLOTS) {
+        for (const slot of SLOTS)
             payload[slot] = this.toDict(this.slots[slot], false);
-        }
-        fs.writeFileSync(this.filePath, JSON.stringify(payload, null, 2), "utf-8");
+        await settingsRepo.setSetting(SETTINGS_KEY, payload);
     }
+
     toDict(cfg, maskKey) {
         const out = {
             label: cfg.label,
@@ -106,18 +89,21 @@ export class ModelsStore {
             out.enable_thinking = cfg.enable_thinking;
         return out;
     }
+
     getSlot(slot) {
         if (!SLOTS.includes(slot))
             throw new Error(`unknown slot: ${slot}`);
         return { ...this.slots[slot] };
     }
+
     getAll(maskKey = true) {
         const out = {};
         for (const slot of SLOTS)
             out[slot] = this.toDict(this.slots[slot], maskKey);
         return out;
     }
-    updateSlot(slot, patch) {
+
+    async updateSlot(slot, patch) {
         if (!SLOTS.includes(slot))
             throw new Error(`unknown slot: ${slot}`);
         const cfg = this.slots[slot];
@@ -139,15 +125,17 @@ export class ModelsStore {
             temperature: Number(patch.temperature ?? cfg.temperature),
             enable_thinking: enableThinking,
         };
-        this.save();
+        await this.save();
         return this.toDict(this.slots[slot], false);
     }
-    updateAll(body) {
+
+    async updateAll(body) {
         for (const slot of SLOTS) {
-            if (body[slot] && typeof body[slot] === "object") {
-                this.updateSlot(slot, body[slot]);
-            }
+            if (body[slot] && typeof body[slot] === "object")
+                await this.updateSlot(slot, body[slot]);
         }
         return this.getAll(false);
     }
 }
+
+export { MASK, parseEnableThinking, SLOTS };

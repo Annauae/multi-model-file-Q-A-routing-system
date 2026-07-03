@@ -4,5 +4,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.js"],
+    fileParallelism: false,
+    pool: "forks",
+    maxWorkers: 1,
   },
 });
