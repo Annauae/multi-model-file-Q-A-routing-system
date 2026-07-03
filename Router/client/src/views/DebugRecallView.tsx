@@ -157,17 +157,23 @@ export function RecallModule() {
       setRows((prev) => prev.map((r) => (r.id === row.id ? updated : r)));
       return updated;
     }
-    let doneData: { answers?: CandidateAnswer[]; timings?: AskTimings; match?: { candidates?: CandidateAnswer[] } } | null = null;
+    type AskDonePayload = {
+      answers?: CandidateAnswer[];
+      timings?: AskTimings;
+      match?: { candidates?: CandidateAnswer[] };
+    };
+    let doneData: AskDonePayload | null = null;
     await streamAskConfidence({ question: q, kb_id: effectiveKb, top_k: topK, match_profile_id: effectiveProfile }, (evt) => {
-      if (evt.event === "done") doneData = evt.data as typeof doneData;
+      if (evt.event === "done") doneData = evt.data as AskDonePayload;
     });
     if (!doneData) return row;
+    const result = doneData as AskDonePayload;
     const updated: RecallRow = {
       ...row,
       run_at: new Date().toISOString(),
-      candidates: doneData.match?.candidates || [],
-      answers: doneData.answers || [],
-      timings: doneData.timings || undefined,
+      candidates: result.match?.candidates || [],
+      answers: result.answers || [],
+      timings: result.timings || undefined,
       match_profile_id: effectiveProfile,
       model_label: profileLabel,
     };
@@ -258,11 +264,12 @@ export function RecallModule() {
       const modeLabel = recallMode === "rag" ? "RAG" : profileLabel;
       let md = `# 召回度测试报告\n\n- 知识库：${displayKbName(effectiveKb)} (${recallMode === "rag" ? "rag_kb" : "kb"}_${effectiveKb})\n- 模式：${modeLabel}\n- Top K：${topK}\n\n## 汇总\n\n| 指标 | 值 |\n|------|-----|\n| 召回率 | ${recallRate} |\n\n## 明细\n\n`;
       rows.forEach((row, i) => {
-        const top = recallMode === "rag" ? row.rag_sources?.[0] : row.answers?.[0];
-        const topId = recallMode === "rag" ? top?.id : top?.id;
+        const topRag = recallMode === "rag" ? row.rag_sources?.[0] : undefined;
+        const topLlm = recallMode === "rag" ? undefined : row.answers?.[0];
+        const topId = topRag?.id ?? topLlm?.id;
         const score = recallMode === "rag"
-          ? (top as RagSearchResult | undefined)?.rerank_score ?? (top as RagSearchResult | undefined)?.rrf_score
-          : top?.confidence;
+          ? topRag?.rerank_score ?? topRag?.rrf_score
+          : topLlm?.confidence;
         const recalled = row.recalled === "yes" ? "是" : row.recalled === "no" ? "否" : "未标注";
         md += `${i + 1}. ${row.question} — ${recalled} — ${topId || "—"} (${score != null ? (recallMode === "rag" ? Number(score).toFixed(3) : fmtConfidence(score as number)) : "—"})\n`;
       });

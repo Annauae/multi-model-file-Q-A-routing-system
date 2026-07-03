@@ -70,6 +70,23 @@ function KeyInput({ value, onChange }: { value: string; onChange: (v: string) =>
   );
 }
 
+type RagPromptsResponse = {
+  embedding_prompt: string;
+  rerank_prompt: string;
+  llm_prompt: string;
+  judge_prompt: string;
+  defaults?: { embedding_prompt: string; rerank_prompt: string; llm_prompt: string; judge_prompt: string };
+  llm_system_preview?: string;
+  judge_system_preview?: string;
+};
+
+const EMPTY_RAG_PROMPTS: RagPromptsResponse = {
+  embedding_prompt: "",
+  rerank_prompt: "",
+  llm_prompt: "",
+  judge_prompt: "",
+};
+
 export function SettingsView() {
   const { showToast } = useAppUi();
   const mainRef = useRef<HTMLDivElement>(null);
@@ -100,20 +117,7 @@ export function SettingsView() {
         pdf_vlm_system_preview?: string;
       }>("/settings/prompts"),
       apiJson<{ slots: Record<string, RagModelSlot> }>("/settings/rag-models").catch(() => ({ slots: {} })),
-      apiJson<{
-        embedding_prompt: string;
-        rerank_prompt: string;
-        llm_prompt: string;
-        judge_prompt: string;
-        defaults?: typeof ragPromptDefaults;
-        llm_system_preview?: string;
-        judge_system_preview?: string;
-      }>("/settings/rag-prompts").catch(() => ({
-        embedding_prompt: "",
-        rerank_prompt: "",
-        llm_prompt: "",
-        judge_prompt: "",
-      })),
+      apiJson<RagPromptsResponse>("/settings/rag-prompts").catch(() => EMPTY_RAG_PROMPTS),
     ]);
     setSlots(models.slots || {});
     setProfiles(mp.profiles || []);

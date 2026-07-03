@@ -59,15 +59,19 @@ export interface MatchProfile {
   api_key: string;
   enable_thinking?: boolean | null;
   max_tokens?: number;
+  temperature?: number;
 }
 
 export interface RecallTestRow {
   id: string;
   question: string;
   recalled: "yes" | "no" | "";
-  last_run_at?: string;
+  run_at?: string;
   last_top_id?: string;
   last_confidence?: number;
+  notes?: string;
+  match_profile_id?: string;
+  model_label?: string;
 }
 
 export interface FileTreeNode {

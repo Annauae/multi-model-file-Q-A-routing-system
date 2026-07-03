@@ -91,7 +91,6 @@ function ManageQuestionsView() {
     setEditItem({ ...item });
     setJsonText(JSON.stringify(item, null, 2));
     setEditorTab("item");
-    setAnswerTab("edit");
   };
 
   const closeEdit = () => {
