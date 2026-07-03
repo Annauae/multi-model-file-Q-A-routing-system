@@ -1,3 +1,14 @@
+/**
+ * matcher.js — LLM 匹配提示词构建与输出解析
+ *
+ * system prompt 结构：
+ *   [置信度匹配规则（来自 promptsStore.confidence_match_prompt）]
+ *   【标准问题列表】
+ *   q001|标准问题文本
+ *   q001|变体问法
+ *   ...
+ */
+
 export const DEFAULT_MATCH_PROMPT_ZH = `你是问题匹配器，不是回答器。
 根据用户问题，从【标准问题列表】中选出语义最接近的一项。
 列表中同一 id 可能出现多行（标准问题 + 其他问法），命中任意一行都输出该 id。
@@ -18,6 +29,7 @@ export function defaultConfidenceMatchPrompt(topK = 5) {
 export function defaultClarificationQuestion() {
     return "未找到相关问题，请换一种问法或补充更具体的功能名称。";
 }
+/** 将启用的 FAQ 项展开为多行 `id|question`，供 LLM 在列表中匹配 */
 export function iterQuestionPromptLines(item) {
     const lines = [`${item.id}|${item.question}`];
     const seen = new Set([item.question.trim()]);
@@ -30,36 +42,41 @@ export function iterQuestionPromptLines(item) {
     }
     return lines;
 }
-export function buildQuestionListSection(enabledItems) {
+export function buildQuestionListSection(enabledItems) { /** 构建标准问题列表 */
     const lines = ["【标准问题列表】"];
     for (const item of enabledItems) {
-        lines.push(...iterQuestionPromptLines(item));
+        lines.push(...iterQuestionPromptLines(item)); // 将启用项展开为多行 `id|question`，供 LLM 在列表中匹配
     }
     if (lines.length === 1)
-        lines.push("(empty)");
-    return lines.join("\n");
+        lines.push("(empty)"); // 如果标准问题列表为空，则添加空行
+    return lines.join("\n"); // 拼接标准问题列表
 }
 export function countQuestionPromptLines(enabledItems) {
-    let total = 0;
+    let total = 0; // 统计标准问题列表的行数
     for (const item of enabledItems) {
         if (!item.enabled)
-            continue;
-        total += iterQuestionPromptLines(item).length;
+            continue; // 如果启用项未启用，则跳过
+        total += iterQuestionPromptLines(item).length; // 统计启用项的行数
     }
-    return total;
+    return total; // 返回标准问题列表的行数
 }
+
+/** 拼接完整 system prompt：规则 + 标准问题列表 */
 export function buildConfidenceSystemPrompt(matchPrompt, enabledItems, topK = 5) {
-    let rules = (matchPrompt || "").trim() || defaultConfidenceMatchPrompt(topK);
+    let rules = (matchPrompt || "").trim() || defaultConfidenceMatchPrompt(topK); // 获取匹配规则，如果为空，则使用默认置信度匹配规则
     if (rules.includes("{top_k}"))
-        rules = rules.replace("{top_k}", String(topK));
-    return `${rules}\n\n${buildQuestionListSection(enabledItems)}`;
+        rules = rules.replace("{top_k}", String(topK)); // 替换 top_k 变量
+    return `${rules}\n\n${buildQuestionListSection(enabledItems)}`; // 拼接规则和标准问题列表
 }
+
+/** OpenAI 风格 messages：system=FAQ列表+规则，user=用户问题（如「怎么安装吊带」） */
 export function buildMatchMessages(systemPrompt, userQuestion) {
     return [
         { role: "system", content: systemPrompt },
         { role: "user", content: (userQuestion || "").trim() },
     ];
 }
+
 function normalizeOutput(raw) {
     const text = (raw || "").trim();
     if (!text)
@@ -80,6 +97,12 @@ function stripJsonFence(text) {
     }
     return raw;
 }
+/**
+ * 解析 LLM 返回的 JSON 数组。
+ * - 去掉 markdown 代码块包裹
+ * - 过滤不在 validIds 中的 id
+ * - confidence 钳制到 [0,1]，按降序排列，截取 topK
+ */
 export function parseConfidenceRaw(raw, validIds, topK = 5) {
     const cleaned = stripJsonFence(raw);
     if (!cleaned)

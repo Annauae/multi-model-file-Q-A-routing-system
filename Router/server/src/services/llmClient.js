@@ -254,8 +254,14 @@ export class LLMClient {
             raiseFriendly(e);
         }
     }
+    
+    /**
+     * 流式聊天补全。调试问答走 mock_mode="confidence" 分支。
+     * 逐 chunk yield delta.content，最终 usage 写入 usage_out。
+     */
     async *chatStream(opts) {
         if (this.settings.mockLlm) {
+            // MOCK_LLM=1 时本地模拟：在 system prompt 的问题列表里做子串匹配
             const text = opts.mock_mode === "confidence"
                 ? this.mockConfidence(opts.messages)
                 : this.mockMatch(opts.messages);

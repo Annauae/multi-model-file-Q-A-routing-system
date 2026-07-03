@@ -65,7 +65,7 @@ function AppShell() {
   const { kbMap: ragKbMap } = useRagKnowledgeBases(); // RAG 知识库下拉选项
   const { data: profilesData } = useMatchProfiles(); // 「问答模型」下拉选项（match_profiles）
 
-  // ── 导航状态 ── 决定现在在哪个页面
+  // ── 导航状态 
   const [module, setModule] = useState<ModuleName>("debug"); // 一级模块：调试、管理、日志、设置
   const [debugSub, setDebugSub] = useState<DebugSub>("single"); // 二级模块：问答、召回度测试
   const [manageSub, setManageSub] = useState<ManageSub>("items"); // 二级模块：问题管理、文件管理
@@ -196,6 +196,7 @@ function AppShell() {
                     <div className="qActions qBtnRow">
                       {debugMode === "llm" ? (
                         <>
+                      {/* 用户点击「提问」→ useDebugAsk.ask(question) → POST /ask/confidence/stream */}
                           <button className="btn primary btnXs" type="button" disabled={debugAsk.loading} onClick={() => void debugAsk.ask(question)}>{debugAsk.loading ? "提问中…" : "提问"}</button>
                           <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); debugAsk.reset(); }}>清空</button>
                           <button className="btn ghost btnXs" type="button" onClick={() => { void debugQuestions.load().then(() => setQuestion(debugQuestions.randomQuestion())); }}>随机问题</button>

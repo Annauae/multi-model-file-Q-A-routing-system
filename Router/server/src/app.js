@@ -1,15 +1,32 @@
+/**
+ * Router 服务端 Express 应用工厂
+ *
+ * 本模块负责：
+ * 1. 初始化应用上下文（数据库 Store、FAQ 缓存、RAG 上下文等）
+ * 2. 注册全部 HTTP API 路由（知识库、问答匹配、文档处理、设置等）
+ * 3. 挂载前端静态资源与 SPA 回退
+ *
+ * 导出：
+ * - createAppContext() — 异步创建共享上下文，供 createApp 与测试复用
+ * - createApp(ctx, clientDist?) — 基于上下文构建 Express 实例
+ */
+
 import express from "express";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import multer from "multer";
+
+// 配置与持久化层
 import { APP_ROOT, loadSettings } from "./config.js";
 import { KbStore } from "./db/stores/kbStore.js";
-import { QuestionsCache } from "./services/questionsCache.js";
 import { ModelsStore } from "./db/stores/modelsStore.js";
 import { MatchProfilesStore } from "./db/stores/matchProfilesStore.js";
 import { PromptsStore } from "./db/stores/promptsStore.js";
 import { OperationLog } from "./db/stores/operationLog.js";
+
+// 业务服务
+import { QuestionsCache } from "./services/questionsCache.js";
 import { LLMClient, LLMError } from "./services/llmClient.js";
 import { AskLogSink, runConfidenceMatch, sseEvent, } from "./services/confidenceMatch.js";
 import { kbAssetsDirPath, kbDirPath, documentsAssetsDirPath, documentsSourcesDirPath, } from "./services/paths.js";
@@ -24,6 +41,15 @@ import { createRagContext } from "./services/ragContext.js";
 import { registerRagRoutes } from "./routes/ragRoutes.js";
 import { rebuildIndex } from "./services/rag/indexer.js";
 
+// ---------------------------------------------------------------------------
+// 工具函数
+// ---------------------------------------------------------------------------
+
+/**
+ * 修正 multer 上传文件名编码。
+ * multer 默认按 latin1 解析 originalname，中文文件名会变成乱码；
+ * 若解码后出现 CJK 而原串没有，则采用 UTF-8 解码结果。
+ */
 function decodeUploadFilename(name) {
     const raw = String(name || "upload").trim() || "upload";
     try {
@@ -43,6 +69,7 @@ function decodeUploadFilename(name) {
     return raw;
 }
 
+/** 校验 kb_id 非空且在 KbStore 中存在，失败时抛出带 status 的 Error */
 function validateKbId(ctx, kbId) {
     const kid = (kbId || "").trim();
     if (!kid)
@@ -51,12 +78,16 @@ function validateKbId(ctx, kbId) {
         throw httpError(404, "kb_id 不存在");
     return kid;
 }
+
+/** 构造可被全局错误中间件识别的 HTTP 异常（含 status、detail） */
 function httpError(status, detail) {
     const e = new Error(detail);
     e.status = status;
     e.detail = detail;
     return e;
 }
+
+/** 按「匹配配置档」(match profile) 创建 LLM 客户端，用于置信度问答 */
 function llmForProfile(settings, profile) {
     return new LLMClient(settings).withCredentials({
         api_base_url: profile.api_base_url,
@@ -64,6 +95,8 @@ function llmForProfile(settings, profile) {
         enable_thinking: profile.enable_thinking ?? null,
     });
 }
+
+/** 按模型槽位名（如 import、pdf_vlm）创建 LLM 客户端 */
 function llmForSlot(settings, modelsStore, slot) {
     const cfg = modelsStore.getSlot(slot);
     return new LLMClient(settings).withCredentials({
@@ -72,6 +105,11 @@ function llmForSlot(settings, modelsStore, slot) {
         enable_thinking: cfg.enable_thinking ?? null,
     });
 }
+
+/**
+ * 规范化文档提取页码/行号范围。
+ * 输入形如 [[1,5],[10,12]]，过滤非法项，仅保留 start/end 均为正整数且 start <= end 的区间。
+ */
 function normalizeImportRanges(ranges) {
     const out = [];
     if (!Array.isArray(ranges))
@@ -86,6 +124,8 @@ function normalizeImportRanges(ranges) {
     }
     return out;
 }
+
+/** 返回排序后的第一个知识库 ID，供提示词预览等默认选中用 */
 function firstKbId(ctx) {
     const ids = Object.keys(ctx.kbStore.getAll()).sort((a, b) => {
         if (/^\d+$/.test(a) && /^\d+$/.test(b))
@@ -94,6 +134,16 @@ function firstKbId(ctx) {
     });
     return ids[0] ?? "";
 }
+
+// ---------------------------------------------------------------------------
+// 应用上下文
+// ---------------------------------------------------------------------------
+
+/**
+ * 创建并初始化服务端共享上下文。
+ * 初始化顺序有依赖：PromptsStore 变更会触发 QuestionsCache 重载；
+ * QuestionsCache 依赖 KbStore；MatchProfilesStore 依赖 ModelsStore。
+ */
 export async function createAppContext() {
     const settings = loadSettings();
     const kbStore = new KbStore();
@@ -101,25 +151,46 @@ export async function createAppContext() {
     const modelsStore = ModelsStore.fromSettings(settings);
     await modelsStore.init();
     const opLog = new OperationLog();
+
+    // cache 需在 promptsStore 之后创建：提示词变更时 reloadAll FAQ 索引
     let cache;
     const promptsStore = PromptsStore.open(() => { void cache?.reloadAll(); });
     await promptsStore.init();
     cache = new QuestionsCache(kbStore, settings.confidenceTopK, promptsStore);
     await cache.loadAll();
+
     const matchProfilesStore = MatchProfilesStore.open(modelsStore);
     await matchProfilesStore.init();
     const ragCtx = await createRagContext({ settings, kbStore, opLog });
     return { settings, kbStore, cache, modelsStore, matchProfilesStore, promptsStore, opLog, ragCtx };
 }
+
+// ---------------------------------------------------------------------------
+// Express 应用与路由
+// ---------------------------------------------------------------------------
+
+/**
+ * 基于已初始化的 ctx 构建 Express 应用并注册全部路由。
+ * @param {object} ctx - createAppContext() 的返回值
+ * @param {string} [clientDist] - 前端构建产物目录，默认 APP_ROOT/client/dist
+ */
 export function createApp(ctx, clientDist) {
     const app = express();
+
+    // 大 JSON 体（如批量 FAQ 导入）
     app.use(express.json({ limit: "50mb" }));
+
+    // 内存上传，供 /documents/upload 使用
     const upload = multer({ storage: multer.memoryStorage() });
+
+    // 将 validateKbId / httpError 等抛出的带 status 错误转为 JSON 响应
     app.use((err, _req, res, next) => {
         if (err.status)
             return res.status(err.status).json({ detail: err.detail ?? err.message });
         next(err);
     });
+
+    /** 解析 match_profile_id，无效 ID 转为 400 */
     const resolveProfile = (profileId = "") => {
         try {
             return ctx.matchProfilesStore.get(profileId);
@@ -128,19 +199,24 @@ export function createApp(ctx, clientDist) {
             throw httpError(400, e instanceof Error ? e.message : String(e));
         }
     };
+
+    // ----- 健康检查 & RAG 子路由（见 routes/ragRoutes.js） -----
     app.get("/health", (_req, res) => res.json({ status: "ok" }));
     registerRagRoutes(app, ctx, ctx.ragCtx);
+
+    // ----- 置信度匹配：同步 JSON 接口 -----
+    /** POST /ask/confidence — 一次性返回匹配结果与答案，无中间日志 */
     app.post("/ask/confidence", async (req, res) => {
         try {
             const question = String(req.body.question ?? "").trim();
             if (!question)
                 throw httpError(400, "question 不能为空");
-            const kbId = validateKbId(ctx, req.body.kb_id);
-            const profile = resolveProfile(req.body.match_profile_id);
+            const kbId = validateKbId(ctx, req.body.kb_id); // 校验 kb_id 非空且在 KbStore 中存在
+            const profile = resolveProfile(req.body.match_profile_id); // 解析 API 地址、Key、model、max_tokens、temperature
             const [, , , , resp] = await runConfidenceMatch({
                 question,
                 kbId,
-                topK: Math.max(1, Math.min(20, Number(req.body.top_k ?? 5))),
+                topK: Math.max(1, Math.min(20, Number(req.body.top_k ?? 5))), // 限制 top_k 在 1-20 之间
                 cache: ctx.cache,
                 llm: llmForProfile(ctx.settings, profile),
                 settings: ctx.settings,
@@ -158,31 +234,45 @@ export function createApp(ctx, clientDist) {
             throw e;
         }
     });
+    /**
+     * LLM 置信度匹配 — 流式接口（调试页「提问」按钮调用此路由）
+     *
+     * 请求体：{ question, kb_id, top_k?, match_profile_id? }
+     * SSE 事件顺序：log（步骤日志，可多条）→ candidates → done | error
+     *
+     * 与 POST /ask/confidence 逻辑相同，额外通过 SSE 推送中间日志与分阶段结果。
+     */
     app.post("/ask/confidence/stream", async (req, res) => {
-        const question = String(req.body.question ?? "").trim();
+        const question = String(req.body.question ?? "").trim(); // 获取问题
         if (!question)
             return res.status(400).json({ detail: "question 不能为空" });
         let kbId;
         try {
-            kbId = validateKbId(ctx, req.body.kb_id);
+            kbId = validateKbId(ctx, req.body.kb_id); // 校验 kb_id 非空且在 KbStore 中存在
         }
         catch (e) {
             return res.status(e.status).json({ detail: e.detail });
         }
-        const topK = Math.max(1, Math.min(20, Number(req.body.top_k ?? 5)));
-        const profile = resolveProfile(req.body.match_profile_id);
+        const topK = Math.max(1, Math.min(20, Number(req.body.top_k ?? 5))); // 限制 top_k 在 1-20 之间
+        const profile = resolveProfile(req.body.match_profile_id); // 解析 API 地址、Key、model、max_tokens、temperature
+
+        // 切换为 SSE 响应，禁止代理缓冲，防止中间日志丢失
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("X-Accel-Buffering", "no");
         res.flushHeaders?.();
+
         const ac = new AbortController();
         const timeout = setTimeout(() => ac.abort(), ctx.settings.debugRequestTimeoutS * 1000);
+
+        // logQueue + worker 模式：runConfidenceMatch 在后台跑，主循环把日志实时写给客户端
         const logQueue = [];
         const box = { matchResult: null, workerError: null, done: false };
         const worker = (async () => {
-            const sink = new AskLogSink((line, kind) => logQueue.push(["log", line, kind]), ctx.opLog, "debug", kbId);
+            const sink = new AskLogSink((line, kind) => logQueue.push(["log", line, kind]), ctx.opLog, "debug", kbId); // 创建日志 sink，将日志推送到 logQueue
             try {
                 sink.log("[step] POST /ask/confidence/stream 收到请求", "step");
+                // 核心：加载 FAQ 索引 → 拼 prompt → LLM 流式匹配 → 解析 JSON → 查 answer
                 box.matchResult = await runConfidenceMatch({
                     question,
                     kbId,
@@ -204,6 +294,8 @@ export function createApp(ctx, clientDist) {
                 box.done = true;
             }
         })();
+
+        // 轮询推送 log 事件，直到 worker 结束且队列清空
         while (!box.done || logQueue.length) {
             while (logQueue.length) {
                 const [, line, kind] = logQueue.shift();
@@ -214,6 +306,7 @@ export function createApp(ctx, clientDist) {
         }
         clearTimeout(timeout);
         await worker;
+
         if (box.workerError) {
             const timedOut = ac.signal.aborted || box.workerError.message.includes("超时");
             res.write(sseEvent("error", { detail: box.workerError.message, timed_out: timedOut }));
@@ -221,13 +314,16 @@ export function createApp(ctx, clientDist) {
         }
         if (!box.matchResult)
             return res.end();
+
         const [match, , , messagesDict, resp] = box.matchResult;
+        // candidates：前端左 Tab「候选匹配」用（此时尚无 answer 正文）
         res.write(sseEvent("candidates", {
             raw_output: match.raw_output,
             candidates: match.candidates,
             enabled_count: (await ctx.cache.getEnabledCount(kbId)),
             messages: messagesDict,
         }));
+        // done：前端右侧「候选回答」+ timings；answers 每项含完整 answer Markdown
         res.write(sseEvent("done", {
             question: resp.question,
             kb_id: resp.kb_id,
@@ -239,6 +335,9 @@ export function createApp(ctx, clientDist) {
         }));
         res.end();
     });
+
+    // ----- LLM 知识库 CRUD 与缓存 -----
+    /** GET /knowledge-bases — 列出所有 LLM 知识库及 enabled FAQ 条数 */
     app.get("/knowledge-bases", async (_req, res) => {
         const items = [];
         for (const [kb_id, cfg] of Object.entries(ctx.kbStore.getAll())) {
@@ -253,6 +352,7 @@ export function createApp(ctx, clientDist) {
         }
         res.json({ items });
     });
+    /** POST /knowledge-bases — 创建知识库；kb_id 可省略则自动分配 */
     app.post("/knowledge-bases", async (req, res) => {
         const kbId = String(req.body.kb_id ?? "").trim() || (await ctx.kbStore.nextAvailableKbId());
         const name = String(req.body.name ?? "").trim();
@@ -267,6 +367,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    /** GET /knowledge-bases/:kbId — 单个知识库详情 */
     app.get("/knowledge-bases/:kbId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -277,6 +378,7 @@ export function createApp(ctx, clientDist) {
             res.status(e.status).json({ detail: e.detail });
         }
     });
+    /** DELETE /knowledge-bases/:kbId — 删除知识库、清缓存与磁盘目录 */
     app.delete("/knowledge-bases/:kbId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -289,6 +391,7 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    /** POST /knowledge-bases/:kbId/rename — 修改显示名称 */
     app.post("/knowledge-bases/:kbId/rename", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -299,6 +402,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    /** GET /knowledge-bases/:kbId/confidence-prompt-preview — 预览置信度匹配 system prompt */
     app.get("/knowledge-bases/:kbId/confidence-prompt-preview", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -315,6 +419,7 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    /** POST /knowledge-bases/:kbId/reload — 从磁盘重新加载 FAQ 索引到内存缓存 */
     app.post("/knowledge-bases/:kbId/reload", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -325,6 +430,7 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    /** POST /knowledge-bases/:kbId/import/from-rag — 从 RAG 知识库导入 FAQ 到 LLM 库 */
     app.post("/knowledge-bases/:kbId/import/from-rag", async (req, res) => {
         try {
             const llmKbId = validateKbId(ctx, req.params.kbId);
@@ -347,6 +453,9 @@ export function createApp(ctx, clientDist) {
             res.status(e.status || 400).json({ detail: e.detail ?? (e instanceof Error ? e.message : String(e)) });
         }
     });
+
+    // ----- FAQ 条目 CRUD（持久化在 questions JSON，变更后 reloadKb） -----
+    /** GET /knowledge-bases/:kbId/questions — 完整 FAQ 文档 { version, items } */
     app.get("/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -356,6 +465,7 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e.detail ?? String(e) });
         }
     });
+    /** PUT /knowledge-bases/:kbId/questions — 全量替换 FAQ 列表（带乐观锁 version） */
     app.put("/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -367,6 +477,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    /** POST /knowledge-bases/:kbId/questions/items — 新增单条 FAQ */
     app.post("/knowledge-bases/:kbId/questions/items", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -382,6 +493,7 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
+    /** PUT /knowledge-bases/:kbId/questions/items/:itemId — 更新单条 FAQ */
     app.put("/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -399,6 +511,7 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
+    /** DELETE /knowledge-bases/:kbId/questions/items/:itemId — 删除单条 FAQ */
     app.delete("/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -411,9 +524,13 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+
+    // ----- 静态资源预览（防路径穿越） -----
+    /** GET /preview-asset?kb_id=&ref= — 知识库 assets 目录下的图片等资源 */
     app.get("/preview-asset", (req, res) => {
         try {
             const kid = validateKbId(ctx, String(req.query.kb_id ?? ""));
+            // 规范化 ref，去掉 ../、assets/ 前缀，禁止 .. 穿越
             let r = String(req.query.ref ?? "").trim().replace(/\\/g, "/");
             if (r.startsWith("../"))
                 r = r.slice(3);
@@ -433,6 +550,7 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
+    /** GET /documents/preview-asset?ref= — 文档模块全局 assets 目录 */
     app.get("/documents/preview-asset", (req, res) => {
         try {
             let r = String(req.query.ref ?? "").trim().replace(/\\/g, "/");
@@ -454,6 +572,9 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
+
+    // ----- 操作日志：轮询与 SSE 流 -----
+    /** GET /logs — 按 module/kb_id/level 过滤的历史日志 */
     app.get("/logs", async (req, res) => {
         const items = await ctx.opLog.listEntries({
             limit: Number(req.query.limit ?? 500),
@@ -463,6 +584,7 @@ export function createApp(ctx, clientDist) {
         });
         res.json({ items });
     });
+    /** GET /logs/stream — SSE 推送 since 之后的新日志，每秒轮询一次 */
     app.get("/logs/stream", (req, res) => {
         let last = String(req.query.since ?? "");
         res.setHeader("Content-Type", "text/event-stream");
@@ -481,6 +603,9 @@ export function createApp(ctx, clientDist) {
         }, 1000);
         req.on("close", () => clearInterval(interval));
     });
+
+    // ----- 系统设置：提示词、匹配配置档、模型槽位 -----
+    /** GET /settings/prompts — 当前提示词及基于默认 kb 的 system 预览 */
     app.get("/settings/prompts", async (req, res) => {
         const gp = ctx.promptsStore.get();
         const previewKb = String(req.query.kb_id ?? "").trim() || firstKbId(ctx);
@@ -520,6 +645,7 @@ export function createApp(ctx, clientDist) {
             enabled_count: enabledCount,
         });
     });
+    /** PUT /settings/prompts — 更新置信度/FAQ/PDF-VLM 提示词（部分字段可选） */
     app.put("/settings/prompts", async (req, res) => {
         const gp = await ctx.promptsStore.set({
             confidence_match_prompt: "confidence_match_prompt" in req.body ? req.body.confidence_match_prompt : undefined,
@@ -529,26 +655,33 @@ export function createApp(ctx, clientDist) {
         ctx.opLog.append({ module: "settings", action: "update_prompts", detail: "更新问答模型提示词" });
         res.json({ ...gp, defaults: allDefaultPrompts(ctx.settings.confidenceTopK) });
     });
+    /** GET /settings/match-profiles — 问答匹配用的多档 API/模型配置 */
     app.get("/settings/match-profiles", (_req, res) => {
         res.json({
             default_id: ctx.matchProfilesStore.getDefaultId(),
             profiles: ctx.matchProfilesStore.listProfiles(false),
         });
     });
+    /** PUT /settings/match-profiles — 批量更新匹配配置档 */
     app.put("/settings/match-profiles", async (req, res) => {
         const updated = await ctx.matchProfilesStore.updateAll(req.body);
         ctx.opLog.append({ module: "settings", action: "update_match_profiles", detail: "更新问答模型配置" });
         res.json(updated);
     });
+    /** GET /settings/models — 各功能槽位模型（import、pdf_vlm 等） */
     app.get("/settings/models", (_req, res) => {
         res.json({ slots: ctx.modelsStore.getAll(false) });
     });
+    /** PUT /settings/models — 更新模型槽位；body 可为 { slots: {...} } 或直接为 slots 对象 */
     app.put("/settings/models", async (req, res) => {
         const slots = req.body.slots && typeof req.body.slots === "object" ? req.body.slots : req.body;
         const updated = await ctx.modelsStore.updateAll(slots ?? {});
         ctx.opLog.append({ module: "settings", action: "update_models", detail: "更新模型配置" });
         res.json({ slots: updated });
     });
+
+    // ----- 召回测试用例（调试页） -----
+    /** GET /knowledge-bases/:kbId/recall-tests — 读取召回测试数据集 */
     app.get("/knowledge-bases/:kbId/recall-tests", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -558,6 +691,7 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e.detail ?? String(e) });
         }
     });
+    /** PUT /knowledge-bases/:kbId/recall-tests — 保存召回测试数据集 */
     app.put("/knowledge-bases/:kbId/recall-tests", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -569,12 +703,17 @@ export function createApp(ctx, clientDist) {
             res.status(404).json({ detail: e.detail ?? String(e) });
         }
     });
+
+    // ----- 文档 / Markdown 文件管理 -----
+    /** GET /markdown-files/tree — 文档目录树（modules 与 sources） */
     app.get("/markdown-files/tree", (_req, res) => {
         res.json(buildMarkdownFilesTree(ctx.settings.filesRoot));
     });
+    /** GET /documents/capabilities — 支持的源文件类型及提取能力说明 */
     app.get("/documents/capabilities", (_req, res) => {
         res.json(listCapabilitiesPayload());
     });
+    /** GET /documents/preview-file?path= — 内联预览 PDF 源文件 */
     app.get("/documents/preview-file", (req, res) => {
         try {
             const filePath = resolvePreviewFilePath(ctx.settings.filesRoot, String(req.query.path ?? ""));
@@ -585,6 +724,7 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e instanceof LLMError ? e.message : String(e) });
         }
     });
+    /** GET /documents/excel-sheets?filename= — 列出 Excel 工作表名供前端选择 */
     app.get("/documents/excel-sheets", (req, res) => {
         try {
             const filename = path.basename(String(req.query.filename ?? "").trim());
@@ -597,6 +737,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof LLMError ? e.message : String(e) });
         }
     });
+    /** GET /markdown-files/content?path= — 读取模块 Markdown 内容及元数据 */
     app.get("/markdown-files/content", async (req, res) => {
         try {
             res.json(await readDocumentContent(ctx.settings.filesRoot, String(req.query.path ?? "")));
@@ -605,6 +746,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof LLMError ? e.message : String(e) });
         }
     });
+    /** PUT /markdown-files/content — 保存模块 Markdown */
     app.put("/markdown-files/content", (req, res) => {
         try {
             const rel = String(req.body.path ?? "").trim();
@@ -618,6 +760,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof LLMError ? e.message : e.detail ?? String(e) });
         }
     });
+    /** DELETE /markdown-files?path= — 删除文档文件 */
     app.delete("/markdown-files", (req, res) => {
         try {
             const result = deleteDocumentFile(ctx.settings.filesRoot, String(req.query.path ?? ""));
@@ -628,6 +771,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof LLMError ? e.message : String(e) });
         }
     });
+    /** PUT /markdown-files/rename — 重命名文档文件 */
     app.put("/markdown-files/rename", (req, res) => {
         try {
             const rel = String(req.body.path ?? "").trim();
@@ -641,6 +785,7 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof LLMError ? e.message : String(e) });
         }
     });
+    /** POST /markdown-files — 新建模块 Markdown 文件 */
     app.post("/markdown-files", (req, res) => {
         try {
             const result = createModuleMarkdown(ctx.settings.filesRoot, String(req.body.name ?? ""), String(req.body.markdown ?? ""));
@@ -651,6 +796,10 @@ export function createApp(ctx, clientDist) {
             res.status(400).json({ detail: e instanceof LLMError ? e.message : String(e) });
         }
     });
+    /**
+     * POST /documents/upload — 上传源文件到 documents/sources
+     * multipart 字段 file；overwrite 可通过 query/body 覆盖已存在文件
+     */
     app.post("/documents/upload", upload.single("file"), (req, res) => {
         const file = req.file;
         if (!file)
@@ -695,6 +844,14 @@ export function createApp(ctx, clientDist) {
         ctx.opLog.append({ module: "files", action: "upload", detail: `uploaded ${path.basename(dest)}` });
         res.json(meta);
     });
+
+    /**
+     * POST /documents/extract/stream — 流式提取源文件为 Markdown（SSE）
+     *
+     * 请求体：filename, ranges（页码或行号区间）, sheet_name?, use_vlm_refine?
+     * 支持 PDF / Word / Excel / 纯文本等；多段 range 会合并为一个 module 文件。
+     * SSE 事件：log（步骤）→ done（path、stats）| error
+     */
     app.post("/documents/extract/stream", async (req, res) => {
         const filename = String(req.body.filename ?? "").trim()
             || path.basename(String(req.body.path ?? "").trim());
@@ -714,6 +871,8 @@ export function createApp(ctx, clientDist) {
         }
         if (!fs.existsSync(sourcePath))
             return res.status(404).json({ detail: "源文件不存在" });
+
+        // SSE 响应头 + 首包 comment，避免代理缓冲
         res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
         res.setHeader("Cache-Control", "no-cache, no-transform");
         res.setHeader("Connection", "keep-alive");
@@ -724,6 +883,7 @@ export function createApp(ctx, clientDist) {
             if (typeof res.flush === "function")
                 res.flush();
         };
+        // 长任务期间定期发送 keepalive，防止连接被中间层断开
         const keepAlive = setInterval(() => {
             if (!res.writableEnded) {
                 res.write(": keepalive\n\n");
@@ -751,6 +911,7 @@ export function createApp(ctx, clientDist) {
                 throw new LLMError(`不支持的文件类型: ${fmt}`);
             const pdfVlmCfg = ctx.modelsStore.getSlot("pdf_vlm");
             const vlmPrompt = ctx.promptsStore.effectivePdfVlmPrompt();
+            // 多段 PDF/行范围：各段先写入临时目录，最后 merge 为一个 module
             const multiRange = ranges.length > 1 && (isPdf || isLineRange);
             if (multiRange) {
                 stagingRoot = fs.mkdtempSync(path.join(os.tmpdir(), "kr-extract-"));
@@ -759,7 +920,7 @@ export function createApp(ctx, clientDist) {
             let combined = {};
             const extractParts = [];
             const allWarnings = [];
-            const rangeList = isExcel ? [[1, 1]] : ranges;
+            const rangeList = isExcel ? [[1, 1]] : ranges; // Excel 用 sheet_name，range 占位
             for (const [rangeStart, rangeEnd] of rangeList) {
                 const rangeOutDir = multiRange
                     ? path.join(stagingRoot, `${isPdf ? "p" : "l"}${rangeStart}-${rangeEnd}`)
@@ -769,6 +930,7 @@ export function createApp(ctx, clientDist) {
                 let mergedMd;
                 let moduleOut;
                 let stats;
+                // 按文件类型选择提取管线
                 if (isExcel) {
                     emitStep("开始转换 Excel 工作表…");
                     [mergedMd, moduleOut, stats] = await extractSourceToMarkdown({
@@ -814,6 +976,7 @@ export function createApp(ctx, clientDist) {
                     });
                 }
                 else {
+                    // 纯文本/Markdown：直接按行切片；HTML 可选 VLM 精修
                     if (["html", "htm"].includes(fmt) && useVlmRefine) {
                         emitStep(`开始转换 HTML 第 ${rangeStart}-${rangeEnd} 行…`);
                         [mergedMd, moduleOut, stats] = await extractSourceToMarkdown({
@@ -859,6 +1022,7 @@ export function createApp(ctx, clientDist) {
             if (multiRange) {
                 emitStep(`正在合并 ${ranges.length} 段为单个 Markdown…`);
             }
+            // 写入 modules 目录并返回相对 path、统计信息
             const result = finalizeCombinedExtract(
                 ctx.settings.filesRoot,
                 filename,
@@ -878,11 +1042,15 @@ export function createApp(ctx, clientDist) {
         }
         finally {
             clearInterval(keepAlive);
+            // 清理多段提取时的临时目录
             if (stagingRoot && fs.existsSync(stagingRoot))
                 fs.rmSync(stagingRoot, { recursive: true, force: true });
         }
         res.end();
     });
+
+    // ----- FAQ 导入流水线：LLM 生成问法 → 提交到 LLM/RAG 库 -----
+    /** POST .../import/generate-questions — 根据 answer_md 用 import 槽位模型生成标准问与变体 */
     app.post("/knowledge-bases/:kbId/import/generate-questions", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -901,6 +1069,11 @@ export function createApp(ctx, clientDist) {
             res.status(e instanceof LLMError ? 502 : 400).json({ detail: e instanceof Error ? e.message : String(e) });
         }
     });
+    /**
+     * POST .../import/commit — 将生成的 FAQ 写入 LLM 和/或 RAG 知识库
+     * targets: ["llm"] | ["rag"] | 两者；append 为 true 时追加，否则与现有合并替换
+     * RAG 写入后默认 auto_rebuild_rag 重建向量索引
+     */
     app.post("/knowledge-bases/:kbId/import/commit", async (req, res) => {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
@@ -915,6 +1088,7 @@ export function createApp(ctx, clientDist) {
 
             const results = { llm: 0, rag: 0, kb_id: kid, items: [] };
 
+            /** 为 rawItems 分配 qN  id，并按 append 模式写入 store */
             const assignAndMerge = async (store, existing) => {
                 let startId = 1;
                 if (existing.length) {
@@ -969,7 +1143,9 @@ export function createApp(ctx, clientDist) {
             res.status(e.status || 400).json({ detail: e.detail ?? (e instanceof Error ? e.message : String(e)) });
         }
     });
-    // Static: legacy assets (manual.md) + React production build
+
+    // ----- 静态资源与 SPA 回退 -----
+    // 旧版静态页、client/public、生产 dist；无 dist 时回退 legacy index.html
     const legacyWeb = path.join(APP_ROOT, "_legacy", "web");
     if (fs.existsSync(legacyWeb)) {
         app.use("/static", express.static(legacyWeb));
@@ -981,6 +1157,7 @@ export function createApp(ctx, clientDist) {
     const dist = clientDist ?? path.join(APP_ROOT, "client", "dist");
     if (fs.existsSync(dist)) {
         app.use(express.static(dist));
+        // 非 API、非带扩展名静态文件的 GET 均返回 index.html（React Router）
         app.get("*", (req, res, next) => {
             if (req.path.startsWith("/api") || req.path.includes("."))
                 return next();

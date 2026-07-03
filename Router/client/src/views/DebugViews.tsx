@@ -1,3 +1,15 @@
+/**
+ * DebugViews.tsx — 调试 · 问答（LLM 模式）核心视图与 Hook
+ *
+ * 用户点击「提问」后的前端主路径：
+ *   App.tsx 按钮 onClick
+ *     → useDebugAsk().ask(question)
+ *       → streamAskConfidence()  POST /ask/confidence/stream
+ *         → SSE 事件 candidates / done
+ *           → setAnswers / setCandidates / setTimings
+ *             → DebugAnswersPanel / CandidatesPanel 重渲染
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import type { AskTimings, CandidateAnswer, ConfidenceCandidate, QAItem } from "../types";
 import {
@@ -8,9 +20,13 @@ import {
   streamAskConfidence,
 } from "../api/client";
 import { MarkdownPreview } from "../components/MarkdownPreview";
-import { TimingsPanel, TokenPanel } from "../components/MetricsPanels";
 import { useAppUi } from "../context/AppUiContext";
 
+/**
+ * 右侧主区「候选回答」列表。
+ * 数据来源：useDebugAsk 在 SSE `done` 事件中写入的 answers 数组。
+ * 每条含 id、confidence、question、answer（Markdown，由 MarkdownPreview 渲染）。
+ */
 export function DebugAnswersPanel({
   kbId,
   loading,
@@ -37,6 +53,10 @@ export function DebugAnswersPanel({
   );
 }
 
+/**
+ * 左侧面板「候选匹配」Tab：展示 LLM 返回的 Top-K 候选及置信度进度条。
+ * 数据在 SSE `candidates` 或 `done` 事件到达时更新；点击卡片滚动到右侧对应 answerCard。
+ */
 export function CandidatesPanel({ candidates, onSelect }: { candidates: ConfidenceCandidate[]; onSelect: (i: number) => void }) {
   if (!candidates.length) return <div className="empty">未匹配到候选</div>;
   return (
@@ -55,30 +75,47 @@ export function CandidatesPanel({ candidates, onSelect }: { candidates: Confiden
   );
 }
 
+/**
+ * LLM 调试问答 Hook — 用户点击「提问」时由 App.tsx 调用 ask(question)。
+ *
+ * @param kbId       当前选中的 LLM 知识库 id（来自 App 的 effectiveKb）
+ * @param profileId  问答模型 profile id（来自 match_profiles 配置）
+ * @param topK       返回候选数量上限（1–20，默认 5）
+ *
+ * 请求体示例（用户输入「怎么安装吊带」）：
+ *   { question: "怎么安装吊带", kb_id: "1", top_k: 5, match_profile_id: "default" }
+ */
 export function useDebugAsk(kbId: string, profileId: string, topK: number) {
   const { showToast } = useAppUi();
-  const [loading, setLoading] = useState(false);
-  const [candidates, setCandidates] = useState<ConfidenceCandidate[]>([]);
-  const [answers, setAnswers] = useState<CandidateAnswer[]>([]);
-  const [timings, setTimings] = useState<AskTimings | null>(null);
+  const [loading, setLoading] = useState(false);           // 控制按钮「提问中…」与右侧「匹配中…」
+  const [candidates, setCandidates] = useState<ConfidenceCandidate[]>([]); // 左 Tab「候选匹配」
+  const [answers, setAnswers] = useState<CandidateAnswer[]>([]);             // 右侧「候选回答」
+  const [timings, setTimings] = useState<AskTimings | null>(null);           // 左 Tab「消耗时间/Token」
 
   const ask = useCallback(async (question: string) => {
-    const q = question.trim();
-    if (!q) { showToast("请输入问题", "error"); return; }
-    if (!kbId) { showToast("请选择知识库", "error"); return; }
+    const q = question.trim(); 
+    if (!q) { showToast("请输入问题", "error"); return; } // 如果问题为空，则显示错误提示
+    if (!kbId) { showToast("请选择知识库", "error"); return; } // 如果知识库为空，则显示错误提示
+
+    // ① 进入加载态，清空上次结果（用户会看到「匹配中…」）
     setLoading(true);
     setAnswers([]);
     setCandidates([]);
     setTimings(null);
+
     try {
+      //  发起 SSE 流式请求；onEvent 在流式过程中被多次调用
       await streamAskConfidence({ question: q, kb_id: kbId, top_k: topK, match_profile_id: profileId }, (evt) => {
+        //  服务端 LLM 匹配完成后先发 candidates（含 raw_output、候选 id/confidence）
         if (evt.event === "candidates") setCandidates((evt.data.candidates as ConfidenceCandidate[]) || []);
+        //  最终 done 事件：带完整 answers（含 answer 正文）、timings
         if (evt.event === "done") {
           const d = evt.data as { answers?: CandidateAnswer[]; match?: { candidates?: ConfidenceCandidate[] }; timings?: AskTimings };
           setAnswers(d.answers || []);
           setCandidates(d.match?.candidates || []);
           setTimings(d.timings || null);
         }
+        // 非超时错误（如 LLM 鉴权失败）弹 Toast
         if (evt.event === "error" && !evt.data?.timed_out) showToast(String(evt.data.detail || "错误"), "error", 3200);
       });
     } catch (e) {
@@ -89,7 +126,7 @@ export function useDebugAsk(kbId: string, profileId: string, topK: number) {
         showToast(`请求超时（${DEBUG_ASK_TIMEOUT_S}s）`, "error", 3200);
       } else showToast((e as Error).message, "error", 3200);
     } finally {
-      setLoading(false);
+      setLoading(false); // ⑥ 结束加载，DebugAnswersPanel 展示 answers
     }
   }, [kbId, profileId, topK, showToast]);
 
