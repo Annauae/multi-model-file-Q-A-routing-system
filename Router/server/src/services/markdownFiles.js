@@ -14,14 +14,31 @@ import {
     convertHtmlFileToPreview,
     extractTextLinesFromContent,
     listExcelSheets,
+    getDocxPageMeta as buildDocxPageMeta,
 } from "./documentConverters.js";
 import { DOCUMENTS_FOLDER, documentsDirPath, documentsModulesDirPath, documentsSourcesDirPath, } from "./paths.js";
+
+function tryFixMojibakeFilename(name) {
+    if (/[\u4e00-\u9fff]/.test(name))
+        return name;
+    try {
+        const decoded = Buffer.from(name, "latin1").toString("utf8");
+        if (/[\u4e00-\u9fff]/.test(decoded))
+            return decoded;
+    }
+    catch {
+        /* ignore */
+    }
+    return name;
+}
+
+const BINARY_LINE_COUNT_KINDS = new Set(["source_pdf", "source_docx", "source_xlsx", "source_xls", "source_csv"]);
 
 function fileMeta(filePath, filesRoot, kind) {
     const stat = fs.statSync(filePath);
     let lineCount = 0;
     const caps = capabilitiesForKind(kind);
-    if (caps?.isTextFile !== false && kind !== "source_pdf") {
+    if (caps?.isTextFile !== false && !BINARY_LINE_COUNT_KINDS.has(kind)) {
         try {
             lineCount = fs.readFileSync(filePath, "utf-8").split(/\r?\n/).length;
         }
@@ -29,9 +46,10 @@ function fileMeta(filePath, filesRoot, kind) {
             lineCount = 0;
         }
     }
+    const basename = tryFixMojibakeFilename(path.basename(filePath));
     return {
         type: "file",
-        name: path.basename(filePath),
+        name: basename,
         path: path.relative(filesRoot, filePath).replace(/\\/g, "/"),
         kind,
         format: formatFromFilename(path.basename(filePath)),
@@ -111,6 +129,7 @@ export async function readDocumentContent(filesRoot, relPath) {
     const format = formatFromFilename(path.basename(dest));
     const base = {
         path: relPath.replace(/\\/g, "/"),
+        display_name: tryFixMojibakeFilename(path.basename(dest)),
         kind,
         format,
         editable: caps?.editable ?? false,
@@ -183,6 +202,14 @@ export async function readMarkdownContent(filesRoot, relPath) {
         size: doc.size,
         ...doc,
     };
+}
+
+export async function loadDocxPageInfo(filesRoot, filename) {
+    const sourcePath = documentsSourcePath(filesRoot, filename);
+    if (!fs.existsSync(sourcePath))
+        throw new LLMError("源文件不存在");
+    const { markdown } = await convertDocxToMarkdown(filesRoot, sourcePath);
+    return buildDocxPageMeta(sourcePath, markdown);
 }
 
 export function saveMarkdownContent(filesRoot, relPath, markdown) {

@@ -3,7 +3,8 @@ import path from "node:path";
 import crypto from "node:crypto";
 import mammoth from "mammoth";
 import TurndownService from "turndown";
-import * as XLSX from "xlsx";
+import XLSX from "xlsx";
+import JSZip from "jszip";
 import { LLMError } from "./llmClient.js";
 import { documentsAssetsDirPath } from "./paths.js";
 
@@ -47,13 +48,46 @@ export function rewriteHtmlAssetRefs(html, _filesRoot) {
     );
 }
 
+const MAMMOTH_NOISE_PATTERNS = [
+    /unrecognised element was ignored/i,
+    /unrecognised paragraph style/i,
+    /image\/x-wmf/i,
+    /image\/x-emf/i,
+    /unlikely to display in web browsers/i,
+];
+
+function collectMammothWarnings(messages, warnings) {
+    let noiseCount = 0;
+    for (const msg of messages || []) {
+        const text = String(msg.message || msg);
+        if (MAMMOTH_NOISE_PATTERNS.some((p) => p.test(text)))
+            noiseCount++;
+        else if (text)
+            warnings.push(text);
+    }
+    if (noiseCount > 0)
+        warnings.push("Word 含部分不兼容元素，已忽略，不影响正文转换");
+}
+
+function isVectorImageContentType(contentType) {
+    return /wmf|emf/i.test(String(contentType || ""));
+}
+
 export async function convertDocxToMarkdown(filesRoot, sourcePath) {
     const warnings = [];
     const imageRefs = [];
+    let skippedVectorImage = false;
     const result = await mammoth.convertToMarkdown(
         { path: sourcePath },
         {
             convertImage: mammoth.images.imgElement(async (image) => {
+                if (isVectorImageContentType(image.contentType)) {
+                    if (!skippedVectorImage) {
+                        warnings.push("WMF/EMF 矢量图无法在网页显示，已跳过");
+                        skippedVectorImage = true;
+                    }
+                    return { src: "" };
+                }
                 const buffer = await image.read();
                 const ref = saveImageBuffer(filesRoot, buffer, image.contentType);
                 imageRefs.push(ref);
@@ -61,10 +95,7 @@ export async function convertDocxToMarkdown(filesRoot, sourcePath) {
             }),
         },
     );
-    if (result.messages?.length) {
-        for (const msg of result.messages)
-            warnings.push(String(msg.message || msg));
-    }
+    collectMammothWarnings(result.messages, warnings);
     let md = String(result.value || "").trim();
     return { markdown: md, preview_html: null, text_lines: md.split(/\r?\n/), warnings, imageRefs };
 }
@@ -117,14 +148,18 @@ function sheetToMarkdownTable(rows) {
     return lines.join("\n");
 }
 
+function readExcelWorkbook(sourcePath) {
+    const buf = fs.readFileSync(sourcePath);
+    return XLSX.read(buf, { type: "buffer", cellDates: true });
+}
+
 export function listExcelSheets(sourcePath) {
-    const wb = XLSX.readFile(sourcePath, { cellDates: true });
-    return wb.SheetNames;
+    return readExcelWorkbook(sourcePath).SheetNames;
 }
 
 export function convertExcelToMarkdown(sourcePath, { sheetName, rowStart = 1, rowEnd = null, maxRows = 5000 } = {}) {
     const warnings = [];
-    const wb = XLSX.readFile(sourcePath, { cellDates: true });
+    const wb = readExcelWorkbook(sourcePath);
     const names = wb.SheetNames;
     if (!names.length)
         throw new LLMError("Excel 文件无工作表");
@@ -206,4 +241,73 @@ export function collectImageRefsFromMarkdown(md) {
             refs.push(ref);
     }
     return refs;
+}
+
+const PAGE_BREAK_RE = /<w:br[^>]*w:type=["']page["']|<w:lastRenderedPageBreak\b/;
+
+export async function parseDocxParagraphPages(sourcePath) {
+    const zip = await JSZip.loadAsync(fs.readFileSync(sourcePath));
+    const xml = await zip.file("word/document.xml")?.async("string");
+    if (!xml)
+        return { pageCount: 1, paragraphPages: [1] };
+    const paragraphs = [...xml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/g)].map((m) => m[0]);
+    let page = 1;
+    const paragraphPages = [];
+    for (const p of paragraphs) {
+        paragraphPages.push(page);
+        if (PAGE_BREAK_RE.test(p))
+            page++;
+    }
+    return { pageCount: Math.max(1, page), paragraphPages };
+}
+
+export function mapDocxPagesToLineRanges(markdown, paragraphPages) {
+    const lines = String(markdown || "").split(/\r?\n/);
+    const blocks = String(markdown || "").split(/\n\n+/);
+    const blockStartLines = [];
+    let pos = 0;
+    for (let i = 0; i < blocks.length; i++) {
+        blockStartLines.push(pos + 1);
+        pos += blocks[i].split(/\r?\n/).length;
+        if (i + 1 < blocks.length && pos < lines.length)
+            pos += 1;
+    }
+    const pageCount = Math.max(1, ...paragraphPages, 1);
+    const pages = [];
+    for (let p = 1; p <= pageCount; p++) {
+        let lineStart = null;
+        let lineEnd = null;
+        for (let i = 0; i < blocks.length; i++) {
+            const pg = paragraphPages[i] ?? paragraphPages[paragraphPages.length - 1] ?? 1;
+            if (pg !== p)
+                continue;
+            const start = blockStartLines[i] ?? 1;
+            const end = i + 1 < blockStartLines.length ? blockStartLines[i + 1] - 1 : lines.length;
+            lineStart = lineStart == null ? start : Math.min(lineStart, start);
+            lineEnd = lineEnd == null ? end : Math.max(lineEnd, end);
+        }
+        pages.push({
+            page: p,
+            line_start: lineStart ?? 1,
+            line_end: lineEnd ?? Math.max(1, lines.length),
+        });
+    }
+    return { page_count: pageCount, pages };
+}
+
+export async function getDocxPageMeta(sourcePath, markdown) {
+    const { pageCount, paragraphPages } = await parseDocxParagraphPages(sourcePath);
+    const mapped = mapDocxPagesToLineRanges(markdown, paragraphPages);
+    return { page_count: pageCount, pages: mapped.pages, paragraphPages };
+}
+
+export function sliceMarkdownByDocxPages(markdown, paragraphPages, pageStart, pageEnd) {
+    const blocks = String(markdown || "").split(/\n\n+/);
+    const selected = [];
+    for (let i = 0; i < blocks.length; i++) {
+        const pg = paragraphPages[i] ?? paragraphPages[paragraphPages.length - 1] ?? 1;
+        if (pg >= pageStart && pg <= pageEnd)
+            selected.push(blocks[i]);
+    }
+    return selected.join("\n\n").trim();
 }

@@ -46,6 +46,7 @@ export interface AskTimings {
   match_ms?: number;
   match_first_token_ms?: number;
   lookup_ms?: number;
+  vlm_refine_ms?: number;
   tokens?: TokenUsage;
   token_breakdown?: { phase: string; usage: TokenUsage }[];
 }
@@ -82,6 +83,7 @@ export interface FileTreeNode {
     preview_only?: boolean;
     can_convert?: boolean;
     direct_question_gen?: boolean;
+    default_vlm_refine?: boolean;
   };
 }
 

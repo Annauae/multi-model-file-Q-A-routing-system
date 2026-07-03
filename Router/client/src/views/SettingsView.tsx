@@ -5,7 +5,7 @@ import { ModeBar } from "../components/ModeBar";
 import { ModeSwitch } from "../components/ModeSwitch";
 import type { AskMode, MatchProfile, RagModelSlot } from "../types";
 
-const SLOT_LABELS: Record<string, string> = { import: "FAQ 生成模型", pdf_vlm: "文档提取 / VLM 整理模型" };
+const SLOT_LABELS: Record<string, string> = { import: "FAQ 生成模型", pdf_vlm: "文档提取 / 模型整理" };
 const RAG_SLOT_ORDER = ["embedding", "rerank", "llm", "judge"] as const;
 const RAG_SLOTS_WITH_PROMPTS = ["llm", "judge"] as const;
 const RAG_SLOT_LABELS: Record<string, string> = {

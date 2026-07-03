@@ -3,5 +3,5 @@
   "rerank_prompt": "（Rerank API 按 query+documents 相关性排序，无需提示词；此处预留说明或备注。）",
   "llm_prompt": "你是相机 FAQ 助手。请只根据给定 FAQ 来源回答，不能编造；如果资料不足，请说明未找到高置信答案。回答使用简体中文。\n\n用户问题：{query}\n\nFAQ 来源：\n{context}",
   "judge_prompt": "你是 RAG 评测裁判。请比较标准答案和系统答案，输出严格 JSON，不要输出额外文本。\nJSON 字段：quality_score, confidence, groundedness, image_support, reason。\n所有分数范围 0 到 1。\n\n用户问题：{query}\n\n标准答案：{expected}\n\n系统答案：{actual}\n\n检索来源：\n{sources}",
-  "updated_at": "2026-07-01T02:32:54Z"
+  "updated_at": "2026-07-02T02:20:25Z"
 }

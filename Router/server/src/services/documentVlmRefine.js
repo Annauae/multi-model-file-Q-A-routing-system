@@ -54,6 +54,16 @@ function stripCodeFence(text) {
     return t.trim();
 }
 
+const MAX_VLM_REFINE_CHARS = 24_000;
+
+function chatWithTimeout(llm, opts, timeoutMs) {
+    let timer;
+    const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new LLMError(`模型整理超时（${Math.round(timeoutMs / 1000)}s）`)), timeoutMs);
+    });
+    return Promise.race([llm.chat(opts), timeoutPromise]).finally(() => clearTimeout(timer));
+}
+
 export async function refineMarkdownWithVlm(opts) {
     const {
         settings,
@@ -68,7 +78,7 @@ export async function refineMarkdownWithVlm(opts) {
 
     const warnings = [];
     if (settings.mockLlm) {
-        warnings.push("MOCK_LLM 已开启，跳过 VLM 整理");
+        warnings.push("MOCK_LLM 已开启，跳过模型整理");
         return { markdown: draftMd, usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }, warnings };
     }
 
@@ -96,13 +106,14 @@ export async function refineMarkdownWithVlm(opts) {
     else {
         userContent = userIntro;
         if (refs.length && !imageUrls.length)
-            warnings.push("配图文件未找到，VLM 仅做文本整理");
+            warnings.push("配图文件未找到，模型仅做文本整理");
     }
 
-    onProgress?.("VLM 整理中…");
+    onProgress?.("模型整理中…");
     const t0 = performance.now();
+    const timeoutMs = Math.max(30, Number(settings.vlmRefineTimeoutS ?? settings.debugRequestTimeoutS ?? 120)) * 1000;
     try {
-        const [text, usage] = await llm.chat({
+        const [text, usage] = await chatWithTimeout(llm, {
             model: cfg.model,
             messages: [
                 { role: "system", content: refinePrompt },
@@ -110,10 +121,10 @@ export async function refineMarkdownWithVlm(opts) {
             ],
             max_tokens: cfg.max_tokens ?? settings.maxTokens,
             temperature: cfg.temperature ?? 0,
-        });
+        }, timeoutMs);
         const markdown = stripCodeFence(text);
         if (!markdown) {
-            warnings.push("VLM 整理返回空内容，已使用初稿");
+            warnings.push("模型整理返回空内容，已使用初稿");
             return {
                 markdown: draftMd,
                 usage,
@@ -121,11 +132,11 @@ export async function refineMarkdownWithVlm(opts) {
                 timing_ms: performance.now() - t0,
             };
         }
-        onProgress?.(`VLM 整理完成（tokens=${usage.total_tokens || 0}）`);
+        onProgress?.(`模型整理完成（tokens=${usage.total_tokens || 0}）`);
         return { markdown, usage, warnings, timing_ms: performance.now() - t0 };
     }
     catch (e) {
-        warnings.push(`VLM 整理失败，已使用初稿：${e instanceof LLMError ? e.message : String(e)}`);
+        warnings.push(`模型整理失败，已使用初稿：${e instanceof LLMError ? e.message : String(e)}`);
         return {
             markdown: draftMd,
             usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },

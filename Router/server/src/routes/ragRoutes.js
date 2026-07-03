@@ -129,15 +129,13 @@ export function registerRagRoutes(app, ctx, ragCtx) {
     });
 
     app.get("/settings/rag-models", (_req, res) => {
-        res.json({ slots: ragCtx.ragModelsStore.getAll(true) });
+        res.json({ slots: ragCtx.ragModelsStore.getAll(false) });
     });
 
     app.put("/settings/rag-models", (req, res) => {
         try {
             const slots = ragCtx.ragModelsStore.updateAll(req.body?.slots ?? req.body ?? {});
-            res.json({ slots: Object.fromEntries(
-                Object.entries(slots).map(([k, v]) => [k, ragCtx.ragModelsStore.toDict(v, true)]),
-            ) });
+            res.json({ slots });
         }
         catch (e) {
             res.status(400).json({ detail: e instanceof Error ? e.message : String(e) });

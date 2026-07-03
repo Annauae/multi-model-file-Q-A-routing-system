@@ -8,17 +8,22 @@ export function TimingsPanel({
 }: {
   timings: AskTimings | null;
   emptyText?: string;
-  mode?: "ask" | "import";
+  mode?: "ask" | "import" | "extract";
 }) {
   if (!timings) {
     return <div className="empty">{emptyText}</div>;
   }
   const chips =
-    mode === "import"
+    mode === "extract"
       ? [
           ["总耗时", timings.total_ms],
-          ["PDF/VLM 提取", timings.prepare_ms],
-          ["LLM 生成", timings.match_ms],
+          ...(Number(timings.prepare_ms) > 0 ? ([["文档解析", timings.prepare_ms]] as const) : []),
+          ...(Number(timings.vlm_refine_ms) > 0 ? ([["模型整理", timings.vlm_refine_ms]] as const) : []),
+        ]
+      : mode === "import"
+      ? [
+          ["总耗时", timings.total_ms],
+          ["LLM 生成", timings.match_ms ?? timings.total_ms],
         ]
       : [
           ["总耗时", timings.total_ms],
@@ -47,6 +52,10 @@ export const RAG_PHASE_LABELS: Record<string, string> = {
   embedding: "Embedding",
   rerank: "Rerank",
   generate: "RAG 问答模型",
+};
+
+export const EXTRACT_PHASE_LABELS: Record<string, string> = {
+  vlm_refine: "模型整理",
 };
 
 export function TokenPanel({

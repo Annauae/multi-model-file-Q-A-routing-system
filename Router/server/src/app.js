@@ -23,6 +23,26 @@ import { buildQuestionListSection, defaultConfidenceMatchPrompt, } from "./servi
 import { createRagContext } from "./services/ragContext.js";
 import { registerRagRoutes } from "./routes/ragRoutes.js";
 import { rebuildIndex } from "./services/rag/indexer.js";
+
+function decodeUploadFilename(name) {
+    const raw = String(name || "upload").trim() || "upload";
+    try {
+        const decoded = Buffer.from(raw, "latin1").toString("utf8").trim();
+        if (!decoded)
+            return raw;
+        const rawHasCjk = /[\u4e00-\u9fff]/.test(raw);
+        const decodedHasCjk = /[\u4e00-\u9fff]/.test(decoded);
+        if (decodedHasCjk && !rawHasCjk)
+            return decoded;
+        if (/[\u00c0-\u00ff]{2,}/.test(raw) && decodedHasCjk)
+            return decoded;
+    }
+    catch {
+        /* ignore */
+    }
+    return raw;
+}
+
 function validateKbId(ctx, kbId) {
     const kid = (kbId || "").trim();
     if (!kid)
@@ -639,7 +659,7 @@ export function createApp(ctx, clientDist) {
         const file = req.file;
         if (!file)
             return res.status(400).json({ detail: "file 必填" });
-        const name = (file.originalname || "upload").trim();
+        const name = decodeUploadFilename(file.originalname);
         if (!isAllowedSourceExtension(name)) {
             return res.status(400).json({ detail: "不支持的文件类型" });
         }
@@ -668,7 +688,7 @@ export function createApp(ctx, clientDist) {
             kind,
             capabilities: caps,
         };
-        if (caps?.editable !== false && kind !== "source_pdf") {
+        if (caps?.editable !== false && !["source_pdf", "source_docx", "source_xlsx", "source_xls", "source_csv"].includes(kind)) {
             try {
                 meta.line_count = fs.readFileSync(dest, "utf-8").split(/\r?\n/).length;
             }
@@ -729,10 +749,9 @@ export function createApp(ctx, clientDist) {
             emitStep("正在准备提取任务…");
             const fmt = detectSourceFormat(filename);
             const isPdf = fmt === "pdf";
-            const isLineRange = ["md", "txt", "json", "html", "htm"].includes(fmt);
-            const isWholeDoc = fmt === "docx";
+            const isLineRange = ["md", "txt", "json", "html", "htm", "docx"].includes(fmt);
             const isExcel = ["xlsx", "xls", "csv"].includes(fmt);
-            if (!isPdf && !isLineRange && !isWholeDoc && !isExcel)
+            if (!isPdf && !isLineRange && !isExcel)
                 throw new LLMError(`不支持的文件类型: ${fmt}`);
             const pdfVlmCfg = ctx.modelsStore.getSlot("pdf_vlm");
             const vlmPrompt = ctx.promptsStore.effectivePdfVlmPrompt();
@@ -744,7 +763,7 @@ export function createApp(ctx, clientDist) {
             let combined = {};
             const extractParts = [];
             const allWarnings = [];
-            const rangeList = isWholeDoc ? [[1, 1]] : ranges;
+            const rangeList = isExcel ? [[1, 1]] : ranges;
             for (const [rangeStart, rangeEnd] of rangeList) {
                 const rangeOutDir = multiRange
                     ? path.join(stagingRoot, `${isPdf ? "p" : "l"}${rangeStart}-${rangeEnd}`)
@@ -754,13 +773,14 @@ export function createApp(ctx, clientDist) {
                 let mergedMd;
                 let moduleOut;
                 let stats;
-                if (isWholeDoc) {
-                    emitStep("开始转换 Word 文档…");
+                if (isExcel) {
+                    emitStep("开始转换 Excel 工作表…");
                     [mergedMd, moduleOut, stats] = await extractSourceToMarkdown({
                         filesRoot: ctx.settings.filesRoot,
                         sourcePath,
                         filename,
                         ranges: [[1, 1]],
+                        sheetName,
                         onProgress: forwardProgress,
                         outputModulesDir: rangeOutDir,
                         settings: ctx.settings,
@@ -769,14 +789,13 @@ export function createApp(ctx, clientDist) {
                         useVlmRefine,
                     });
                 }
-                else if (isExcel) {
-                    emitStep(`开始转换 Excel 第 ${rangeStart}-${rangeEnd} 行…`);
+                else if (fmt === "docx") {
+                    emitStep(`开始转换 Word 第 ${rangeStart}-${rangeEnd} 行…`);
                     [mergedMd, moduleOut, stats] = await extractSourceToMarkdown({
                         filesRoot: ctx.settings.filesRoot,
                         sourcePath,
                         filename,
                         ranges: [[rangeStart, rangeEnd]],
-                        sheetName,
                         onProgress: forwardProgress,
                         outputModulesDir: rangeOutDir,
                         settings: ctx.settings,
@@ -828,12 +847,18 @@ export function createApp(ctx, clientDist) {
                 if (stats.warnings?.length)
                     allWarnings.push(...stats.warnings);
                 extractParts.push({
-                    label: isPdf ? `pages ${rangeStart}-${rangeEnd}` : `lines ${rangeStart}-${rangeEnd}`,
+                    label: isPdf
+                        ? `pages ${rangeStart}-${rangeEnd}`
+                        : isExcel
+                            ? `sheet ${sheetName || "default"}`
+                            : `lines ${rangeStart}-${rangeEnd}`,
                     md: mergedMd,
                     modulePath: stats.module_path,
                     absPath: moduleOut,
                 });
                 combined = mergeExtractStats(combined, stats);
+                if (isExcel)
+                    break;
             }
             if (multiRange) {
                 emitStep(`正在合并 ${ranges.length} 段为单个 Markdown…`);
@@ -841,7 +866,7 @@ export function createApp(ctx, clientDist) {
             const result = finalizeCombinedExtract(
                 ctx.settings.filesRoot,
                 filename,
-                isWholeDoc ? [[1, 1]] : ranges,
+                isExcel ? [[1, 1]] : ranges,
                 isPdf,
                 extractParts,
                 combined,

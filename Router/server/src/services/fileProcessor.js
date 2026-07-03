@@ -3,12 +3,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { LLMError } from "./llmClient.js";
-import { convertDocxToMarkdown, convertExcelToMarkdown, convertHtmlToMarkdown, } from "./documentConverters.js";
+import { convertDocxToMarkdown, convertExcelToMarkdown, convertHtmlToMarkdown, collectImageRefsFromMarkdown, } from "./documentConverters.js";
 import { formatFromFilename } from "./documentTypes.js";
 import { refineMarkdownWithVlm } from "./documentVlmRefine.js";
 import { documentsAssetsDirPath, documentsModulesDirPath, DOCLING_SCRIPT, MODEL_ROUTER_ROOT, } from "./paths.js";
 const PLACEHOLDER_HEADING_RE = /^#{1,3}\s*前言\s*$/gm;
 const DOCLING_META_BLOCK = /---\s*\n(?:(?!---).)*?(?:route:|route_label:|source_pdf:)(?:(?!---).)*?\n---\s*\n?/gis;
+const MAX_VLM_REFINE_CHARS = 24_000;
 export function stripMdFrontmatter(text) {
     let body = text || "";
     if (body.startsWith("---")) {
@@ -316,12 +317,22 @@ function buildExtractStats(t0, mergedMd, moduleOut, filesRoot, outputModulesDir,
 }
 
 export async function extractDocxToMarkdown(opts) {
-    const { filesRoot, sourcePath, onProgress, outputModulesDir, settings, modelsStore, promptsStore, useVlmRefine = true } = opts;
+    const { filesRoot, sourcePath, onProgress, outputModulesDir, settings, modelsStore, promptsStore, useVlmRefine = true, lineStart = null, lineEnd = null } = opts;
     const t0 = performance.now();
     onProgress?.("正在转换 Word 文档…");
     const { markdown: draft, warnings, imageRefs } = await convertDocxToMarkdown(filesRoot, sourcePath);
     let mergedMd = cleanPageMarkdown(draft);
     const allWarnings = [...warnings];
+    if (lineStart != null && lineEnd != null) {
+        const lines = draft.split(/\r?\n/);
+        const start = Math.max(1, lineStart);
+        const end = Math.min(Math.max(start, lineEnd), lines.length);
+        mergedMd = cleanPageMarkdown(lines.slice(start - 1, end).join("\n"));
+        if (!mergedMd.trim())
+            allWarnings.push(`Word 第 ${start}-${end} 行无内容`);
+    }
+    const refsForVlm = imageRefs.filter((ref) => mergedMd.includes(ref));
+    const vlmImageRefs = refsForVlm.length ? refsForVlm : collectImageRefsFromMarkdown(mergedMd);
     let statsExtra = { prepare_ms: performance.now() - t0 };
 
     if (useVlmRefine && mergedMd) {
@@ -332,7 +343,7 @@ export async function extractDocxToMarkdown(opts) {
             filesRoot,
             draftMd: mergedMd,
             sourceFormat: "docx",
-            imageRefs,
+            imageRefs: vlmImageRefs,
             onProgress,
         });
         mergedMd = cleanPageMarkdown(refined.markdown);
@@ -351,7 +362,8 @@ export async function extractDocxToMarkdown(opts) {
     const modulesDir = outputModulesDir || documentsModulesDirPath(filesRoot);
     fs.mkdirSync(modulesDir, { recursive: true });
     const stem = path.basename(sourcePath, path.extname(sourcePath)).replace(/[^\w.\u4e00-\u9fff-]+/g, "_").slice(0, 80);
-    const moduleOut = path.join(modulesDir, `merged_${stem}.md`);
+    const lineLabel = lineStart != null && lineEnd != null ? `_l${lineStart}-${lineEnd}` : "";
+    const moduleOut = path.join(modulesDir, `merged_${stem}${lineLabel}.md`);
     fs.writeFileSync(moduleOut, mergedMd, "utf-8");
     onProgress?.("Word 转换完成");
     const stats = buildExtractStats(t0, mergedMd, moduleOut, filesRoot, outputModulesDir, statsExtra);
@@ -359,19 +371,24 @@ export async function extractDocxToMarkdown(opts) {
 }
 
 export async function extractExcelToMarkdown(opts) {
-    const { filesRoot, sourcePath, sheetName, rowStart = 1, rowEnd, onProgress, outputModulesDir, settings, modelsStore, promptsStore, useVlmRefine = true } = opts;
+    const { filesRoot, sourcePath, sheetName, onProgress, outputModulesDir, settings, modelsStore, promptsStore, useVlmRefine = true } = opts;
     const t0 = performance.now();
     onProgress?.("正在转换 Excel…");
     const { markdown: draft, sheet, warnings } = convertExcelToMarkdown(sourcePath, {
         sheetName,
-        rowStart,
-        rowEnd: rowEnd ?? undefined,
+        rowStart: 1,
+        rowEnd: null,
     });
     let mergedMd = cleanPageMarkdown(draft);
     const allWarnings = [...warnings];
     let statsExtra = { prepare_ms: performance.now() - t0 };
 
-    if (useVlmRefine && mergedMd) {
+    const skipVlm = !useVlmRefine || !mergedMd || mergedMd.length > MAX_VLM_REFINE_CHARS;
+    if (useVlmRefine && mergedMd.length > MAX_VLM_REFINE_CHARS) {
+        allWarnings.push(`表格过大（约 ${mergedMd.length} 字符），已跳过模型整理`);
+    }
+
+    if (useVlmRefine && mergedMd && !skipVlm) {
         const refined = await refineMarkdownWithVlm({
             settings,
             modelsStore,
@@ -491,15 +508,13 @@ export async function extractSourceToMarkdown(opts) {
         });
     }
     if (fmt === "docx") {
-        return extractDocxToMarkdown(common);
+        const [lineStart, lineEnd] = opts.ranges?.[0] ?? [1, 99999];
+        return extractDocxToMarkdown({ ...common, lineStart, lineEnd });
     }
     if (fmt === "xlsx" || fmt === "xls" || fmt === "csv") {
-        const [rowStart, rowEnd] = opts.ranges?.[0] ?? [1, 99999];
         return extractExcelToMarkdown({
             ...common,
             sheetName: opts.sheetName,
-            rowStart,
-            rowEnd,
         });
     }
     if (fmt === "html" || fmt === "htm") {

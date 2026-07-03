@@ -2,7 +2,7 @@
   "data_hash": "a6e5b0f6a6798b0341d92cef2897c0c7f7b6391126086edc31237be76369214b",
   "embedding_model": "BAAI/bge-m3",
   "embedding_dim": "1024",
-  "built_at": "2026-07-01T06:47:36Z",
+  "built_at": "2026-07-02T02:33:12Z",
   "items": "154",
   "search_docs": "476",
   "holdout_docs": "154",

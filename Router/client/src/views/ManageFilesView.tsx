@@ -4,22 +4,25 @@ import DOMPurify from "dompurify";
 import { apiJson, sseStepText, streamDocumentExtract } from "../api/client";
 import { DocumentEditorPane, type DocumentContent } from "../components/DocumentEditorPane";
 import { MarkdownPreview } from "../components/MarkdownPreview";
-import { TimingsPanel, TokenPanel } from "../components/MetricsPanels";
+import { TimingsPanel, TokenPanel, EXTRACT_PHASE_LABELS } from "../components/MetricsPanels";
 import { Dropdown } from "../components/Dropdown";
 import { useAppUi } from "../context/AppUiContext";
 import type { AskTimings, FileTreeNode, ImportSelection } from "../types";
 import {
   UPLOAD_ACCEPT,
   canConvertKind,
-  canQuestionGenKind,
+  CONVERT_TOOLTIP,
   convertKindFor,
   defaultVlmRefineKind,
+  vlmRefineRecommendedKind,
   isEditableKind,
   isPreviewOnlyKind,
   kindLabel,
+  QUESTION_GEN_TOOLTIP,
 } from "../utils/documentTypes";
 import {
   LineViewer,
+  displayFileName,
   documentTextForLines,
   renderFileTreeNodes,
   sliceMarkdownLines,
@@ -39,17 +42,10 @@ export function ManageFilesView() {
   const [editMode, setEditMode] = useState<"source" | "preview">("source");
   const [extractOpen, setExtractOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [extractRanges, setExtractRanges] = useState([{ start: 1, end: 5 }]);
-  const [extractSheet, setExtractSheet] = useState("");
-  const [sheetNames, setSheetNames] = useState<string[]>([]);
-  const [useVlmRefine, setUseVlmRefine] = useState(true);
-  const [extractLog, setExtractLog] = useState<string[]>([]);
-  const [extractWarnings, setExtractWarnings] = useState<string[]>([]);
-  const [extractMetrics, setExtractMetrics] = useState<AskTimings | null>(null);
-  const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const extractProgressRef = useRef<HTMLDivElement>(null);
+  const [docLoading, setDocLoading] = useState(false);
+  const loadSeqRef = useRef(0);
 
   const loadTree = useCallback(async () => {
     const data = await apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree");
@@ -58,20 +54,14 @@ export function ManageFilesView() {
 
   useEffect(() => { void loadTree(); }, [loadTree]);
 
-  useEffect(() => {
-    const el = extractProgressRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [extractLog]);
-
-  const loadDocument = async (node: FileTreeNode) => {
+  const loadDocument = async (node: FileTreeNode, seq: number) => {
     if (node.kind === "source_pdf") {
-      setDocContent(null);
-      setMarkdown("");
+      if (seq !== loadSeqRef.current) return;
       setLoadedContent("");
-      setEditMode("preview");
       return;
     }
     const data = await apiJson<DocumentContent>(`/markdown-files/content?path=${encodeURIComponent(node.path!)}`);
+    if (seq !== loadSeqRef.current) return;
     const text = documentTextForLines(data);
     setDocContent(data);
     setMarkdown(text);
@@ -84,11 +74,18 @@ export function ManageFilesView() {
     if (selected?.path !== node.path && editable && markdown !== loadedContent) {
       if (!confirm("当前文件有未保存修改，切换文件将丢失。是否继续？")) return;
     }
+    const seq = ++loadSeqRef.current;
     setSelected({ path: node.path!, kind: node.kind || "", name: node.name });
+    setDocContent(null);
+    setMarkdown("");
+    setDocLoading(true);
+    setEditMode(node.kind === "source_pdf" || isPreviewOnlyKind(node.kind || "") ? "preview" : "source");
     try {
-      await loadDocument(node);
+      await loadDocument(node, seq);
     } catch (e) {
-      showToast((e as Error).message, "error");
+      if (seq === loadSeqRef.current) showToast((e as Error).message, "error");
+    } finally {
+      if (seq === loadSeqRef.current) setDocLoading(false);
     }
   };
 
@@ -207,92 +204,23 @@ export function ManageFilesView() {
     }
   };
 
-  const openExtract = async () => {
-    if (!selected) return;
-    setUseVlmRefine(defaultVlmRefineKind(selected.kind));
-    setExtractRanges([{ start: 1, end: 5 }]);
-    if (["source_xlsx", "source_xls", "source_csv"].includes(selected.kind)) {
-      try {
-        const data = await apiJson<{ sheets: string[] }>(`/documents/excel-sheets?filename=${encodeURIComponent(selected.name)}`);
-        setSheetNames(data.sheets || []);
-        setExtractSheet(data.sheets?.[0] || "");
-        setExtractRanges([{ start: 1, end: 100 }]);
-      } catch {
-        setSheetNames([]);
-        setExtractSheet("");
-      }
-    }
-    setExtractOpen(true);
-  };
-
-  const runExtract = async () => {
-    if (!selected?.path || extracting) return;
-    const filename = selected.path.split("/").pop() || selected.name;
-    const convertKind = convertKindFor(selected.kind);
-    setExtractLog([]);
-    setExtractWarnings([]);
-    setExtractMetrics(null);
-    setExtracting(true);
-    await new Promise<void>((r) => requestAnimationFrame(() => r()));
-    try {
-      const body: Record<string, unknown> = {
-        filename,
-        use_vlm_refine: useVlmRefine,
-      };
-      if (convertKind === "whole_doc") {
-        body.ranges = [[1, 99999]];
-      } else {
-        body.ranges = extractRanges.map((r) => [Math.max(1, r.start), Math.max(r.start, r.end)]);
-      }
-      if (convertKind === "sheet_rows" && extractSheet)
-        body.sheet_name = extractSheet;
-
-      await streamDocumentExtract(body, (evt) => {
-        if (evt.event === "log") {
-          const line = sseStepText(evt.data as Record<string, unknown>);
-          if (line) {
-            flushSync(() => {
-              setExtractLog((p) => [...p, line]);
-            });
-          }
-        }
-        if (evt.event === "done") {
-          const d = evt.data as {
-            markdown?: string;
-            path?: string;
-            module_path?: string;
-            timings?: AskTimings;
-            warnings?: string[];
-          };
-          const outPath = d.path || d.module_path || "";
-          if (d.markdown) { setMarkdown(d.markdown); setLoadedContent(d.markdown); }
-          if (d.warnings?.length) setExtractWarnings(d.warnings);
-          if (outPath) {
-            setSelected({ path: outPath, kind: "module_md", name: outPath.split("/").pop() || "" });
-            setDocContent({ path: outPath, kind: "module_md", markdown: d.markdown, editable: true });
-            setEditMode("source");
-          }
-          setExtractMetrics(d.timings || null);
-          setExtractOpen(false);
-          void loadTree();
-          showToast(d.warnings?.length ? "提取完成（有提示）" : "提取完成");
-        }
-        if (evt.event === "error") showToast(String((evt.data as { detail?: string }).detail || "错误"), "error");
-      });
-    } catch (e) {
-      showToast((e as Error).message, "error");
-    } finally {
-      setExtracting(false);
-    }
-  };
-
   const kind = selected?.kind || "";
   const previewOnly = isPreviewOnlyKind(kind);
   const editable = isEditableKind(kind);
-  const canConvert = selected ? canConvertKind(kind) : false;
-  const canQuestionGen = selected ? canQuestionGenKind(kind) : false;
-  const convertKind = selected ? convertKindFor(kind) : "";
   const lineCount = markdown ? markdown.split("\n").length : docContent?.line_count || 0;
+
+  const handleExtracted = (result: { path?: string; markdown?: string; module_path?: string }) => {
+    const outPath = result.path || result.module_path || "";
+    if (result.markdown) {
+      setMarkdown(result.markdown);
+      setLoadedContent(result.markdown);
+    }
+    if (outPath) {
+      setSelected({ path: outPath, kind: "module_md", name: outPath.split("/").pop() || "" });
+      setDocContent({ path: outPath, kind: "module_md", markdown: result.markdown, editable: true });
+      setEditMode("source");
+    }
+  };
 
   return (
     <div className="filesPage panel">
@@ -302,8 +230,8 @@ export function ManageFilesView() {
         </span>
         <span className="headActions">
           <button type="button" id="filesToolbarUpload" className={`btn btnXs primary${uploading ? " btnRunning" : ""}`} disabled={uploading} onClick={() => fileInputRef.current?.click()}>{uploading ? "上传中…" : "上传文件"}</button>
-          <button type="button" id="filesToolbarExtract" className="btn btnXs" disabled={!canConvert} onClick={() => void openExtract()}>文件转 Markdown</button>
-          <button type="button" id="filesToolbarGenerate" className="btn btnXs" disabled={!canQuestionGen} title={!canQuestionGen ? "PDF/Excel 需先转 Markdown" : ""} onClick={() => setGenerateOpen(true)}>问题生成</button>
+          <button type="button" id="filesToolbarExtract" className="btn btnXs" title={CONVERT_TOOLTIP} onClick={() => setExtractOpen(true)}>文件转 Markdown</button>
+          <button type="button" id="filesToolbarGenerate" className="btn btnXs" title={QUESTION_GEN_TOOLTIP} onClick={() => setGenerateOpen(true)}>问题生成</button>
           <button type="button" id="filesToolbarRefresh" className="btn btnXs ghost" onClick={() => void loadTree()}>刷新</button>
           <button type="button" id="filesMainSaveBtn" className="btn btnXs primary" disabled={!editable || !selected || saving} onClick={() => void saveMd()}>{saving ? "保存中…" : "保存"}</button>
           <Dropdown label="操作" primary={false}>
@@ -340,6 +268,7 @@ export function ManageFilesView() {
                 content={docContent}
                 editMode={editMode}
                 text={markdown}
+                loading={docLoading}
                 onChange={setMarkdown}
               />
             </div>
@@ -348,99 +277,25 @@ export function ManageFilesView() {
       </div>
       <input ref={fileInputRef} id="filesFileInput" type="file" accept={UPLOAD_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadFile(f); e.target.value = ""; }} />
 
-      {extractOpen && selected && (
-        <div className="modalOverlay" id="extractModalOverlay">
-          <div className="modal modalWide">
-            <div className="modalHead">
-              <span>文件转 Markdown</span>
-              <button type="button" id="extractModalCloseBtn" className="btn btnXs ghost" disabled={extracting} onClick={() => setExtractOpen(false)}>关闭</button>
-            </div>
-            <div className="modalBody">
-              <p className="extractFidelityNote muted">转换保留正文与图片，VLM 可提高可读性，不保证版式与原文件一致。</p>
-              <p id="extractModalFileLabel" className="muted">{selected.name}</p>
-              {convertKind === "pdf_pages" && (
-                <p className="muted extractVlmNote">PDF 提取已内置 VLM 版面整理。</p>
-              )}
-              {convertKind !== "pdf_pages" && convertKind !== "whole_doc" && defaultVlmRefineKind(selected.kind) && (
-                <label className="extractVlmToggle">
-                  <input type="checkbox" checked={useVlmRefine} disabled={extracting} onChange={(e) => setUseVlmRefine(e.target.checked)} />
-                  VLM 智能整理（推荐）
-                </label>
-              )}
-              {convertKind === "whole_doc" && (
-                <p className="muted">将转换整个 Word 文档为 Markdown。</p>
-              )}
-              {convertKind === "sheet_rows" && sheetNames.length > 0 && (
-                <label className="fieldLabel">工作表
-                  <select className="kbSelect" value={extractSheet} disabled={extracting} onChange={(e) => setExtractSheet(e.target.value)}>
-                    {sheetNames.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </label>
-              )}
-              {convertKind !== "whole_doc" && (
-                <div id="filesExtractRange" className="uploadRangeBlock">
-                  <div className="uploadRangeHead filesPdfRangeHead">
-                    <span className="uploadRangeTitle">
-                      {convertKind === "pdf_pages" ? "PDF 页码范围" : convertKind === "sheet_rows" ? "Excel 行范围" : "行范围"}
-                    </span>
-                    {convertKind !== "sheet_rows" && (
-                      <button type="button" className="btn btnXs ghost" disabled={extracting} onClick={() => setExtractRanges([...extractRanges, { start: extractRanges[extractRanges.length - 1].end + 1, end: extractRanges[extractRanges.length - 1].end + 3 }])}>+ 添加范围</button>
-                    )}
-                  </div>
-                  <div className="rangeList">
-                    {extractRanges.map((r, i) => (
-                      <div key={i} className="rangeRow">
-                        <span>从</span>
-                        <input type="number" value={r.start} min={1} disabled={extracting} onChange={(e) => { const n = [...extractRanges]; n[i].start = parseInt(e.target.value, 10); setExtractRanges(n); }} />
-                        <span>到</span>
-                        <input type="number" value={r.end} min={1} disabled={extracting} onChange={(e) => { const n = [...extractRanges]; n[i].end = parseInt(e.target.value, 10); setExtractRanges(n); }} />
-                        {extractRanges.length > 1 && convertKind !== "sheet_rows" && (
-                          <button type="button" className="btn btnXs ghost" disabled={extracting} onClick={() => setExtractRanges(extractRanges.filter((_, j) => j !== i))}>删除</button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <button
-                type="button"
-                id="filesExtractBtn"
-                className={`btn btnXs primary${extracting ? " btnRunning" : ""}`}
-                style={{ width: "100%", marginTop: 12 }}
-                disabled={extracting}
-                onClick={() => void runExtract()}
-              >
-                {extracting ? "转换中…" : "开始转换"}
-              </button>
-              {(extracting || extractLog.length > 0) && (
-                <div id="filesProgress" ref={extractProgressRef} className="importProgress importProgressModal">
-                  {extractLog.length > 0
-                    ? extractLog.map((line, i) => <div key={i} className="importLogLine">{line}</div>)
-                    : (extracting ? <div className="importLogLine">正在准备…</div> : null)}
-                </div>
-              )}
-              {extractWarnings.length > 0 && (
-                <div className="extractWarnings">
-                  {extractWarnings.map((w, i) => <p key={i} className="muted">{w}</p>)}
-                </div>
-              )}
-              <div className="workflowMetrics">
-                <div className="workflowMetricsHead muted">消耗时间</div>
-                <div id="extractModalTimingPanel" className="timingPanel"><TimingsPanel timings={extractMetrics} emptyText="转换完成后显示" mode="import" /></div>
-                <div className="workflowMetricsHead muted">消耗 Token</div>
-                <div id="extractModalTokenPanel" className="tokenPanel"><TokenPanel timings={extractMetrics} emptyText="转换完成后显示" /></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {extractOpen && (
+        <ExtractModal
+          open
+          onClose={() => setExtractOpen(false)}
+          initialPath={selected && canConvertKind(selected.kind) ? selected.path : ""}
+          initialKind={selected && canConvertKind(selected.kind) ? selected.kind : ""}
+          initialName={selected && canConvertKind(selected.kind) ? selected.name : ""}
+          onExtracted={handleExtracted}
+          onTreeReload={() => void loadTree()}
+        />
       )}
 
       {generateOpen && (
         <GenerateModal
           open
           onClose={() => setGenerateOpen(false)}
-          initialPath={canQuestionGen ? selected?.path : ""}
-          initialMarkdown={canQuestionGen ? markdown : ""}
+          initialPath={selected?.path || ""}
+          initialName={selected?.name || ""}
+          initialMarkdown={markdown}
           onCommitted={() => void loadTree()}
         />
       )}
@@ -448,8 +303,415 @@ export function ManageFilesView() {
   );
 }
 
-function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitted }: {
-  open: boolean; onClose: () => void; initialPath?: string; initialMarkdown?: string; onCommitted: () => void;
+type ExtractRange = { id: string; start: number; end: number };
+
+function newExtractRange(start: number, end: number): ExtractRange {
+  return { id: `r_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, start, end };
+}
+
+function extractHighlightProps(
+  ranges: ExtractRange[],
+  activeRangeId: string,
+) {
+  const active = ranges.find((r) => r.id === activeRangeId) || ranges[0];
+  if (!active) return {};
+  return {
+    lineStart: active.start,
+    lineEnd: active.end,
+    activeSelectionId: active.id,
+    selections: ranges.map((r) => ({ id: r.id, lineStart: r.start, lineEnd: r.end })),
+  };
+}
+
+function ExtractModal({
+  open,
+  onClose,
+  initialPath,
+  initialKind,
+  initialName,
+  onExtracted,
+  onTreeReload,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialPath?: string;
+  initialKind?: string;
+  initialName?: string;
+  onExtracted: (result: { path?: string; markdown?: string; module_path?: string }) => void;
+  onTreeReload: () => void;
+}) {
+  const { showToast } = useAppUi();
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [tree, setTree] = useState<FileTreeNode[]>([]);
+  const [path, setPath] = useState(initialPath || "");
+  const [fileKind, setFileKind] = useState(initialKind || "");
+  const [fileName, setFileName] = useState(initialName || "");
+  const [md, setMd] = useState("");
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"source" | "preview">("preview");
+  const [extractRanges, setExtractRanges] = useState<ExtractRange[]>([newExtractRange(1, 5)]);
+  const [activeRangeId, setActiveRangeId] = useState("");
+  const [extractSheet, setExtractSheet] = useState("");
+  const [sheetNames, setSheetNames] = useState<string[]>([]);
+  const [useVlmRefine, setUseVlmRefine] = useState(() => defaultVlmRefineKind(initialKind || ""));
+  const [extractLog, setExtractLog] = useState<string[]>([]);
+  const [extractWarnings, setExtractWarnings] = useState<string[]>([]);
+  const [extractErrors, setExtractErrors] = useState<string[]>([]);
+  const [extractMetrics, setExtractMetrics] = useState<AskTimings | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractDone, setExtractDone] = useState(false);
+
+  const convertKind = fileKind ? convertKindFor(fileKind) : "";
+  const showRangePicker = !!path && convertKind !== "whole_sheet";
+  const rangeTitle = convertKind === "pdf_pages" ? "页码范围" : "行范围";
+  const rangeUnit = convertKind === "pdf_pages" ? "页" : "行";
+  const highlight = extractHighlightProps(extractRanges, activeRangeId);
+
+  useEffect(() => {
+    if (!open) return;
+    setUseVlmRefine(defaultVlmRefineKind(initialKind || ""));
+    void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []));
+    if (initialPath) void selectModalFile(initialPath, initialKind || "", initialName || "");
+  }, [open, initialPath, initialKind, initialName]);
+
+  useEffect(() => {
+    const el = progressRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [extractLog, extractErrors, extractWarnings]);
+
+  const resetExtractProgress = () => {
+    setExtractLog([]);
+    setExtractWarnings([]);
+    setExtractErrors([]);
+    setExtractMetrics(null);
+    setExtractDone(false);
+  };
+
+  const loadPreview = async (p: string, kind: string) => {
+    if (kind === "source_pdf") {
+      setMd("");
+      setPreviewHtml(null);
+      setViewMode("preview");
+      return { lineCount: 0 };
+    }
+    const data = await apiJson<DocumentContent>(`/markdown-files/content?path=${encodeURIComponent(p)}`);
+    const text = documentTextForLines(data);
+    setMd(text);
+    setPreviewHtml(data.preview_html || null);
+    setViewMode(isPreviewOnlyKind(kind) ? "preview" : "source");
+    return { lineCount: text ? text.split("\n").length : (data.line_count || 0) };
+  };
+
+  const setupRangesForKind = async (
+    kind: string,
+    name: string,
+    lineCount = 0,
+    caps?: FileTreeNode["capabilities"],
+  ) => {
+    setUseVlmRefine(defaultVlmRefineKind(kind, caps));
+    if (["source_xlsx", "source_xls", "source_csv"].includes(kind)) {
+      try {
+        const data = await apiJson<{ sheets: string[] }>(`/documents/excel-sheets?filename=${encodeURIComponent(name)}`);
+        setSheetNames(data.sheets || []);
+        setExtractSheet(data.sheets?.[0] || "");
+      } catch {
+        setSheetNames([]);
+        setExtractSheet("");
+      }
+      setExtractRanges([]);
+      setActiveRangeId("");
+      return;
+    }
+    setSheetNames([]);
+    setExtractSheet("");
+    const end = Math.min(5, lineCount || 5);
+    const first = newExtractRange(1, end);
+    setExtractRanges([first]);
+    setActiveRangeId(first.id);
+  };
+
+  const selectModalFile = async (
+    p: string,
+    kind: string,
+    name: string,
+    caps?: FileTreeNode["capabilities"],
+  ) => {
+    if (!canConvertKind(kind)) {
+      showToast("该文件类型不可转换", "error");
+      return;
+    }
+    setPath(p);
+    setFileKind(kind);
+    setFileName(name);
+    setMd("");
+    setPreviewHtml(null);
+    resetExtractProgress();
+    try {
+      const preview = await loadPreview(p, kind);
+      await setupRangesForKind(kind, name, preview.lineCount, caps);
+    } catch (e) {
+      showToast((e as Error).message, "error");
+    }
+  };
+
+  const runExtract = async () => {
+    if (!path || !fileKind || extracting) return;
+    if (!canConvertKind(fileKind)) return showToast("请选择可转换的文件", "error");
+    const filename = path.split("/").pop() || fileName;
+    resetExtractProgress();
+    setExtracting(true);
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    try {
+      const body: Record<string, unknown> = {
+        filename,
+        use_vlm_refine: useVlmRefine,
+      };
+      if (convertKind === "whole_sheet") {
+        body.ranges = [[1, 99999]];
+        if (extractSheet) body.sheet_name = extractSheet;
+      } else {
+        body.ranges = extractRanges.map((r) => [Math.max(1, r.start), Math.max(r.start, r.end)]);
+      }
+
+      await streamDocumentExtract(body, (evt) => {
+        if (evt.event === "log") {
+          const line = sseStepText(evt.data as Record<string, unknown>);
+          if (line) {
+            flushSync(() => setExtractLog((prev) => [...prev, line]));
+          }
+        }
+        if (evt.event === "error") {
+          const msg = String((evt.data as { detail?: string }).detail || "转换失败");
+          flushSync(() => setExtractErrors((prev) => [...prev, msg]));
+        }
+        if (evt.event === "done") {
+          const d = evt.data as {
+            markdown?: string;
+            path?: string;
+            module_path?: string;
+            timings?: AskTimings;
+            tokens?: AskTimings["tokens"];
+            token_breakdown?: AskTimings["token_breakdown"];
+            warnings?: string[];
+          };
+          if (d.warnings?.length) setExtractWarnings(d.warnings);
+          const timings = d.timings
+            ? {
+                ...d.timings,
+                tokens: d.timings.tokens ?? d.tokens,
+                token_breakdown: d.timings.token_breakdown ?? d.token_breakdown,
+              }
+            : null;
+          setExtractMetrics(timings);
+          setExtractDone(true);
+          onExtracted(d);
+          onTreeReload();
+          showToast("提取完成");
+        }
+      });
+    } catch (e) {
+      const msg = (e as Error).message;
+      setExtractErrors((prev) => [...prev, msg]);
+      showToast(msg, "error");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="modalOverlay" id="extractModalOverlay">
+      <div className="modal modalWide modalTall workflowModalFixed">
+        <div className="modalHead">
+          <span>文件转 Markdown</span>
+          <span className="headActions">
+            <button
+              type="button"
+              id="filesExtractBtn"
+              className={`btn btnXs primary${extracting ? " btnRunning" : ""}`}
+              disabled={extracting || !path || !canConvertKind(fileKind)}
+              onClick={() => void runExtract()}
+            >
+              {extracting ? "转换中…" : "转换"}
+            </button>
+            <button type="button" id="extractModalCloseBtn" className="btn btnXs ghost" disabled={extracting} onClick={onClose}>关闭</button>
+          </span>
+        </div>
+        <div className="modalBody generateModalBody">
+          <p className="extractFidelityNote muted">转换保留正文与图片，模型整理可提高可读性，不保证版式与原文件一致。</p>
+          <div className="generateToolbar stripHead modalToolbarRow">
+            <button type="button" id="extractRefreshTreeBtn" className="btn btnXs ghost" onClick={() => void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []))}>刷新文件</button>
+            <span id="extractModalFileLabel" className="muted generateFileLabel">{displayFileName(path, fileName) || "未选择文件"}</span>
+          </div>
+          <div className="modalToolbarDivider" />
+          <div className="uploadSelectLayout generateLayout extractModalLayout workflowModalBody">
+            <aside className="generateTreeCol">
+              <div className="stripHead"><span>文件</span></div>
+              <div id="extractFileTree" className="fileTree scrollInner">
+                {renderFileTreeNodes(tree, path, (n) => { if (n.path && n.kind) void selectModalFile(n.path, n.kind, n.name, n.capabilities); }, "convert")}
+              </div>
+            </aside>
+            <aside className="uploadSelectLeft extractRangeCol">
+              {path && (
+                <label className="extractVlmToggle">
+                  <input type="checkbox" checked={useVlmRefine} disabled={extracting} onChange={(e) => setUseVlmRefine(e.target.checked)} />
+                  模型智能整理{vlmRefineRecommendedKind(fileKind) ? "（推荐）" : ""}
+                </label>
+              )}
+              {convertKind === "pdf_pages" && (
+                <p className="muted extractVlmNote">PDF 提取已内置版面整理，上方选项对 PDF 不生效。</p>
+              )}
+              {fileKind === "source_docx" && (
+                <p className="muted extractVlmNote">Word 按 Markdown 行号选段；含图片段落以链接形式保留。</p>
+              )}
+              {convertKind === "whole_sheet" && (
+                <>
+                  <p className="muted">将转换整个工作表为 Markdown 表格，通常无需模型整理。</p>
+                  {sheetNames.length > 0 && (
+                    <label className="fieldLabel">工作表
+                      <select className="kbSelect" value={extractSheet} disabled={extracting} onChange={(e) => setExtractSheet(e.target.value)}>
+                        {sheetNames.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </label>
+                  )}
+                </>
+              )}
+              {showRangePicker && (
+                <div id="filesExtractRange" className="uploadRangeBlock extractRangeBlock">
+                  <div className="uploadRangeHead filesPdfRangeHead">
+                    <span className="uploadRangeTitle">{rangeTitle}</span>
+                    <button
+                      type="button"
+                      className="btn btnXs ghost"
+                      disabled={extracting}
+                      onClick={() => {
+                        const last = extractRanges[extractRanges.length - 1];
+                        const next = newExtractRange(last ? last.end + 1 : 1, last ? last.end + 3 : 5);
+                        setExtractRanges([...extractRanges, next]);
+                        setActiveRangeId(next.id);
+                      }}
+                    >
+                      + 添加范围
+                    </button>
+                  </div>
+                  <div className="extractRangeList">
+                    {extractRanges.map((r) => (
+                      <div
+                        key={r.id}
+                        className={`extractRangeCard${activeRangeId === r.id ? " active" : ""}`}
+                        onClick={() => {
+                          setActiveRangeId(r.id);
+                          if (fileKind !== "source_pdf") setViewMode("source");
+                        }}
+                      >
+                        <div className="extractRangeCardMain">
+                          <span>从</span>
+                          <input
+                            type="number"
+                            value={r.start}
+                            min={1}
+                            disabled={extracting}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              setExtractRanges(extractRanges.map((x) => (x.id === r.id ? { ...x, start: val } : x)));
+                            }}
+                          />
+                          <span>到</span>
+                          <input
+                            type="number"
+                            value={r.end}
+                            min={1}
+                            disabled={extracting}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              setExtractRanges(extractRanges.map((x) => (x.id === r.id ? { ...x, end: val } : x)));
+                            }}
+                          />
+                          <span className="muted">{rangeUnit}</span>
+                        </div>
+                        {extractRanges.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btnXs ghost extractRangeCardDelete"
+                            disabled={extracting}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const next = extractRanges.filter((x) => x.id !== r.id);
+                              setExtractRanges(next);
+                              if (activeRangeId === r.id) setActiveRangeId(next[0]?.id || "");
+                            }}
+                          >
+                            删除
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {!path && <p className="muted extractRangeEmpty">请从左侧选择要转换的文件</p>}
+            </aside>
+            <section className="uploadSelectRight generateMdCol">
+              <div className="stripHead generateMdHead">
+                <span>文件内容</span>
+                <div className="segmented generateMdTabs">
+                  <button type="button" className={`segmentedBtn${viewMode === "source" ? " active" : ""}`} onClick={() => setViewMode("source")}>源码</button>
+                  <button type="button" className={`segmentedBtn${viewMode === "preview" ? " active" : ""}`} onClick={() => setViewMode("preview")}>预览</button>
+                </div>
+              </div>
+              <div id="extractMdViewer" className="generateMdViewer scrollInner">
+                {!path ? (
+                  <div className="muted filesEmptyHint">从左侧选择文件…</div>
+                ) : fileKind === "source_pdf" && viewMode === "preview" ? (
+                  <iframe title={fileName} className="filesPdfPreview" src={`/documents/preview-file?path=${encodeURIComponent(path)}`} />
+                ) : viewMode === "source" ? (
+                  <LineViewer
+                    markdown={md}
+                    lineStart={highlight.lineStart}
+                    lineEnd={highlight.lineEnd}
+                    activeSelectionId={highlight.activeSelectionId}
+                    selections={highlight.selections}
+                  />
+                ) : fileKind === "source_json" ? (
+                  <pre className="jsonPreview">{md}</pre>
+                ) : previewHtml ? (
+                  <div className="docPreviewHtml mdPreview" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }} />
+                ) : md ? (
+                  <div className="generateMdPreview mdPreview"><MarkdownPreview md={md} kbId="documents" /></div>
+                ) : (
+                  <div className="muted filesEmptyHint">暂无预览内容</div>
+                )}
+              </div>
+            </section>
+          </div>
+          {(extracting || extractLog.length > 0 || extractErrors.length > 0 || extractWarnings.length > 0 || extractDone) && (
+            <div id="filesProgress" ref={progressRef} className="importProgress importProgressModal extractProgressPanel">
+              {extractLog.map((line, i) => <div key={`log-${i}`} className="importLogLine">{line}</div>)}
+              {extractErrors.map((line, i) => <div key={`err-${i}`} className="importLogLine extractLogError">{line}</div>)}
+              {extractWarnings.map((line, i) => <div key={`warn-${i}`} className="importLogLine extractLogWarn">{line}</div>)}
+              {extracting && extractLog.length === 0 && <div className="importLogLine">正在准备…</div>}
+              {extractDone && !extracting && <div className="importLogLine extractLogDone">转换完成</div>}
+            </div>
+          )}
+          {(extractDone || extractMetrics) && (
+            <div className="workflowMetrics">
+              <div className="workflowMetricsHead muted">消耗时间</div>
+              <div id="extractModalTimingPanel" className="timingPanel"><TimingsPanel timings={extractMetrics} emptyText="转换完成后显示" mode="extract" /></div>
+              <div className="workflowMetricsHead muted">消耗 Token</div>
+              <div id="extractModalTokenPanel" className="tokenPanel"><TokenPanel timings={extractMetrics} emptyText="转换完成后显示" phaseLabels={EXTRACT_PHASE_LABELS} /></div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdown, onCommitted }: {
+  open: boolean; onClose: () => void; initialPath?: string; initialName?: string; initialMarkdown?: string; onCommitted: () => void;
 }) {
   const { showToast } = useAppUi();
   const { kbMap } = useKnowledgeBases();
@@ -458,6 +720,7 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
   const [llmKbId, setLlmKbId] = useState("");
   const [ragKbId, setRagKbId] = useState("");
   const [path, setPath] = useState(initialPath || "");
+  const [fileName, setFileName] = useState(initialName || "");
   const [md, setMd] = useState(initialMarkdown || "");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [fileKindState, setFileKindState] = useState("");
@@ -479,10 +742,12 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
     void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []));
     if (!llmKbId && kbIds.length) setLlmKbId(kbIds[0]);
     if (!ragKbId && ragKbIds.length) setRagKbId(ragKbIds[0]);
-    if (initialPath) void loadDocumentText(initialPath, initialMarkdown);
-  }, [open, initialPath, initialMarkdown, kbIds.length, ragKbIds.length]);
+    if (initialPath) void loadDocumentText(initialPath, initialMarkdown, initialName);
+  }, [open, initialPath, initialName, initialMarkdown, kbIds.length, ragKbIds.length]);
 
-  const loadDocumentText = async (p: string, fallbackMd?: string) => {
+  const loadDocumentText = async (p: string, fallbackMd?: string, name?: string) => {
+    setMd("");
+    setPreviewHtml(null);
     try {
       const data = await apiJson<DocumentContent>(`/markdown-files/content?path=${encodeURIComponent(p)}`);
       const text = documentTextForLines(data);
@@ -490,6 +755,7 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
       setPreviewHtml(data.preview_html || null);
       setFileKindState(data.kind || "");
       setPath(p);
+      setFileName(name || data.display_name || displayFileName(p));
       const lc = text.split("\n").length;
       setLineEnd(Math.min(10, lc || 10));
     } catch (e) {
@@ -564,7 +830,7 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
 
   return (
     <div className="modalOverlay" id="generateModalOverlay">
-      <div className="modal modalWide modalTall">
+      <div className="modal modalWide modalTall workflowModalFixed">
         <div className="modalHead">
           <span>问题生成</span>
           <button type="button" id="generateModalCloseBtn" className="btn btnXs ghost" disabled={importing || !!generatingId} onClick={onClose}>关闭</button>
@@ -581,7 +847,7 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
           {fileKindState === "source_docx" && (
             <p className="muted generateDocxHint">Word 文本提取用于选行；含图片段落以 Markdown 链接形式保留。</p>
           )}
-          <div className="generateToolbar stripHead" style={{ border: "none", padding: "0 0 10px" }}>
+          <div className="generateToolbar stripHead modalToolbarRow">
             {importLlm && (
               <label className="kbSelectLabel">问答模型 KB<select className="kbSelect" value={llmKbId} onChange={(e) => setLlmKbId(e.target.value)}>{kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>)}</select></label>
             )}
@@ -589,36 +855,48 @@ function GenerateModal({ open, onClose, initialPath, initialMarkdown, onCommitte
               <label className="kbSelectLabel">RAG KB<select className="kbSelect" value={ragKbId} onChange={(e) => setRagKbId(e.target.value)}>{ragKbIds.map((id) => <option key={id} value={id}>{ragKbMap[id]?.name || id}</option>)}</select></label>
             )}
             <button type="button" id="generateRefreshTreeBtn" className="btn btnXs ghost" onClick={() => void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []))}>刷新文件</button>
-            <span id="generateFileLabel" className="muted generateFileLabel">{path ? path.split("/").pop() : "未选择文件"}</span>
+            <span id="generateFileLabel" className="muted generateFileLabel">{displayFileName(path, fileName) || "未选择文件"}</span>
             <span className="headActions" style={{ marginLeft: "auto" }}>
               <button type="button" id="generateCommitBtn" className={`btn btnXs primary${importing ? " btnRunning" : ""}`} disabled={importing || !!generatingId} onClick={() => void commit()}>{importing ? "导入中…" : "导入"}</button>
             </span>
           </div>
-          <div className="uploadSelectLayout generateLayout generateModalLayout">
+          <div className="modalToolbarDivider" />
+          <div className="uploadSelectLayout generateLayout generateModalLayout workflowModalBody">
             <aside className="generateTreeCol">
               <div className="stripHead"><span>文件</span></div>
-              <div id="generateFileTree" className="fileTree scrollInner">{renderFileTreeNodes(tree, path, (n) => { if (n.path) void loadDocumentText(n.path); }, true)}</div>
+              <div id="generateFileTree" className="fileTree scrollInner">{renderFileTreeNodes(tree, path, (n) => { if (n.path) void loadDocumentText(n.path, undefined, n.name); }, "questionGen")}</div>
             </aside>
-            <aside className="uploadSelectLeft">
+            <aside className="uploadSelectLeft generateRangeCol">
               <div className="uploadPhaseHead stripHead">
                 <span className="uploadPhaseTitle">选择行范围</span>
                 <button type="button" id="generateAddSelectionBtn" className="btn btnXs primary" disabled={importing || !!generatingId} onClick={addSelection}>添加选择</button>
               </div>
-              <div className="rangeRow">
+              <div className="generateRangeRow">
                 <input type="number" id="generateSelLineStart" value={lineStart} min={1} onChange={(e) => setLineStart(parseInt(e.target.value, 10))} />
                 <span>–</span>
                 <input type="number" id="generateSelLineEnd" value={lineEnd} min={1} onChange={(e) => setLineEnd(parseInt(e.target.value, 10))} />
               </div>
               <div id="generateSelectionsList" className="uploadSelectionsList">
                 {selections.map((s) => (
-                  <div key={s.id} className={`uploadSelectionCard${activeSelectionId === s.id ? " active" : ""}`}>
+                  <div
+                    key={s.id}
+                    className={`uploadSelectionCard${activeSelectionId === s.id ? " active" : ""}`}
+                    onClick={() => { setActiveSelectionId(s.id); setMdViewMode("source"); }}
+                  >
                     <div className="uploadSelectionHead">
                       <span className="uploadSelectionTitle">第 {s.lineStart}–{s.lineEnd} 行</span>
-                      <span className="uploadSelectionActions">
-                        <button type="button" className="btn btnXs ghost" onClick={() => setActiveSelectionId(s.id)} disabled={!!generatingId || importing}>高亮</button>
-                        <button type="button" className={`btn btnXs primary${generatingId === s.id ? " btnRunning" : ""}`} disabled={!!generatingId || importing} onClick={() => void autoGenerate(s)}>{generatingId === s.id ? "生成中…" : "自动生成问法"}</button>
-                        <button type="button" className="btn btnXs ghost" onClick={() => removeSelection(s.id)} disabled={!!generatingId || importing}>删除</button>
-                      </span>
+                      <button
+                        type="button"
+                        className="btn btnXs ghost uploadSelectionDelete"
+                        onClick={(e) => { e.stopPropagation(); removeSelection(s.id); }}
+                        disabled={!!generatingId || importing}
+                      >
+                        删除
+                      </button>
+                    </div>
+                    <div className="uploadSelectionActions">
+                      <button type="button" className="btn btnXs ghost" onClick={(e) => { e.stopPropagation(); setActiveSelectionId(s.id); setMdViewMode("source"); }} disabled={!!generatingId || importing}>高亮</button>
+                      <button type="button" className={`btn btnXs primary${generatingId === s.id ? " btnRunning" : ""}`} disabled={!!generatingId || importing} onClick={(e) => { e.stopPropagation(); void autoGenerate(s); }}>{generatingId === s.id ? "生成中…" : "自动生成问法"}</button>
                     </div>
                     <label className="fieldLabel uploadSelectionField">标准问题
                       <input className="settingsInput importSelQuestion" value={s.question} placeholder="输入标准问题" onChange={(e) => updateSelection(s.id, { question: e.target.value })} />

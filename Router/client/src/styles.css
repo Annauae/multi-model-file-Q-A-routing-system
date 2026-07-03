@@ -405,6 +405,95 @@ body {
   font-weight: 500;
 }
 .modalTall { width: min(960px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.workflowModalFixed {
+  width: min(1120px, 98vw) !important;
+  height: min(720px, 88vh);
+  min-height: min(720px, 88vh);
+  max-height: min(720px, 88vh);
+}
+.workflowModalFixed .modalBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.workflowModalBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.modalToolbarRow {
+  border: none !important;
+  padding: 0 0 10px !important;
+  margin-bottom: 0;
+}
+.modalToolbarDivider {
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 12px;
+}
+.extractRangeCol {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 10px;
+  gap: 10px;
+}
+.extractRangeBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.extractRangeList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px 12px;
+  overflow: auto;
+  flex: 1;
+}
+.extractRangeCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.extractRangeCardMain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.extractRangeCard .extractRangeCardDelete {
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.extractRangeCard:hover {
+  border-color: #93c5fd;
+}
+.extractRangeCard.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+}
+.extractRangeCard input[type="number"] {
+  width: 44px;
+  padding: 2px 4px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.extractRangeEmpty {
+  text-align: center;
+  padding: 24px 8px;
+}
 .modalTall .modalBody {
   flex: 1;
   min-height: 0;
@@ -487,7 +576,9 @@ body {
   border-right: 1px solid var(--border);
   font-family: var(--mono);
   font-size: 12px;
+  line-height: 20px;
   user-select: none;
+  box-sizing: border-box;
 }
 .mdSourceLineNo {
   height: 20px;
@@ -495,6 +586,8 @@ body {
   text-align: right;
   padding: 0 8px;
   color: var(--text-muted);
+  font-size: 12px;
+  box-sizing: border-box;
 }
 .mdSourceTextarea {
   flex: 1;
@@ -505,16 +598,25 @@ body {
   resize: none;
   padding: 8px 12px;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 20px;
   background: transparent;
   box-sizing: border-box;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: auto;
+  tab-size: 2;
 }
 .mdSourceTextareaWithGutter {
   min-height: 0;
+  padding: 0 12px;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 .filesEditBody .mdSourceEditor {
-  height: 100%;
+  height: auto;
+  flex: 1;
+  min-height: 0;
   border: none;
   border-radius: 0;
 }
@@ -533,8 +635,32 @@ body {
 }
 .generateModalLayout {
   flex: 1;
-  min-height: 280px;
+  min-height: 0;
   max-height: none;
+  height: 100%;
+}
+.extractModalLayout {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+}
+#extractModalOverlay .modal {
+  width: min(1120px, 98vw);
+}
+.extractProgressPanel {
+  margin-top: 12px;
+  max-height: 160px;
+}
+.extractLogError {
+  color: #c0392b;
+}
+.extractLogWarn {
+  color: var(--text-secondary);
+}
+.extractLogDone {
+  color: #1a7f37;
+  font-weight: 600;
 }
 #generateModalOverlay .modal {
   width: min(1120px, 98vw);
@@ -640,8 +766,24 @@ body {
   overflow: hidden;
   padding: 12px 16px;
 }
-.uploadEditPane { flex: 1; min-height: 0; overflow: auto; display: none; }
-.uploadEditPane.active { display: block; }
+.uploadEditPane { flex: 1; min-height: 0; overflow: hidden; display: none; }
+.uploadEditPane.active { display: flex; flex-direction: column; min-height: 0; }
+.filesEditBody .uploadEditPane.active { overflow: hidden; }
+.filesEditBody .uploadEditPane.active .mdSourceEditor,
+.filesEditBody .uploadEditPane.active .jsonPreview,
+.filesEditBody .uploadEditPane.active .mdPreview,
+.filesEditBody .uploadEditPane.active .docPreviewHtml,
+.filesEditBody .uploadEditPane.active .filesMdPreviewPane,
+.filesEditBody .uploadEditPane.active .filesPdfPreview {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+.filesEditBody .uploadEditPane.active .mdPreview,
+.filesEditBody .uploadEditPane.active .filesMdPreviewPane {
+  padding: 16px;
+}
 .uploadEditTextarea {
   width: 100%;
   height: 100%;
@@ -847,24 +989,112 @@ body {
   background: #fafbfc;
   font-family: var(--mono);
   font-size: 12px;
+  line-height: 20px;
 }
-.mdLineRow { display: flex; gap: 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.mdLineRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  min-height: 20px;
+  min-width: min-content;
+}
 .mdLineRow:last-child { border-bottom: none; }
 .mdLineNo {
   flex: 0 0 48px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
   text-align: right;
-  padding: 2px 8px;
+  padding: 0 8px;
   color: var(--text-muted);
   user-select: none;
-  background: rgba(0,0,0,0.03);
+  background: #f3f4f6;
   border-right: 1px solid var(--border);
+  line-height: 20px;
+  min-height: 20px;
+  box-sizing: border-box;
 }
-.mdLineContent { flex: 1; padding: 2px 10px; min-width: 0; word-break: break-word; }
+.mdLineContent {
+  flex: 1;
+  padding: 0 10px;
+  min-width: 0;
+  white-space: pre;
+  line-height: 20px;
+  box-sizing: border-box;
+}
 .mdLineContent code { white-space: pre-wrap; font-family: inherit; background: transparent; }
 .mdLineActive { background: rgba(37, 99, 235, 0.14); }
 .mdLineSelected { background: rgba(37, 99, 235, 0.08); }
 .mdLineDimmed { opacity: 0.45; }
 .uploadSelectionsList { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; flex: 1; min-height: 0; overflow: auto; }
+.generateRangeCol {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 10px;
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+.generateRangeCol .uploadPhaseHead {
+  padding: 0 4px;
+}
+.generateRangeCol .generateRangeRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 4px;
+  width: 100%;
+}
+.generateRangeCol .generateRangeRow input {
+  width: 44px;
+  padding: 2px 4px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.generateRangeCol .uploadSelectionsList {
+  align-items: center;
+  padding: 8px 4px 12px;
+}
+.generateRangeCol .uploadSelectionCard {
+  width: 100%;
+  max-width: 300px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  cursor: pointer;
+}
+.generateRangeCol .uploadSelectionCard.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+}
+.generateRangeCol .uploadSelectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.generateRangeCol .uploadSelectionTitle {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.generateRangeCol .uploadSelectionDelete {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.generateRangeCol .uploadSelectionActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 .uploadSelectionCard {
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1386,13 +1616,27 @@ body {
 .filesEditorCol { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .filesEditBody { flex: 1; min-height: 0; }
 .filesPdfHint { padding: 12px 16px; font-size: 13px; }
-.filesPdfPreview { width: 100%; height: min(70vh, 720px); border: 0; background: var(--bg-muted); }
+.filesPdfPreview { width: 100%; height: 100%; min-height: 0; border: 0; background: var(--bg-muted); }
+.workflowModalFixed .generateMdViewer .filesPdfPreview {
+  min-height: 100%;
+}
+.filesPreviewWarn { padding: 8px 16px; font-size: 12px; margin: 0; }
 .docPreviewHtml { padding: 16px; overflow: auto; max-height: 100%; }
 .docPreviewHtml table.docPreviewTable { border-collapse: collapse; width: 100%; font-size: 13px; }
 .docPreviewHtml table.docPreviewTable th,
 .docPreviewHtml table.docPreviewTable td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
 .docPreviewHtml table.docPreviewTable th { background: var(--bg-muted); }
-.jsonPreview { margin: 0; padding: 16px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; overflow: auto; max-height: 100%; }
+.jsonPreview {
+  margin: 0;
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: pre;
+  overflow: auto;
+  max-height: 100%;
+  tab-size: 2;
+}
 .extractFidelityNote { font-size: 12px; margin: 0 0 8px; }
 .extractVlmToggle { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; }
 .extractVlmNote { font-size: 12px; margin: 4px 0 8px; }
@@ -1477,11 +1721,11 @@ body {
 .generateMdViewer .mdLineViewer {
   max-height: none;
   border: 1px solid var(--border);
-  overflow: visible;
+  overflow: auto;
 }
 .generateMdPreview {
   padding: 4px 2px 16px;
-  min-height: min-content;
+  min-height: 0;
 }
 .fileTree { font-size: 13px; }
 .fileTreeToggle {

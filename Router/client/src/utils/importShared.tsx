@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FileTreeNode } from "../types";
-import { canQuestionGenKind, kindLabel } from "./documentTypes";
+import { canConvertKind, canQuestionGenKind, kindLabel } from "./documentTypes";
 
 function isFolder(node: FileTreeNode) {
   return node.type === "folder" || !!(node.children && node.children.length);
@@ -24,24 +24,37 @@ export function filterTreeMarkdownOnly(nodes: FileTreeNode[]): FileTreeNode[] {
   return filterTreeQuestionGenEligible(nodes);
 }
 
+export function filterTreeConvertEligible(nodes: FileTreeNode[]): FileTreeNode[] {
+  const out: FileTreeNode[] = [];
+  for (const node of nodes || []) {
+    if (isFolder(node)) {
+      const children = filterTreeConvertEligible(node.children || []);
+      if (children.length) out.push({ ...node, children });
+    } else if (node.kind && canConvertKind(node.kind)) {
+      out.push(node);
+    }
+  }
+  return out;
+}
+
 function FileTreeFolder({
   node,
   depth,
   selectedPath,
   onSelect,
-  mdOnly,
+  treeFilter,
 }: {
   node: FileTreeNode;
   depth: number;
   selectedPath: string;
   onSelect: (node: FileTreeNode) => void;
-  mdOnly: boolean;
+  treeFilter: "all" | "questionGen" | "convert";
 }) {
   const [expanded, setExpanded] = useState(true);
   const pad = depth * 14;
   const children = (node.children || [])
     .map((c) => (
-      <FileTreeNodeView key={`${node.name}/${c.name}/${c.path || ""}`} node={c} depth={depth + 1} selectedPath={selectedPath} onSelect={onSelect} mdOnly={mdOnly} />
+      <FileTreeNodeView key={`${node.name}/${c.name}/${c.path || ""}`} node={c} depth={depth + 1} selectedPath={selectedPath} onSelect={onSelect} treeFilter={treeFilter} />
     ))
     .filter(Boolean);
 
@@ -65,17 +78,18 @@ function FileTreeNodeView({
   depth,
   selectedPath,
   onSelect,
-  mdOnly,
+  treeFilter,
 }: {
   node: FileTreeNode;
   depth: number;
   selectedPath: string;
   onSelect: (node: FileTreeNode) => void;
-  mdOnly: boolean;
+  treeFilter: "all" | "questionGen" | "convert";
 }) {
-  if (mdOnly && node.kind && !canQuestionGenKind(node.kind)) return null;
+  if (treeFilter === "questionGen" && node.kind && !canQuestionGenKind(node.kind)) return null;
+  if (treeFilter === "convert" && node.kind && !canConvertKind(node.kind)) return null;
   if (isFolder(node)) {
-    return <FileTreeFolder node={node} depth={depth} selectedPath={selectedPath} onSelect={onSelect} mdOnly={mdOnly} />;
+    return <FileTreeFolder node={node} depth={depth} selectedPath={selectedPath} onSelect={onSelect} treeFilter={treeFilter} />;
   }
   const pad = depth * 14 + 18;
   const label = kindLabel(node.kind || "");
@@ -97,11 +111,20 @@ function FileTreeNodeView({
   );
 }
 
-export function renderFileTreeNodes(nodes: FileTreeNode[], selectedPath: string, onSelect: (node: FileTreeNode) => void, mdOnly = false) {
-  const list = mdOnly ? filterTreeQuestionGenEligible(nodes) : nodes;
+export function renderFileTreeNodes(
+  nodes: FileTreeNode[],
+  selectedPath: string,
+  onSelect: (node: FileTreeNode) => void,
+  treeFilter: "all" | "questionGen" | "convert" = "all",
+) {
+  const list = treeFilter === "questionGen"
+    ? filterTreeQuestionGenEligible(nodes)
+    : treeFilter === "convert"
+      ? filterTreeConvertEligible(nodes)
+      : nodes;
   if (!list.length) return <div className="empty muted">暂无文件</div>;
   return list.map((node) => (
-    <FileTreeNodeView key={`${node.name}/${node.path || "folder"}`} node={node} depth={0} selectedPath={selectedPath} onSelect={onSelect} mdOnly={mdOnly} />
+    <FileTreeNodeView key={`${node.name}/${node.path || "folder"}`} node={node} depth={0} selectedPath={selectedPath} onSelect={onSelect} treeFilter={treeFilter} />
   ));
 }
 
@@ -112,7 +135,7 @@ export function LineViewer({ markdown, lineStart, lineEnd, activeSelectionId, se
   activeSelectionId?: string;
   selections?: { id: string; lineStart: number; lineEnd: number }[];
 }) {
-  const lines = markdown.split("\n");
+  const lines = markdown.split(/\r?\n/);
   return (
     <div className="mdLineViewer">
       {lines.map((line, i) => {
@@ -136,13 +159,32 @@ export function LineViewer({ markdown, lineStart, lineEnd, activeSelectionId, se
 export const MdLineViewer = LineViewer;
 
 export function sliceMarkdownLines(markdown: string, start: number, end: number): string {
-  const lines = markdown.split("\n");
+  const lines = markdown.split(/\r?\n/);
   return lines.slice(Math.max(0, start - 1), end).join("\n");
 }
 
 export function documentTextForLines(doc: { content?: string | null; markdown?: string; text_lines?: string[] }): string {
   if (doc.text_lines?.length) return doc.text_lines.join("\n");
   return doc.content ?? doc.markdown ?? "";
+}
+
+/** 修正 multer latin1 误解码导致的中文文件名乱码（仅用于展示） */
+export function tryFixMojibakeFilename(name: string): string {
+  if (/[\u4e00-\u9fff]/.test(name)) return name;
+  try {
+    const bytes = Uint8Array.from(name, (c) => c.charCodeAt(0) & 0xff);
+    const decoded = new TextDecoder("utf-8").decode(bytes);
+    if (/[\u4e00-\u9fff]/.test(decoded)) return decoded;
+  } catch {
+    /* ignore */
+  }
+  return name;
+}
+
+export function displayFileName(path: string, name?: string): string {
+  if (name?.trim()) return name;
+  const base = path.split("/").pop() || path;
+  return tryFixMojibakeFilename(base);
 }
 
 export function sourceFileExists(tree: FileTreeNode[], fileName: string): boolean {

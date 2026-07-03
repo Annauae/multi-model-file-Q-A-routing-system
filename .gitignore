@@ -6,8 +6,10 @@
 # Local API config (contains api_key)
 knowledge_router/config/match_profiles.json
 knowledge_router/config/models.json
+knowledge_router/config/rag_models.json
 Router/config/match_profiles.json
 Router/config/models.json
+Router/config/rag_models.json
 
 # Python
 __pycache__/

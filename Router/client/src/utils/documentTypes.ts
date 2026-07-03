@@ -46,13 +46,24 @@ export function canQuestionGenKind(kind: string): boolean {
   return ["source_md", "module_md", "source_txt", "source_docx", "source_html", "source_json"].includes(kind);
 }
 
-export function defaultVlmRefineKind(kind: string): boolean {
-  return ["source_docx", "source_xlsx", "source_xls", "source_csv", "source_html"].includes(kind);
+const VLM_REFINE_RECOMMENDED_KINDS = new Set(["source_pdf", "source_docx", "source_html"]);
+
+export function vlmRefineRecommendedKind(kind: string): boolean {
+  return VLM_REFINE_RECOMMENDED_KINDS.has(kind);
+}
+
+export function defaultVlmRefineKind(kind: string, caps?: Pick<DocCapabilities, "default_vlm_refine">): boolean {
+  if (typeof caps?.default_vlm_refine === "boolean") return caps.default_vlm_refine;
+  return vlmRefineRecommendedKind(kind);
 }
 
 export function convertKindFor(kind: string): string {
   if (kind === "source_pdf") return "pdf_pages";
-  if (kind === "source_docx") return "whole_doc";
-  if (kind === "source_xlsx" || kind === "source_xls" || kind === "source_csv") return "sheet_rows";
+  if (kind === "source_docx") return "line_range";
+  if (kind === "source_xlsx" || kind === "source_xls" || kind === "source_csv") return "whole_sheet";
   return "line_range";
 }
+
+export const CONVERT_TOOLTIP = "支持 PDF、Word、Excel/CSV、MD、TXT、HTML；modules 下 MD 与 JSON 不可转换";
+
+export const QUESTION_GEN_TOOLTIP = "支持 MD、TXT、Word、HTML、JSON；PDF/Excel 需先转为 Markdown";

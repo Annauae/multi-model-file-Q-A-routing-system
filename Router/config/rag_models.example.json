@@ -1,0 +1,34 @@
+{
+  "embedding": {
+    "label": "Embedding 模型",
+    "api_base_url": "https://api.example.com/v1",
+    "api_key": "",
+    "model": "example/embedding-model",
+    "max_tokens": 0,
+    "temperature": 0
+  },
+  "rerank": {
+    "label": "Rerank 模型",
+    "api_base_url": "https://api.example.com/v1",
+    "api_key": "",
+    "model": "example/rerank-model",
+    "max_tokens": 0,
+    "temperature": 0
+  },
+  "llm": {
+    "label": "RAG 问答模型",
+    "api_base_url": "https://api.example.com/v1",
+    "api_key": "",
+    "model": "example/llm-model",
+    "max_tokens": 1200,
+    "temperature": 0.1
+  },
+  "judge": {
+    "label": "评测裁判模型",
+    "api_base_url": "https://api.example.com/v1",
+    "api_key": "",
+    "model": "example/judge-model",
+    "max_tokens": 500,
+    "temperature": 0
+  }
+}

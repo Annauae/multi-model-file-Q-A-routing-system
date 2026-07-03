@@ -1,0 +1,118 @@
+{
+  "document_title": "尼康软件与应用生态概览",
+  "source_reference": {
+    "file": "ZfcRGPRC_(Sc)12-33-706.pdf",
+    "printed_pages": "43-48",
+    "note": "内容依据手册相关部分重新组织，未覆盖版本兼容性的实时变化"
+  },
+  "generated_at": "2026-07-02T04:15:15",
+  "categories": [
+    {
+      "category": "智能设备应用",
+      "applications": [
+        {
+          "name": "SnapBridge",
+          "connection": [
+            "Wi-Fi",
+            "蓝牙/无线连接"
+          ],
+          "primary_functions": [
+            "将照片下载到智能手机或平板电脑",
+            "使用智能设备遥控拍摄"
+          ],
+          "target_users": [
+            "日常摄影者",
+            "需要快速分享照片的用户"
+          ],
+          "important_note": "实际功能取决于相机型号、应用版本和移动操作系统"
+        },
+        {
+          "name": "尼康影速传",
+          "connection": [
+            "USB",
+            "Wi-Fi"
+          ],
+          "primary_functions": [
+            "从相机导入照片到智能设备",
+            "由智能设备将照片上传至FTP服务器"
+          ],
+          "target_users": [
+            "新闻摄影",
+            "活动现场传图",
+            "需要快速交付素材的团队"
+          ],
+          "important_note": "支持功能和操作系统可能因国家或地区而异"
+        }
+      ]
+    },
+    {
+      "category": "计算机软件",
+      "applications": [
+        {
+          "name": "尼康工坊（NX Studio）",
+          "connection": [
+            "存储卡读取",
+            "USB传输"
+          ],
+          "primary_functions": [
+            "查看与管理照片",
+            "传送照片到计算机",
+            "处理NEF/NRW（RAW）文件",
+            "调整亮度、对比度和优化校准"
+          ],
+          "target_users": [
+            "照片整理者",
+            "RAW后期用户"
+          ],
+          "important_note": "应使用较新版本，以提高对新相机和RAW文件的兼容性"
+        },
+        {
+          "name": "尼康远控",
+          "connection": [
+            "相机与计算机连接"
+          ],
+          "primary_functions": [
+            "联机拍摄",
+            "在电脑端调整曝光和白平衡等设定"
+          ],
+          "target_users": [
+            "棚拍摄影",
+            "产品摄影",
+            "固定机位拍摄"
+          ],
+          "important_note": "适合需要在大屏幕上集中控制相机参数的工作流"
+        },
+        {
+          "name": "Wireless Transmitter Utility",
+          "connection": [
+            "无线网络"
+          ],
+          "primary_functions": [
+            "相机与计算机配对",
+            "通过无线网络下载照片"
+          ],
+          "target_users": [
+            "无线传输工作流",
+            "多设备协作环境"
+          ],
+          "important_note": "首次使用通常需要完成网络配置和设备配对"
+        },
+        {
+          "name": "Webcam Utility",
+          "connection": [
+            "USB"
+          ],
+          "primary_functions": [
+            "将兼容相机作为计算机网络摄像头使用"
+          ],
+          "target_users": [
+            "网络会议",
+            "在线课程",
+            "直播演示"
+          ],
+          "important_note": "兼容型号、系统要求和使用限制需以下载中心说明为准"
+        }
+      ]
+    }
+  ]
+}

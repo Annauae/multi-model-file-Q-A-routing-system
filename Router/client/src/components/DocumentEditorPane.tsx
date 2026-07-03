@@ -13,6 +13,7 @@ export interface DocumentContent {
   preview_html?: string | null;
   text_lines?: string[];
   line_count?: number;
+  display_name?: string;
   warnings?: string[];
 }
 
@@ -21,12 +22,14 @@ export function DocumentEditorPane({
   content,
   editMode,
   text,
+  loading = false,
   onChange,
 }: {
   selected: { path: string; kind: string; name: string } | null;
   content: DocumentContent | null;
   editMode: "source" | "preview";
   text: string;
+  loading?: boolean;
   onChange: (v: string) => void;
 }) {
   if (!selected) {
@@ -34,9 +37,20 @@ export function DocumentEditorPane({
   }
 
   const kind = selected.kind;
+  const contentReady = !content?.path || content.path === selected.path;
   const previewOnly = isPreviewOnlyKind(kind) || content?.editable === false;
+  const effectiveMode = previewOnly ? "preview" : editMode;
+  const displayText = contentReady ? (text || content?.markdown || content?.content || "") : text;
 
-  if (kind === "source_pdf" && editMode === "preview") {
+  if (loading && kind !== "source_pdf") {
+    return <div className="muted filesEmptyHint">正在加载…</div>;
+  }
+
+  if (!contentReady && kind !== "source_pdf" && !displayText) {
+    return <div className="muted filesEmptyHint">正在加载…</div>;
+  }
+
+  if (kind === "source_pdf" && effectiveMode === "preview") {
     return (
       <iframe
         title={selected.name}
@@ -46,26 +60,32 @@ export function DocumentEditorPane({
     );
   }
 
-  if (previewOnly && editMode === "preview" && content?.preview_html) {
+  if (previewOnly && effectiveMode === "preview" && contentReady && content?.preview_html) {
     const html = DOMPurify.sanitize(content.preview_html);
     return (
       <div className="docPreviewHtml mdPreview" dangerouslySetInnerHTML={{ __html: html }} />
     );
   }
 
-  if (previewOnly && editMode === "preview" && kind === "source_docx" && text) {
-    return <MarkdownPreview md={text} kbId="documents" />;
-  }
-
-  if (previewOnly && editMode === "preview" && kind === "source_json") {
-    return <pre className="jsonPreview">{text}</pre>;
+  if (previewOnly && effectiveMode === "preview" && displayText) {
+    if (kind === "source_json") {
+      return <pre className="jsonPreview">{displayText}</pre>;
+    }
+    return (
+      <div className="filesMdPreviewPane">
+        <MarkdownPreview md={displayText} kbId="documents" />
+        {contentReady && content?.warnings?.map((w, i) => (
+          <p key={i} className="muted filesPreviewWarn">{w}</p>
+        ))}
+      </div>
+    );
   }
 
   if (previewOnly) {
     return (
       <div className="filesPreviewHint muted">
         <p>此格式不可直接编辑，请使用「文件转 Markdown」转换后在 modules 中编辑。</p>
-        {content?.warnings?.map((w, i) => <p key={i}>{w}</p>)}
+        {contentReady && content?.warnings?.map((w, i) => <p key={i}>{w}</p>)}
       </div>
     );
   }
@@ -80,7 +100,11 @@ export function DocumentEditorPane({
         : DOMPurify.sanitize(text);
       return <div className="docPreviewHtml mdPreview" dangerouslySetInnerHTML={{ __html: html }} />;
     }
-    return <MarkdownPreview md={text} kbId="documents" />;
+    return (
+      <div className="filesMdPreviewPane">
+        <MarkdownPreview md={text} kbId="documents" />
+      </div>
+    );
   }
 
   if (isEditableKind(kind)) {
