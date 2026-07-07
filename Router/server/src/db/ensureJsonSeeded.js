@@ -171,16 +171,6 @@ async function importRagMeta(filesRoot) {
         const meta = readJson(path.join(base, "index_meta.json"));
         if (meta)
             await ragMetaRepo.saveIndexMeta(kbId, meta);
-        const evalDir = path.join(base, "eval");
-        if (fs.existsSync(evalDir)) {
-            for (const f of fs.readdirSync(evalDir)) {
-                if (!f.endsWith(".json"))
-                    continue;
-                const data = readJson(path.join(evalDir, f));
-                if (data?.run_id)
-                    await ragMetaRepo.saveEvalRun(kbId, data.run_id, data);
-            }
-        }
     }
 }
 

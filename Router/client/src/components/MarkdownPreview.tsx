@@ -1,7 +1,9 @@
+/** Markdown 预览 */
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { escapeHtml } from "../api/client";
 
+/** 获取资产预览 URL */
 function assetPreviewUrl(kbId: string, ref: string): string {
   let r = String(ref || "").trim();
   if (!r) return r;
@@ -15,6 +17,7 @@ function assetPreviewUrl(kbId: string, ref: string): string {
   return `/preview-asset?kb_id=${encodeURIComponent(scope)}&ref=${encodeURIComponent(r)}`;
 }
 
+/** 去除引用行 */
 function stripCitationLines(text: string): string {
   return (text ?? "")
     .split("\n")
@@ -24,10 +27,12 @@ function stripCitationLines(text: string): string {
     .trim();
 }
 
+/** 是否为图片引用 */
 function isImageRef(url: string): boolean {
   return /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url || "");
 }
 
+/** 是否为安全 HTTP URL */
 function isSafeHttpUrl(url: string): boolean {
   try {
     const u = new URL(String(url).trim());
@@ -37,6 +42,7 @@ function isSafeHttpUrl(url: string): boolean {
   }
 }
 
+/** 渲染答案文本 */
 function renderAnswerText(s: string): string {
   const text = s ?? "";
   const linkRe = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -58,6 +64,7 @@ function renderAnswerText(s: string): string {
   return result;
 }
 
+/** 渲染答案文本带媒体 */
 function renderAnswerWithMedia(text: string, kbId: string): string {
   const body = stripCitationLines(text);
   if (!body) return "";
@@ -81,6 +88,7 @@ function renderAnswerWithMedia(text: string, kbId: string): string {
   return result;
 }
 
+/** 渲染 Markdown 预览 */
 export function renderMarkdownPreview(md: string, kbId: string): string {
   const withMedia = renderAnswerWithMedia(md, kbId);
   const html = marked.parse(withMedia, { breaks: true }) as string;

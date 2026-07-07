@@ -30,41 +30,6 @@ export async function saveIndexMeta(kbId, meta) {
     );
 }
 
-export async function saveEvalRun(kbId, runId, data) {
-    const now = nowIso();
-    const created = data.created_at ?? now;
-    await query(
-        `INSERT INTO rag_eval_runs (kb_id, run_id, data, created_at, updated_at)
-         VALUES ($1, $2, $3::jsonb, $4::timestamptz, $5::timestamptz)
-         ON CONFLICT (kb_id, run_id) DO UPDATE SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at`,
-        [kbId, runId, JSON.stringify(data), created, data.updated_at ?? now],
-    );
-}
-
-export async function getEvalRun(kbId, runId) {
-    const r = await query("SELECT data FROM rag_eval_runs WHERE kb_id = $1 AND run_id = $2", [kbId, runId]);
-    return r.rows[0]?.data ?? null;
-}
-
-export async function listEvalRuns(kbId, limit = 10) {
-    const r = await query(
-        `SELECT data FROM rag_eval_runs WHERE kb_id = $1 ORDER BY created_at DESC LIMIT $2`,
-        [kbId, limit],
-    );
-    return r.rows.map((row) => {
-        const raw = row.data;
-        return {
-            run_id: raw.run_id,
-            status: raw.status,
-            size: raw.size,
-            mode: raw.mode,
-            created_at: raw.created_at,
-            updated_at: raw.updated_at,
-            summary: raw.summary,
-        };
-    });
-}
-
 export async function hasDataMigration(name) {
     const r = await query("SELECT 1 FROM data_migrations WHERE name = $1", [name]);
     return r.rows.length > 0;

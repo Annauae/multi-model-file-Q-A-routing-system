@@ -1881,14 +1881,5 @@ body {
 
 .multiItemBlock { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
 .multiItemBlockHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.ragEvalModeHint { font-size: 12px; margin: 0; }
-.ragEvalSizeBtns { display: flex; gap: 8px; flex-wrap: wrap; }
-.ragEvalSummary { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
-.ragEvalSummaryHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.ragEvalMetrics { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; margin-bottom: 8px; }
-.ragEvalMetrics b { font-weight: 600; margin-left: 4px; }
-.ragEvalResultRow { font-size: 12px; padding: 2px 0; }
-.ragEvalHistory { display: flex; flex-direction: column; gap: 4px; }
-.ragEvalHistoryBtn { justify-content: flex-start; text-align: left; }
 .ragSourceList { display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow: auto; }
 .tokenModeHint { font-size: 12px; margin: 0 0 8px; line-height: 1.5; }

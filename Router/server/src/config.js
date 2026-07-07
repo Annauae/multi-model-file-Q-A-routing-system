@@ -62,7 +62,6 @@ export function loadSettings() {
         ragEmbeddingModel: firstEnv("RAG_EMBEDDING_MODEL", "EMBEDDING_MODEL") || "BAAI/bge-m3",
         ragRerankModel: firstEnv("RAG_RERANK_MODEL", "RERANK_MODEL") || "BAAI/bge-reranker-v2-m3",
         ragLlmModel: firstEnv("RAG_LLM_MODEL", "LLM_MODEL") || "Qwen/Qwen3-VL-8B-Instruct",
-        ragJudgeModel: firstEnv("RAG_JUDGE_MODEL", "JUDGE_MODEL", "RAG_LLM_MODEL", "LLM_MODEL") || "Qwen/Qwen3-VL-8B-Instruct",
         ragVectorTopK: Math.max(1, parseInt(process.env.RAG_VECTOR_TOP_K || process.env.VECTOR_TOP_K || "30", 10)),
         ragKeywordTopK: Math.max(1, parseInt(process.env.RAG_KEYWORD_TOP_K || process.env.KEYWORD_TOP_K || "30", 10)),
         ragRrfK: Math.max(1, parseInt(process.env.RAG_RRF_K || process.env.RRF_K || "60", 10)),

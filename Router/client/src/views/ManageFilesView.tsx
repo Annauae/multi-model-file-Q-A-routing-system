@@ -762,6 +762,7 @@ function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdow
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
   const ragKbIds = Object.keys(ragKbMap).sort((a, b) => Number(a) - Number(b));
 
+  // 初始化
   useEffect(() => {
     if (!open) return;
     void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []));
@@ -770,45 +771,50 @@ function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdow
     if (initialPath) void loadDocumentText(initialPath, initialMarkdown, initialName);
   }, [open, initialPath, initialName, initialMarkdown, kbIds.length, ragKbIds.length]);
 
+  // 加载文档文本
   const loadDocumentText = async (p: string, fallbackMd?: string, name?: string) => {
     setMd("");
     setPreviewHtml(null);
     try {
-      const data = await apiJson<DocumentContent>(`/markdown-files/content?path=${encodeURIComponent(p)}`);
+      const data = await apiJson<DocumentContent>(`/markdown-files/content?path=${encodeURIComponent(p)}`); // 获取文档文本
       const text = documentTextForLines(data);
       setMd(text || fallbackMd || "");
       setPreviewHtml(data.preview_html || null);
       setFileKindState(data.kind || "");
-      setPath(p);
-      setFileName(name || data.display_name || displayFileName(p));
+      setPath(p); // 设置路径
+      setFileName(name || data.display_name || displayFileName(p)); // 设置文件名
       const lc = text.split("\n").length;
-      setLineEnd(Math.min(10, lc || 10));
+      setLineEnd(Math.min(10, lc || 10)); // 设置行数
     } catch (e) {
       showToast((e as Error).message, "error");
     }
   };
 
+  // 添加选择
   const addSelection = () => {
     const id = `s_${Date.now()}`;
     setSelections([...selections, { id, lineStart, lineEnd, question: "", variants: [], answer: sliceMarkdownLines(md, lineStart, lineEnd) }]);
     setActiveSelectionId(id);
   };
 
+  // 删除选择
   const removeSelection = (id: string) => {
     setSelections(selections.filter((s) => s.id !== id));
     if (activeSelectionId === id) setActiveSelectionId("");
   };
 
+  // 更新选择
   const updateSelection = (id: string, patch: Partial<ImportSelection>) => {
     setSelections(selections.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   };
 
+  // 自动生成问法
   const autoGenerate = async (sel: ImportSelection) => {
     if (generatingId) return;
     setGeneratingId(sel.id);
     const t0 = performance.now();
     try {
-      const data = await apiJson<{ question: string; variants: string[] }>(`/knowledge-bases/${encodeURIComponent(llmKbId || kbIds[0] || "1")}/import/generate-questions`, {
+      const data = await apiJson<{ question: string; variants: string[] }>(`/knowledge-bases/${encodeURIComponent(llmKbId || kbIds[0] || "1")}/import/generate-questions`, { // 生成问法
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answer_md: sel.answer }),
       });
       updateSelection(sel.id, { question: data.question, variants: data.variants || [] });

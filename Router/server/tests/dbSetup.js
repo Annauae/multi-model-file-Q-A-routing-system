@@ -13,7 +13,7 @@ export async function resetTestDb() {
     await query(`
         TRUNCATE TABLE
             operation_logs, recall_tests, qa_items, qa_documents,
-            rag_eval_runs, rag_index_meta, rag_runtime_configs,
+            rag_index_meta, rag_runtime_configs,
             llm_knowledge_bases, rag_knowledge_bases, app_settings,
             data_migrations
         RESTART IDENTITY CASCADE

@@ -1,7 +1,7 @@
-import { clipText, stripMarkdown } from "./textUtils.js";
+import { stripMarkdown } from "./textUtils.js";
 import { normalizeApiUsage, usageFromRerankInput, usageFromText, estimateTextTokens } from "./tokenUtils.js";
 import { activeTemplate } from "../../db/stores/ragRuntimeConfigStore.js";
-import { DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../../db/stores/ragPromptsStore.js";
+import { DEFAULT_RAG_LLM_PROMPT } from "../../db/stores/ragPromptsStore.js";
 
 export class RagLlmClient {
     ragModelsStore;
@@ -18,11 +18,6 @@ export class RagLlmClient {
         if (kbTemplate)
             return kbTemplate;
         return this.ragPromptsStore?.effectiveLlmPrompt() || DEFAULT_RAG_LLM_PROMPT;
-    }
-
-    // 获取 评估提示词模板
-    judgePromptTemplate() {
-        return this.ragPromptsStore?.effectiveJudgePrompt() || DEFAULT_RAG_JUDGE_PROMPT;
     }
 
     // 填充提示词模板
@@ -128,67 +123,5 @@ export class RagLlmClient {
             console.warn(`[llm] generation skipped: ${err}`);
         }
         return { content: sources[0].answer, usage: null };
-    }
-
-    // 降级评估
-    fallbackJudge(expectedAnswer, actualAnswer) {
-        const exp = new Set(stripMarkdown(expectedAnswer));
-        const act = new Set(stripMarkdown(actualAnswer));
-        let overlap = 0;
-        for (const ch of exp) {
-            if (act.has(ch))
-                overlap++;
-        }
-        const score = Math.max(0, Math.min(1, overlap / Math.max(1, exp.size)));
-        return {
-            quality_score: score,
-            confidence: score,
-            groundedness: score,
-            image_support: 0,
-            reason: "本地降级评估：按答案字符覆盖率粗略估计。",
-            judge_error: "",
-        };
-    }
-
-    // 评估
-    async judge(query, expectedAnswer, actualAnswer, sources) {
-        const fallback = this.fallbackJudge(expectedAnswer, actualAnswer);
-        const cfg = this.ragModelsStore.getSlot("judge");
-        if (!cfg.api_key?.trim())
-            return fallback;
-        const sourceText = sources
-            .slice(0, 5)
-            .map((src) => `- ${src.id}: ${src.question}`)
-            .join("\n");
-        const prompt = this.fillPrompt(this.judgePromptTemplate(), {
-            query,
-            expected: clipText(stripMarkdown(expectedAnswer), 1800),
-            actual: clipText(stripMarkdown(actualAnswer), 1800),
-            sources: sourceText,
-        });
-        try {
-            const url = `${cfg.api_base_url.replace(/\/$/, "")}/chat/completions`;
-            const resp = await fetch(url, {
-                method: "POST",
-                headers: this.headers("judge"),
-                body: JSON.stringify({
-                    model: cfg.model,
-                    messages: [{ role: "user", content: prompt }],
-                    temperature: 0,
-                    max_tokens: cfg.max_tokens || 500,
-                }),
-                signal: AbortSignal.timeout(180_000),
-            });
-            if (!resp.ok)
-                throw new Error(await resp.text());
-            const content = (await resp.json()).choices?.[0]?.message?.content ?? "{}";
-            const start = content.indexOf("{");
-            const end = content.lastIndexOf("}");
-            const parsed = JSON.parse(start >= 0 && end >= start ? content.slice(start, end + 1) : content);
-            return { ...fallback, ...parsed };
-        }
-        catch (err) {
-            return { ...fallback, judge_error: String(err) };
-        }
     }
 }

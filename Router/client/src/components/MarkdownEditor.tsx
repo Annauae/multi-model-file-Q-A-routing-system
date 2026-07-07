@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MarkdownPreview } from "./MarkdownPreview";
 import { MdSourceEditor } from "./MdSourceEditor";
 
+/**  Markdown 编辑器 */
 export function MarkdownEditor({
   value,
   onChange,
@@ -15,9 +16,10 @@ export function MarkdownEditor({
   showLineNumbers?: boolean;
   minHeight?: number;
 }) {
-  const [narrow, setNarrow] = useState(false);
+  const [narrow, setNarrow] = useState(false); 
   const [tab, setTab] = useState<"edit" | "preview">("edit");
 
+  /** 监听窗口宽度变化 */
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 720px)");
     const update = () => setNarrow(mq.matches);
@@ -26,6 +28,7 @@ export function MarkdownEditor({
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  /** 如果窗口宽度小于 720px，则显示窄版编辑器 */
   if (narrow) {
     return (
       <div className="markdownEditor markdownEditorNarrow" style={{ minHeight }}>
@@ -46,6 +49,7 @@ export function MarkdownEditor({
     );
   }
 
+  /** 如果窗口宽度大于 720px，则显示分屏编辑器 */
   return (
     <div className="markdownEditor markdownEditorSplit" style={{ minHeight }}>
       <div className="markdownEditorPane markdownEditorSource">

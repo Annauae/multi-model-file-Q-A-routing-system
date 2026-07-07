@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 
+/** Markdown 源代码编辑器 */
 export function MdSourceEditor({
   id,
   value,
@@ -22,6 +23,7 @@ export function MdSourceEditor({
   const lines = useMemo(() => value.split("\n"), [value]);
   const lineCount = Math.max(lines.length, 1);
 
+  /** 同步滚动 */
   const syncScroll = useCallback(() => {
     const ta = textareaRef.current;
     const gutter = gutterRef.current;
@@ -29,10 +31,12 @@ export function MdSourceEditor({
       gutter.scrollTop = ta.scrollTop;
   }, []);
 
+  /** 处理变化 */
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange?.(e.target.value);
   };
 
+  /** 如果不需要显示行号，则显示文本框 */
   if (!showLineNumbers) {
     return (
       <textarea
@@ -48,6 +52,7 @@ export function MdSourceEditor({
     );
   }
 
+  /** 如果需要显示行号，则显示代码编辑器 */
   return (
     <div className={`mdSourceEditor ${className}`.trim()}>
       <div ref={gutterRef} className="mdSourceGutter" aria-hidden="true">

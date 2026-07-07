@@ -315,9 +315,9 @@ export function RagTokenPanel({ chatResult }: { chatResult: RagChatResponse | nu
     return <div className="empty">提问后显示</div>;
   }
   const hint = chatResult.mode === "direct"
-    ? "直出模式：未调用 RAG 问答模型；评测裁判仅在 Recall@K 评测时消耗。"
+    ? "直出模式：未调用 RAG 问答模型。"
     : chatResult.mode === "generated"
-      ? "合成模式：含 RAG 问答模型消耗；评测裁判仅在 Recall@K 评测时消耗。"
+      ? "合成模式：含 RAG 问答模型消耗。"
       : undefined;
   const timings = {
     tokens: chatResult.tokens,

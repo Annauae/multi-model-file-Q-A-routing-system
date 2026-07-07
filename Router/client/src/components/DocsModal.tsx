@@ -1,20 +1,24 @@
+/** 使用手册 */
+
 import { useEffect, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
 const MANUAL_VERSION = 9;
 
-export function DocsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** 使用手册弹窗 */
+export function DocsModal({ open, onClose }: { open: boolean; onClose: () => void }) { 
   const [html, setHtml] = useState("");
   const [toc, setToc] = useState<{ id: string; text: string; level: number }[]>([]);
 
+  /** 加载使用手册 */
   useEffect(() => {
     if (!open) return;
-    void fetch(`/static/manual.md?v=${MANUAL_VERSION}`)
+    void fetch(`/static/manual.md?v=${MANUAL_VERSION}`) // 获取使用手册
       .then((r) => r.text())
       .then((md) => {
-        const parsed = marked.parse(md) as string;
-        const clean = DOMPurify.sanitize(parsed);
+        const parsed = marked.parse(md) as string; // 解析使用手册
+        const clean = DOMPurify.sanitize(parsed); // 清理使用手册
         setHtml(clean);
         const div = document.createElement("div");
         div.innerHTML = clean;
@@ -29,6 +33,7 @@ export function DocsModal({ open, onClose }: { open: boolean; onClose: () => voi
       });
   }, [open]);
 
+  /** 监听键盘事件 */
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -36,9 +41,10 @@ export function DocsModal({ open, onClose }: { open: boolean; onClose: () => voi
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  /** 如果未打开，则返回 null */
   if (!open) return null;
 
-  return (
+  return ( // 返回使用手册
     <div className="modalOverlay" id="docsOverlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal docsModal modalWide modalTall">
         <div className="modalHead">

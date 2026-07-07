@@ -860,7 +860,7 @@ export function createApp(ctx, clientDist) {
             || path.basename(String(req.body.path ?? "").trim()); // 获取文件名或路径
         const ranges = normalizeImportRanges(req.body.ranges); // 归一化导入范围
         const useVlmRefine = req.body.use_vlm_refine !== false; // 是否使用 VLM 精修
-        const sheetName = String(req.body.sheet_name ?? "").trim() || undefined; // 获取工作表名
+        const sheetName = String(req.body.sheet_name ?? "").trim() || undefined;
         if (!filename)
             return res.status(400).json({ detail: "filename 必填" });
         if (!ranges.length)

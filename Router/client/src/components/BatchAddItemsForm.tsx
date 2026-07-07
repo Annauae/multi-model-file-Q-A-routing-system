@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+/** 批量添加项 */
+
 export type BatchAddRow = {
   id: string;
   question: string;
@@ -7,19 +9,22 @@ export type BatchAddRow = {
   answer: string;
 };
 
+/** 空行 */
 function emptyRow(): BatchAddRow {
   return { id: `b_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, question: "", variants: "", answer: "" };
 }
 
+/** 批量添加项问题组 */
 export function BatchAddItemsForm({ onChange }: { onChange: (rows: BatchAddRow[]) => void }) {
   const [rows, setRows] = useState<BatchAddRow[]>([emptyRow()]);
 
+  /** 更新行 */
   const update = (next: BatchAddRow[]) => {
     setRows(next);
-    onChange(next);
+    onChange(next); // 回调
   };
 
-  return (
+  return ( // 返回问题组
     <div>
       <p style={{ margin: "0 0 10px", color: "var(--text-secondary)", fontSize: 13 }}>可添加多组问题，一次批量提交。</p>
       <div id="multiItemBlocks">
@@ -27,7 +32,7 @@ export function BatchAddItemsForm({ onChange }: { onChange: (rows: BatchAddRow[]
           <div key={row.id} className="multiItemBlock">
             <div className="multiItemBlockHead">
               <span className="muted">第 {i + 1} 组</span>
-              {rows.length > 1 && (
+              {rows.length > 1 && ( // 如果有多组，则显示删除按钮
                 <button type="button" className="btn btnXs ghost" onClick={() => update(rows.filter((r) => r.id !== row.id))}>删除本组</button>
               )}
             </div>
@@ -42,6 +47,7 @@ export function BatchAddItemsForm({ onChange }: { onChange: (rows: BatchAddRow[]
   );
 }
 
+/** 解析问题组 */
 export function parseBatchAddRows(rows: BatchAddRow[]) {
   return rows.map((row) => ({
     question: row.question.trim(),

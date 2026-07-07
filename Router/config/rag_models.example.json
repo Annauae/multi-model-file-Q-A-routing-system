@@ -22,13 +22,5 @@
     "model": "example/llm-model",
     "max_tokens": 1200,
     "temperature": 0.1
-  },
-  "judge": {
-    "label": "评测裁判模型",
-    "api_base_url": "https://api.example.com/v1",
-    "api_key": "",
-    "model": "example/judge-model",
-    "max_tokens": 500,
-    "temperature": 0
   }
 }

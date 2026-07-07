@@ -321,7 +321,7 @@ export interface RagChatResponse {
 /**
  * RAG 模型槽位配置（单 slot）。
  * 来源：GET /settings/rag-models；持久化于 config/rag_models.json
- * slot 名：embedding | rerank | llm | judge
+ * slot 名：embedding | rerank | llm
  */
 export interface RagModelSlot {
   label?: string;
@@ -352,51 +352,4 @@ export interface RagRuntimeConfig {
   active_template_id: string;
   /** 可选的多套回答 prompt 模板 */
   templates: { id: string; name: string; content: string }[];
-}
-
-/**
- * RAG 批量评测汇总指标。
- * 来源：GET /rag/eval/runs/:runId 的 summary 字段
- */
-export interface RagEvalSummary {
-  count?: number;
-  processed?: number;
-  recall_at_1?: number;
-  recall_at_3?: number;
-  recall_at_5?: number;
-  avg_quality?: number;
-  avg_confidence?: number;
-  /** 未命中或评测失败的样例列表 */
-  failures?: { query?: string; expected_item_id?: string; actual_item_id?: string }[];
-}
-
-/**
- * RAG 评测任务一次运行的完整记录。
- * 来源：POST /rag/eval/run 创建，GET /rag/eval/runs/:runId 轮询
- * 结果文件存于 files/rag_kb_{id}/eval/
- */
-export interface RagEvalRun {
-  run_id: string;
-  kb_id?: string;
-  status: "queued" | "running" | "completed" | "failed" | string;
-  /** 评测样本规模：10 | 50 | 100 */
-  size?: number;
-  /** 评测模式，如 mixed */
-  mode?: string;
-  top_k?: number;
-  created_at?: string;
-  updated_at?: string;
-  completed_at?: string;
-  summary?: RagEvalSummary;
-  /** 逐条样例的召回与质量分 */
-  results?: {
-    query?: string;
-    expected_item_id?: string;
-    actual_item_id?: string;
-    /** key 为 K 值，value 表示 Recall@K 是否命中 */
-    recall_at?: Record<number, boolean>;
-    quality_score?: number;
-    confidence?: number;
-    error?: string;
-  }[];
 }

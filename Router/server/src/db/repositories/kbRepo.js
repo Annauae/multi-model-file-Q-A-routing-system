@@ -144,7 +144,6 @@ export async function deleteRagKb(kbId) {
     const cfg = await getRagKb(kbId);
     if (!cfg)
         throw new Error("kb_id 不存在");
-    await query("DELETE FROM rag_eval_runs WHERE kb_id = $1", [kbId]);
     await query("DELETE FROM rag_index_meta WHERE kb_id = $1", [kbId]);
     await query("DELETE FROM rag_runtime_configs WHERE kb_id = $1", [kbId]);
     await query("DELETE FROM qa_items WHERE kb_type = 'rag' AND kb_id = $1", [kbId]);

@@ -6,29 +6,18 @@ import { ModeSwitch } from "../components/ModeSwitch";
 import type { AskMode, MatchProfile, RagModelSlot } from "../types";
 
 const SLOT_LABELS: Record<string, string> = { import: "FAQ 生成模型", pdf_vlm: "文档提取 / 模型整理" };
-const RAG_SLOT_ORDER = ["embedding", "rerank", "llm", "judge"] as const;
-const RAG_SLOTS_WITH_PROMPTS = ["llm", "judge"] as const;
+const RAG_SLOT_ORDER = ["embedding", "rerank", "llm"] as const;
+const RAG_SLOTS_WITH_PROMPTS = ["llm"] as const;
 const RAG_SLOT_LABELS: Record<string, string> = {
   embedding: "Embedding 模型",
   rerank: "Rerank 模型",
   llm: "RAG 问答模型",
-  judge: "评测裁判模型",
-};
-const RAG_PROMPT_KEYS: Record<(typeof RAG_SLOT_ORDER)[number], string> = {
-  embedding: "embedding_prompt",
-  rerank: "rerank_prompt",
-  llm: "llm_prompt",
-  judge: "judge_prompt",
 };
 const RAG_PROMPT_LABELS: Record<string, string> = {
-  embedding: "Embedding 提示词",
-  rerank: "Rerank 提示词",
   llm: "RAG 回答提示词",
-  judge: "评测裁判提示词",
 };
 const RAG_PROMPT_NOTES: Record<string, string> = {
   llm: "RAG 问答合成回答时使用的模板；留空则使用内置默认。占位符：{query}、{context}",
-  judge: "Recall@K 评测裁判规则；留空则使用内置默认。占位符：{query}、{expected}、{actual}、{sources}",
 };
 const NAV_ITEMS = [
   { id: "secMatchProfiles", label: "问答模型" },
@@ -74,17 +63,14 @@ type RagPromptsResponse = {
   embedding_prompt: string;
   rerank_prompt: string;
   llm_prompt: string;
-  judge_prompt: string;
-  defaults?: { embedding_prompt: string; rerank_prompt: string; llm_prompt: string; judge_prompt: string };
+  defaults?: { embedding_prompt: string; rerank_prompt: string; llm_prompt: string };
   llm_system_preview?: string;
-  judge_system_preview?: string;
 };
 
 const EMPTY_RAG_PROMPTS: RagPromptsResponse = {
   embedding_prompt: "",
   rerank_prompt: "",
   llm_prompt: "",
-  judge_prompt: "",
 };
 
 export function SettingsView() {
@@ -99,9 +85,9 @@ export function SettingsView() {
   const [promptPreview, setPromptPreview] = useState({ confidence_match_prompt: "", faq_generation_prompt: "", pdf_vlm_prompt: "" });
   const [settingsMode, setSettingsMode] = useState<AskMode>("llm");
   const [ragSlots, setRagSlots] = useState<Record<string, RagModelSlot>>({});
-  const [ragPrompts, setRagPrompts] = useState({ embedding_prompt: "", rerank_prompt: "", llm_prompt: "", judge_prompt: "" });
-  const [ragPromptDefaults, setRagPromptDefaults] = useState({ embedding_prompt: "", rerank_prompt: "", llm_prompt: "", judge_prompt: "" });
-  const [ragPromptPreview, setRagPromptPreview] = useState({ llm_prompt: "", judge_prompt: "" });
+  const [ragPrompts, setRagPrompts] = useState({ embedding_prompt: "", rerank_prompt: "", llm_prompt: "" });
+  const [ragPromptDefaults, setRagPromptDefaults] = useState({ embedding_prompt: "", rerank_prompt: "", llm_prompt: "" });
+  const [ragPromptPreview, setRagPromptPreview] = useState({ llm_prompt: "" });
 
   const load = async () => {
     const [models, mp, pr, ragModels, ragPr] = await Promise.all([
@@ -135,17 +121,15 @@ export function SettingsView() {
       pdf_vlm_prompt: pr.pdf_vlm_system_preview || defs.pdf_vlm_prompt || "",
     });
     setRagSlots(ragModels.slots || {});
-    const ragDefs = ragPr.defaults || { embedding_prompt: "", rerank_prompt: "", llm_prompt: "", judge_prompt: "" };
+    const ragDefs = ragPr.defaults || { embedding_prompt: "", rerank_prompt: "", llm_prompt: "" };
     setRagPromptDefaults(ragDefs);
     setRagPrompts({
       embedding_prompt: ragPr.embedding_prompt || "",
       rerank_prompt: ragPr.rerank_prompt || "",
       llm_prompt: ragPr.llm_prompt || "",
-      judge_prompt: ragPr.judge_prompt || "",
     });
     setRagPromptPreview({
       llm_prompt: ragPr.llm_system_preview || ragDefs.llm_prompt || "",
-      judge_prompt: ragPr.judge_system_preview || ragDefs.judge_prompt || "",
     });
   };
 
@@ -352,7 +336,6 @@ export function SettingsView() {
           {settingsMode === "rag" && (
           <div className="modePanelEnter">
             {RAG_SLOT_ORDER.map((slot) => {
-              const promptKey = RAG_PROMPT_KEYS[slot] as keyof typeof ragPrompts;
               const hasPrompt = (RAG_SLOTS_WITH_PROMPTS as readonly string[]).includes(slot);
               return (
                 <div key={slot}>
@@ -369,16 +352,16 @@ export function SettingsView() {
                   </section>
                   {hasPrompt && (
                   <section id={`secRagPrompt_${slot}`} className="settingsSection">
-                    <h3>{RAG_PROMPT_LABELS[slot]}</h3>
-                    <p className="muted">{RAG_PROMPT_NOTES[slot]}</p>
+                    <h3>{RAG_PROMPT_LABELS.llm}</h3>
+                    <p className="muted">{RAG_PROMPT_NOTES.llm}</p>
                     <div className="settingsPromptActions">
-                      <button type="button" className="btn btnXs ghost" onClick={() => setRagPrompts({ ...ragPrompts, [promptKey]: ragPromptDefaults[promptKey] })}>恢复默认提示词</button>
+                      <button type="button" className="btn btnXs ghost" onClick={() => setRagPrompts({ ...ragPrompts, llm_prompt: ragPromptDefaults.llm_prompt })}>恢复默认提示词</button>
                     </div>
-                    <label className="fieldLabel">{RAG_PROMPT_LABELS[slot]}
-                      <textarea rows={10} className="settingsTextarea" value={ragPrompts[promptKey]} onChange={(e) => setRagPrompts({ ...ragPrompts, [promptKey]: e.target.value })} />
+                    <label className="fieldLabel">{RAG_PROMPT_LABELS.llm}
+                      <textarea rows={10} className="settingsTextarea" value={ragPrompts.llm_prompt} onChange={(e) => setRagPrompts({ ...ragPrompts, llm_prompt: e.target.value })} />
                     </label>
                     <label className="fieldLabel">规则预览（只读）
-                      <textarea rows={10} readOnly className="settingsTextarea readonly" value={slot === "llm" ? ragPromptPreview.llm_prompt : ragPromptPreview.judge_prompt} />
+                      <textarea rows={10} readOnly className="settingsTextarea readonly" value={ragPromptPreview.llm_prompt} />
                     </label>
                   </section>
                   )}

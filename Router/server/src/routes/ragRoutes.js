@@ -1,9 +1,8 @@
 import { rebuildIndex } from "../services/rag/indexer.js";
 import { indexStatus } from "../services/rag/indexStatus.js";
 import { RagRetriever } from "../services/rag/retriever.js";
-import { startEvalRun, getEvalRun, listEvalRuns } from "../services/rag/evaluator.js";
 import { ensureRagKbStructure, importLlmFaqToRag } from "../services/ragImport.js";
-import { allDefaultRagPrompts, DEFAULT_RAG_JUDGE_PROMPT, DEFAULT_RAG_LLM_PROMPT } from "../db/stores/ragPromptsStore.js";
+import { allDefaultRagPrompts, DEFAULT_RAG_LLM_PROMPT } from "../db/stores/ragPromptsStore.js";
 
 function httpError(status, detail) {
     const e = new Error(detail);
@@ -148,11 +147,9 @@ export function registerRagRoutes(app, ctx, ragCtx) {
             embedding_prompt: gp.embedding_prompt,
             rerank_prompt: gp.rerank_prompt,
             llm_prompt: gp.llm_prompt,
-            judge_prompt: gp.judge_prompt,
             updated_at: gp.updated_at,
             defaults: allDefaultRagPrompts(),
             llm_system_preview: gp.llm_prompt.trim() || DEFAULT_RAG_LLM_PROMPT,
-            judge_system_preview: gp.judge_prompt.trim() || DEFAULT_RAG_JUDGE_PROMPT,
         });
     });
 
@@ -162,7 +159,6 @@ export function registerRagRoutes(app, ctx, ragCtx) {
                 embedding_prompt: "embedding_prompt" in req.body ? req.body.embedding_prompt : undefined,
                 rerank_prompt: "rerank_prompt" in req.body ? req.body.rerank_prompt : undefined,
                 llm_prompt: "llm_prompt" in req.body ? req.body.llm_prompt : undefined,
-                judge_prompt: "judge_prompt" in req.body ? req.body.judge_prompt : undefined,
             });
             ragCtx.opLog.append({ module: "settings", action: "update_rag_prompts", detail: "更新 RAG 模型提示词" });
             res.json({ ...gp, defaults: allDefaultRagPrompts() });
@@ -372,41 +368,4 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.post("/rag/eval/run", async (req, res) => {
-        try {
-            const kbId = validateRagKbId(ragCtx, req.body?.kb_id);
-            const size = [10, 50, 100].includes(Number(req.body?.size)) ? Number(req.body.size) : 10;
-            const mode = String(req.body?.mode ?? "mixed");
-            const top_k = Math.max(1, Math.min(20, Number(req.body?.top_k ?? 5)));
-            const runId = await startEvalRun(kbId, { size, mode, top_k }, ragCtx);
-            res.json({ run_id: runId, status: "queued" });
-        }
-        catch (e) {
-            res.status(e.status || 400).json({ detail: e.detail ?? e.message });
-        }
-    });
-
-    app.get("/rag/eval/runs", async (req, res) => {
-        try {
-            const kbId = validateRagKbId(ragCtx, req.query?.kb_id);
-            const limit = Math.max(1, Math.min(50, Number(req.query?.limit ?? 10)));
-            res.json({ runs: await listEvalRuns(kbId, limit) });
-        }
-        catch (e) {
-            res.status(e.status || 400).json({ detail: e.detail ?? e.message });
-        }
-    });
-
-    app.get("/rag/eval/runs/:runId", async (req, res) => {
-        try {
-            const kbId = validateRagKbId(ragCtx, req.query?.kb_id);
-            const run = await getEvalRun(kbId, req.params.runId);
-            if (!run)
-                return res.status(404).json({ detail: "eval run not found" });
-            res.json(run);
-        }
-        catch (e) {
-            res.status(e.status || 400).json({ detail: e.detail ?? e.message });
-        }
-    });
 }

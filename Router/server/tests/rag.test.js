@@ -118,16 +118,3 @@ describe("rag models settings", () => {
     expect(res.body.slots.embedding).toBeTruthy();
   });
 });
-
-describe("rag eval", () => {
-  it("starts eval run and returns status", async () => {
-    const start = await request(app).post("/rag/eval/run").send({ kb_id: "1", size: 10, mode: "question", top_k: 3 });
-    expect(start.status).toBe(200);
-    expect(start.body.run_id).toBeTruthy();
-
-    await new Promise((r) => setTimeout(r, 500));
-    const run = await request(app).get(`/rag/eval/runs/${start.body.run_id}?kb_id=1`);
-    expect(run.status).toBe(200);
-    expect(["queued", "running", "completed"].includes(run.body.status)).toBe(true);
-  });
-});

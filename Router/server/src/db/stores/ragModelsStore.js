@@ -1,7 +1,7 @@
 import * as settingsRepo from "../repositories/settingsRepo.js";
 import { MASK, parseEnableThinking } from "./modelUtils.js";
 
-export const RAG_SLOTS = ["embedding", "rerank", "llm", "judge"];
+export const RAG_SLOTS = ["embedding", "rerank", "llm"];
 const SETTINGS_KEY = "rag_models";
 
 export class RagModelsStore {
@@ -39,14 +39,6 @@ export class RagModelsStore {
                 model: settings.ragLlmModel,
                 max_tokens: 1200,
                 temperature: 0.1,
-            },
-            judge: {
-                label: "评测裁判模型",
-                api_base_url: baseUrl,
-                api_key: apiKey,
-                model: settings.ragJudgeModel,
-                max_tokens: 500,
-                temperature: 0,
             },
         };
         return new RagModelsStore(defaults);
