@@ -1,4 +1,16 @@
+/**
+ * ManageFilesView.tsx — 管理 · 文件管理
+ *
+ * 典型工作流（上传 → 转 MD → 生成问题 → 导入双库）：
+ *   上传 POST /documents/upload
+ *   → ExtractModal 转 MD POST /documents/extract/stream
+ *   → GenerateModal 生成问法 POST .../import/generate-questions
+ *   → 导入 POST .../import/commit（targets: llm+rag，RAG 侧自动 rebuildIndex）
+ *   → 问题管理页 IndexStatusPill「重建索引」可手动再建（可选）
+ */
+
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { flushSync } from "react-dom";
 import DOMPurify from "dompurify";
 import { apiJson, sseStepText, streamDocumentExtract } from "../api/client";
@@ -47,6 +59,7 @@ export function ManageFilesView() {
   const [docLoading, setDocLoading] = useState(false);
   const loadSeqRef = useRef(0);
 
+  // 加载文件树
   const loadTree = useCallback(async () => {
     const data = await apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree");
     setTree(data.tree || []);
@@ -54,6 +67,7 @@ export function ManageFilesView() {
 
   useEffect(() => { void loadTree(); }, [loadTree]);
 
+  // 加载文档
   const loadDocument = async (node: FileTreeNode, seq: number) => {
     if (node.kind === "source_pdf") {
       if (seq !== loadSeqRef.current) return;
@@ -69,6 +83,7 @@ export function ManageFilesView() {
     setEditMode(isPreviewOnlyKind(node.kind || "") ? "preview" : "source");
   };
 
+  // 选择文件
   const selectFile = async (node: FileTreeNode) => {
     const editable = isEditableKind(node.kind || "");
     if (selected?.path !== node.path && editable && markdown !== loadedContent) {
@@ -89,6 +104,7 @@ export function ManageFilesView() {
     }
   };
 
+  // 保存 Markdown
   const saveMd = async () => {
     if (!selected || !isEditableKind(selected.kind)) return showToast("该文件不可编辑", "error");
     setSaving(true);
@@ -107,6 +123,7 @@ export function ManageFilesView() {
     }
   };
 
+  // 创建 Markdown
   const createMd = async () => {
     const name = prompt("新建 Markdown 文件名（不含路径）", "new.md");
     if (!name?.trim()) return;
@@ -128,6 +145,7 @@ export function ManageFilesView() {
     }
   };
 
+  // 重命名文件
   const renameFile = async () => {
     if (!selected) return;
     const newName = prompt("新文件名", selected.name);
@@ -146,6 +164,7 @@ export function ManageFilesView() {
     }
   };
 
+  // 删除文件
   const deleteFile = async () => {
     if (!selected || !confirm(`确定删除 ${selected.name}？`)) return;
     try {
@@ -161,6 +180,7 @@ export function ManageFilesView() {
     }
   };
 
+  /** 上传源文件到 files/documents/sources/，成功后刷新左侧文件树 */
   const uploadFile = async (file: File, overwrite = false) => {
     setUploading(true);
     try {
@@ -204,8 +224,11 @@ export function ManageFilesView() {
     }
   };
 
+  // 文件类型
   const kind = selected?.kind || "";
+  // 预览模式
   const previewOnly = isPreviewOnlyKind(kind);
+  // 可编辑
   const editable = isEditableKind(kind);
   const lineCount = markdown ? markdown.split("\n").length : docContent?.line_count || 0;
 
@@ -277,6 +300,7 @@ export function ManageFilesView() {
       </div>
       <input ref={fileInputRef} id="filesFileInput" type="file" accept={UPLOAD_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadFile(f); e.target.value = ""; }} />
 
+      {/* 文件转 Markdown */}
       {extractOpen && (
         <ExtractModal
           open
@@ -454,6 +478,7 @@ function ExtractModal({
     }
   };
 
+  /** SSE 流式提取：多段 ranges 合并为一个 module_md，use_vlm_refine 控制模型智能整理 */
   const runExtract = async () => {
     if (!path || !fileKind || extracting) return;
     if (!canConvertKind(fileKind)) return showToast("请选择可转换的文件", "error");
@@ -795,6 +820,7 @@ function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdow
     }
   };
 
+  /** 提交生成的 FAQ 到 LLM/RAG 库；双选时一次 commit，RAG 侧默认 auto_rebuild_rag */
   const commit = async () => {
     if (importing) return;
     if (importLlm && !llmKbId) return showToast("请选择问答模型知识库", "error");

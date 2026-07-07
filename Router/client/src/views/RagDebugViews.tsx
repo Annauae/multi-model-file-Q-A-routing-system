@@ -1,3 +1,17 @@
+/**
+ * RagDebugViews.tsx — 调试 · 问答（RAG 模式）核心视图与 Hook
+ *
+ * 用户切换到 RAG 并点击「问答」后的主路径：
+ *   App.tsx ModeBar 切换 debugMode → "rag"
+ *     → useRagAsk().chat("怎么调光圈")
+ *       → apiJson POST /rag/chat
+ *         → ragRoutes.js → RagRetriever.chat()
+ *           → search（embedding + 向量 + 关键词 + RRF + rerank）
+ *           → direct 或 generated 返回答案
+ *       → setChatResult / setSearchResults
+ *         → RagQaMain 渲染合成回答与来源条目
+ */
+
 import { useCallback, useState } from "react";
 import { apiJson, fmtConfidence, fmtMs } from "../api/client";
 import { TokenPanel, RAG_PHASE_LABELS } from "../components/MetricsPanels";
@@ -5,6 +19,15 @@ import { MarkdownPreview } from "../components/MarkdownPreview";
 import { useAppUi } from "../context/AppUiContext";
 import type { RagChatResponse, RagSearchResult, RagTimings, TokenUsage } from "../types";
 
+/**
+ * RAG 调试问答 Hook — 用户点击「问答」或「检索」时由 App.tsx 调用。
+ *
+ * @param kbId  当前选中的 RAG 知识库 id（来自 App 的 effectiveKb / debugRagKb）
+ * @param topK  检索返回条数上限（传给后端的 top_n 或 top_k）
+ *
+ * 「问答」走 POST /rag/chat（检索 + 置信判定 + 直出/合成）
+ * 「检索」走 POST /rag/search（仅检索排序，不生成合成回答）
+ */
 export function useRagAsk(kbId: string, topK: number) {
   const { showToast } = useAppUi();
   const [loading, setLoading] = useState(false);
@@ -20,6 +43,11 @@ export function useRagAsk(kbId: string, topK: number) {
     setLastError("");
   }, []);
 
+  /**
+   * RAG 完整问答 — 用户点击「问答」按钮时调用。
+   * 例：query="怎么调光圈", kb_id="1", top_n=5
+   * 后端返回 mode=direct|generated|no_high_confidence 及 sources、answer、timing
+   */
   const chat = useCallback(async (query: string) => {
     if (!query.trim()) {
       showToast("请输入问题", "error");
@@ -120,6 +148,11 @@ function scrollToRagAnswer(index: number) {
   document.getElementById(`ragAnswer-${index}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+/**
+ * RAG 调试页右侧主区：合成回答 + 来源条目列表 + 条目导航。
+ * mode=generated 时顶部显示 LLM 合成回答；mode=direct 时主要展示 Top1 来源；
+ * mode=no_high_confidence 时显示低置信提示 + 候选来源。
+ */
 export function RagQaMain({
   kbId,
   loading,

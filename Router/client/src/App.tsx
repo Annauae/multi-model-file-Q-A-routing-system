@@ -143,9 +143,11 @@ function AppShell() {
             <div className="navSub">
               <button type="button" className={`navItem ${module === "debug" && debugSub === "single" ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); switchModule("debug", "single"); }}>问答</button>
               <button type="button" className={`navItem ${module === "debug" && debugSub === "recall" ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); switchModule("debug", "recall"); }}>召回度测试</button>
+              {/* ↑ 点击后 debugSub="recall"，渲染 RecallModule（DebugRecallView.tsx） */}
             </div>
           </div>
           <div className="navGroup" data-nav-group="manage">
+            {/* 管理模块：默认子页「问题管理」；文件管理见 ManageFilesView */}
             <button type="button" className={`navGroupHead ${module === "manage" ? "active" : ""}`} onClick={() => switchModule("manage", manageSub)}><span>管理</span></button>
           </div>
           <div className="navGroup" data-nav-group="logs">
@@ -203,8 +205,9 @@ function AppShell() {
                         </>
                       ) : (
                         <>
-                          {/* RAG：「问答」= 检索+Rerank+生成；「检索」= 仅返回排序结果 */}
+                          {/* RAG「问答」→ useRagAsk.chat → POST /rag/chat（检索+直出/合成） */}
                           <button className="btn primary btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.chat(question)}>{ragAsk.loading ? "问答中…" : "问答"}</button>
+                          {/* RAG「检索」→ useRagAsk.search → POST /rag/search（仅检索，不合成） */}
                           <button className="btn btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.search(question)}>{ragAsk.loading ? "检索中…" : "检索"}</button>
                           <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); ragAsk.reset(); }}>清空</button>
                         </>
@@ -263,6 +266,7 @@ function AppShell() {
                     <div className="answersScroll"><div className="answersBody"><DebugAnswersPanel kbId={effectiveKb} loading={debugAsk.loading} answers={debugAsk.answers} /></div></div>
                   </div>
                 ) : (
+                  /* RAG 模式右侧：RagQaMain 展示合成回答与检索来源 */
                   <RagQaMain kbId={effectiveKb} loading={ragAsk.loading} chatResult={ragAsk.chatResult} searchResults={ragAsk.searchResults} activeNav={ragAsk.activeNav} setActiveNav={ragAsk.setActiveNav} lastError={ragAsk.lastError} />
                 )}
               </section>

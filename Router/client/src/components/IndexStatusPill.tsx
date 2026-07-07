@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { apiJson } from "../api/client";
 import { useAppUi } from "../context/AppUiContext";
 
+/**
+ * IndexStatusPill — RAG 模式下显示索引状态（就绪/过期/未构建）
+ * 挂载于 App.tsx 调试页，kbId 变化时 GET /rag/knowledge-bases/:id/index/status
+ */
 export function IndexStatusPill({ kbId, onRebuild }: { kbId: string; onRebuild?: () => void }) {
   const { showToast } = useAppUi();
   const [status, setStatus] = useState<{ ready?: boolean; stale?: boolean; reason?: string } | null>(null);

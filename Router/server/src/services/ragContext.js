@@ -1,3 +1,8 @@
+/**
+ * ragContext.js — RAG 子系统上下文，服务启动时由 createAppContext 组装。
+ * 提供：RAG 知识库、embedding/rerank/llm 模型配置、Weaviate、FAQ Store、运行时配置等。
+ */
+
 import { RagKbStore } from "../db/stores/ragKbStore.js";
 import { RagModelsStore } from "../db/stores/ragModelsStore.js";
 import { RagPromptsStore } from "../db/stores/ragPromptsStore.js";

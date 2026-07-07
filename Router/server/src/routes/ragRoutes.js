@@ -313,12 +313,19 @@ export function registerRagRoutes(app, ctx, ragCtx) {
     app.get("/rag/search", (req, res) => void handleSearch(req, res));
     app.post("/rag/search", (req, res) => void handleSearch(req, res));
 
+    /**
+     * RAG 完整问答 — 调试页「问答」按钮调用此路由（非 SSE，一次性 JSON 返回）
+     *
+     * 请求体：{ query, kb_id, top_n?, use_llm_answer? }
+     * 流程：indexStatus 检查索引 → RagRetriever.chat() → 检索 + 置信判定 + 直出/合成
+     */
     app.post("/rag/chat", async (req, res) => {
         try {
             const queryText = String(req.body?.query ?? "").trim();
             if (!queryText)
                 throw httpError(400, "query 不能为空");
             const kbId = validateRagKbId(ragCtx, req.body?.kb_id);
+            // 索引未构建或过期则 409，前端 Toast 提示「请先重建索引」
             const status = await indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
             if (!status.ready)
                 return res.status(409).json({ detail: status.reason || "索引不存在，请先重建索引" });

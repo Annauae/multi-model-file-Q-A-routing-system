@@ -254,7 +254,6 @@ export class LLMClient {
             raiseFriendly(e);
         }
     }
-    
     /**
      * 流式聊天补全。调试问答走 mock_mode="confidence" 分支。
      * 逐 chunk yield delta.content，最终 usage 写入 usage_out。

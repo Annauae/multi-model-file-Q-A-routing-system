@@ -93,9 +93,9 @@ export function useDebugAsk(kbId: string, profileId: string, topK: number) {
   const [timings, setTimings] = useState<AskTimings | null>(null);           // 左 Tab「消耗时间/Token」
 
   const ask = useCallback(async (question: string) => {
-    const q = question.trim(); 
-    if (!q) { showToast("请输入问题", "error"); return; } // 如果问题为空，则显示错误提示
-    if (!kbId) { showToast("请选择知识库", "error"); return; } // 如果知识库为空，则显示错误提示
+    const q = question.trim();
+    if (!q) { showToast("请输入问题", "error"); return; }
+    if (!kbId) { showToast("请选择知识库", "error"); return; }
 
     // ① 进入加载态，清空上次结果（用户会看到「匹配中…」）
     setLoading(true);
@@ -104,18 +104,18 @@ export function useDebugAsk(kbId: string, profileId: string, topK: number) {
     setTimings(null);
 
     try {
-      //  发起 SSE 流式请求；onEvent 在流式过程中被多次调用
+      // ② 发起 SSE 流式请求；onEvent 在流式过程中被多次调用
       await streamAskConfidence({ question: q, kb_id: kbId, top_k: topK, match_profile_id: profileId }, (evt) => {
-        //  服务端 LLM 匹配完成后先发 candidates（含 raw_output、候选 id/confidence）
+        // ③ 服务端 LLM 匹配完成后先发 candidates（含 raw_output、候选 id/confidence）
         if (evt.event === "candidates") setCandidates((evt.data.candidates as ConfidenceCandidate[]) || []);
-        //  最终 done 事件：带完整 answers（含 answer 正文）、timings
+        // ④ 最终 done 事件：带完整 answers（含 answer 正文）、timings
         if (evt.event === "done") {
           const d = evt.data as { answers?: CandidateAnswer[]; match?: { candidates?: ConfidenceCandidate[] }; timings?: AskTimings };
           setAnswers(d.answers || []);
           setCandidates(d.match?.candidates || []);
           setTimings(d.timings || null);
         }
-        // 非超时错误（如 LLM 鉴权失败）弹 Toast
+        // ⑤ 非超时错误（如 LLM 鉴权失败）弹 Toast
         if (evt.event === "error" && !evt.data?.timed_out) showToast(String(evt.data.detail || "错误"), "error", 3200);
       });
     } catch (e) {

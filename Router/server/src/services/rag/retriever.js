@@ -5,6 +5,11 @@ import { ragKbAssetsDirPath } from "../paths.js";
 import { SEARCHABLE_DOC_TYPES } from "./searchDocBuilder.js";
 import { aggregateTokens } from "./tokenUtils.js";
 import { RagLogSink, formatRagSearchSummary } from "./ragLogger.js";
+
+/**
+ * RAG 检索器 — 向量 + 关键词混合检索、RRF 融合、rerank、chat 直出/合成。
+ * 调试页 POST /rag/chat 的核心执行类。
+ */
 export class RagRetriever {
     settings;
     kbId;
@@ -45,6 +50,10 @@ export class RagRetriever {
         return this.itemMap;
     }
 
+    /**
+     * 混合检索：embed query → Weaviate 向量检索 → 关键词 n-gram → RRF 融合 → rerank。
+     * 例：query="怎么调光圈" 可能命中 q012 光圈调节相关 FAQ。
+     */
     async search(query, topK) {
         const top_k = topK ?? this.rt("top_k", 8);
         const timing = {};
@@ -110,6 +119,12 @@ export class RagRetriever {
         return { results, timing, tokens, token_breakdown };
     }
 
+    /**
+     * RAG 问答主流程：先 search，再按置信度与 answer_mode 决定返回方式。
+     * - no_high_confidence：Top1 分数 < min_confidence_score
+     * - direct：直出 Top1 的 answer（默认）
+     * - generated：用 RAG LLM 根据 sources 合成回答
+     */
     async chat(query, { topN, useLlmAnswer } = {}) {
         const tTotal = performance.now();
         const top_n = topN ?? this.rt("top_n", 3);

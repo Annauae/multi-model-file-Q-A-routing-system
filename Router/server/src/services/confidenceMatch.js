@@ -84,19 +84,19 @@ export async function runConfidenceMatch(opts) {
 
     // ── 阶段 2：拼装 system prompt = 匹配规则 + 【标准问题列表】 ──
     // 例：q003|怎么安装吊带、q003|吊带安装方法 …
-    const systemPrompt = await opts.cache.getConfidenceSystemPrompt(opts.kbId, opts.topK); // 获取知识库的 FAQ 索引的置信度系统提示词
-    const messagesDict = buildMatchMessages(systemPrompt, opts.question); // 构建匹配消息字典
-    const messages = messagesDict.map((m) => ({ role: m.role, content: m.content })); // 将匹配消息字典转换为消息列表
+    const systemPrompt = await opts.cache.getConfidenceSystemPrompt(opts.kbId, opts.topK);
+    const messagesDict = buildMatchMessages(systemPrompt, opts.question);
+    const messages = messagesDict.map((m) => ({ role: m.role, content: m.content }));
     log(`[prompt] confidence system 长度=${systemPrompt.length} 字符`, "prompt");
     log(`[prompt] user 消息:\n${opts.question}`, "prompt");
 
-    const modelName = opts.matchModel ?? opts.settings.matchModel; // 获取匹配模型
-    const tok = opts.maxTokens ?? opts.settings.confidenceMaxTokens; // 获取最大token数
-    const temp = opts.temperature ?? opts.settings.matchTemperature; // 获取温度
+    const modelName = opts.matchModel ?? opts.settings.matchModel;
+    const tok = opts.maxTokens ?? opts.settings.confidenceMaxTokens;
+    const temp = opts.temperature ?? opts.settings.matchTemperature;
     log(`[match] 调用 LLM model=${modelName} max_tokens=${tok} temperature=${temp}`, "match");
 
-    const tMatch0 = performance.now(); // 记录匹配开始时间
-    timings.prepare_ms = tMatch0 - t0; // 计算准备时间
+    const tMatch0 = performance.now();
+    timings.prepare_ms = tMatch0 - t0;
 
     // ── 阶段 3：流式调用 LLM，期望输出 JSON 数组 ──
     // 例：[{"id":"q003","confidence":0.92},{"id":"q007","confidence":0.41}]
@@ -105,40 +105,40 @@ export async function runConfidenceMatch(opts) {
     let gotFirst = false;
     let deltaCount = 0;
     const usageHolder = [];
-    for await (const delta of opts.llm.chatStream({ // 流式调用 LLM，期望输出 JSON 数组
+    for await (const delta of opts.llm.chatStream({
         model: modelName,
-        messages, // 匹配消息列表
-        max_tokens: tok, // 最大token数
-        temperature: temp, // 温度
-        mock_mode: "confidence", // 模拟模式
-        usage_out: usageHolder, // 使用输出
+        messages,
+        max_tokens: tok,
+        temperature: temp,
+        mock_mode: "confidence",
+        usage_out: usageHolder,
     })) {
         if (opts.abortSignal?.aborted)
-            throw new LLMError(`请求超时（${opts.settings.debugRequestTimeoutS}s）`); // 如果请求超时，则抛出错误
-        deltaCount++; // 统计delta数量
+            throw new LLMError(`请求超时（${opts.settings.debugRequestTimeoutS}s）`);
+        deltaCount++;
         if (!gotFirst) {
             firstTokenMs = performance.now() - tMatch0;
             gotFirst = true;
             log(`[match] 首 token 到达 +${firstTokenMs.toFixed(1)}ms`, "match");
         }
-        buffer += delta.content; // 拼接delta内容
+        buffer += delta;
     }
-    const raw = buffer.trim(); // 去除空白字符
-    timings.match_ms = performance.now() - tMatch0; // 计算匹配时间
-    timings.match_first_token_ms = firstTokenMs; // 计算首token时间
+    const raw = buffer.trim();
+    timings.match_ms = performance.now() - tMatch0;
+    timings.match_first_token_ms = firstTokenMs;
     if (usageHolder.length)
-        applyUsageToTimings(timings, usageHolder[0]); // 应用使用量到timings
+        applyUsageToTimings(timings, usageHolder[0]);
     else
-        timings.match_output_tokens = raw ? Math.max(1, raw.split(/\s+/).length) : 0; // 计算匹配输出token数
-    log(`[match] stream 结束 deltas=${deltaCount} raw_output=${JSON.stringify(raw)}`, "match"); // 记录匹配结束日志
+        timings.match_output_tokens = raw ? Math.max(1, raw.split(/\s+/).length) : 0;
+    log(`[match] stream 结束 deltas=${deltaCount} raw_output=${JSON.stringify(raw)}`, "match");
 
     // ── 阶段 4：解析 LLM 输出，校验 id 在 validIds 内，按 confidence 排序取 topK ──
-    const { candidates: parsed, rawOutput } = parseConfidenceRaw(raw, idx.validIds, opts.topK); // 解析LLM输出
-    const candidates = []; 
-    const answers = []; 
+    const { candidates: parsed, rawOutput } = parseConfidenceRaw(raw, idx.validIds, opts.topK);
+    const candidates = [];
+    const answers = [];
     for (const row of parsed) {
         // ── 阶段 5：按匹配到的 id 从内存索引取标准问题与 answer 正文 ──
-        const item = opts.cache.resolveItem(opts.kbId, row.id); // 从内存索引取标准问题与 answer 正文
+        const item = opts.cache.resolveItem(opts.kbId, row.id);
         const qText = item?.question ?? "";
         const ansText = item?.answer ?? "";
         candidates.push({ id: row.id, confidence: row.confidence, question: qText });

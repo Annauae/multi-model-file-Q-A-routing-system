@@ -1,3 +1,8 @@
+/**
+ * indexStatus.js — 检查 RAG 知识库 Weaviate 索引是否可用。
+ * /rag/chat 请求前必须 ready=true，否则返回 409。
+ */
+
 import * as ragMetaRepo from "../../db/repositories/ragMetaRepo.js";
 import * as kbRepo from "../../db/repositories/kbRepo.js";
 import * as qaRepo from "../../db/repositories/qaRepo.js";
@@ -11,6 +16,7 @@ export async function writeIndexMeta(_filesRoot, kbId, meta) {
     await ragMetaRepo.saveIndexMeta(kbId, meta);
 }
 
+/** 判断索引是否就绪、是否因 FAQ 变更而过期（data_hash 不一致） */
 export async function indexStatus(settings, kbId, ragModelsStore) {
     const doc = await qaRepo.getDocument("rag", kbId);
     if (!doc.items.length) {

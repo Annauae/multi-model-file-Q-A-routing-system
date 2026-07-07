@@ -1,3 +1,14 @@
+/**
+ * DebugRecallView.tsx — 调试 · 召回度测试页
+ *
+ * 用户操作路径（全选 + 批量运行）：
+ *   App.tsx 导航「召回度测试」→ RecallModule
+ *     → loadTests() 加载 recall_tests 行
+ *     → 全选 checkbox → setSelected(所有 row.id)
+ *     → batchRun() → 逐行 runRow() → streamAskConfidence 或 /rag/chat
+ *     → 更新每行 answers/timings，聚合 batchMetrics，切到「消耗时间」Tab
+ */
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AskTimings, CandidateAnswer, RecallTestRow } from "../types";
 import {
@@ -45,6 +56,7 @@ function newRecallRow(partial: Partial<RecallRow> = {}): RecallRow {
   };
 }
 
+/** 对批量运行成功的各行 timings 求和/平均，供左侧「消耗时间/Token」Tab 展示 */
 function aggregateRecallMetrics(rows: RecallRow[]): AskTimings | null {
   const ran = rows.filter((r) => r.timings?.total_ms != null);
   if (!ran.length) return null;
@@ -66,6 +78,7 @@ function aggregateRecallMetrics(rows: RecallRow[]): AskTimings | null {
   return totals;
 }
 
+/** 构建召回度测试统计文本 */
 function buildRecallStat(rows: RecallRow[]): string {
   const labeled = rows.filter((r) => r.recalled === "yes" || r.recalled === "no");
   const yes = rows.filter((r) => r.recalled === "yes").length;
@@ -77,6 +90,7 @@ function buildRecallStat(rows: RecallRow[]): string {
   return `共 ${rows.length} 条 · 已标注 ${labeled.length} · 召回率 ${rate} · 平均耗时 ${avgTotalMs != null ? fmtMs(avgTotalMs) : "—"} · 平均 Token ${avgTokens != null ? avgTokens : "—"}`;
 }
 
+// 召回度测试模块
 export function RecallModule() {
   const { showToast, showModal } = useAppUi();
   const { kbMap, kbDisplayName } = useKnowledgeBases();
@@ -102,15 +116,18 @@ export function RecallModule() {
   const [batchMetrics, setBatchMetrics] = useState<AskTimings | null>(null);
   const [timedOut, setTimedOut] = useState(false);
 
+  // 获取有效知识库 ID 和显示名称
   const effectiveKb = recallMode === "rag" ? (ragKbId || ragKbIds[0] || "") : (kbId || kbIds[0] || "");
   const displayKbName = recallMode === "rag" ? ragKbDisplayName : kbDisplayName;
   const profiles = profilesData?.profiles || [];
   const effectiveProfile = profileId || profilesData?.default_id || profiles[0]?.id || "";
   const profileLabel = profiles.find((p) => p.id === effectiveProfile)?.name || effectiveProfile;
 
+  /** 从 PostgreSQL recall_tests 表加载当前知识库的测试行 */
   const loadTests = useCallback(async (kid: string) => {
     if (!kid) { setRows([]); return; }
     try {
+      // 获取召回度测试行
       const path = recallMode === "rag"
         ? `/rag/knowledge-bases/${encodeURIComponent(kid)}/recall-tests`
         : `/knowledge-bases/${encodeURIComponent(kid)}/recall-tests`;
@@ -119,6 +136,7 @@ export function RecallModule() {
     } catch {
       setRows([]);
     }
+    // 清空选中行
     setSelected(new Set());
   }, [recallMode]);
 
@@ -131,6 +149,11 @@ export function RecallModule() {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   };
 
+  /**
+   * 单行运行 — batchRun 对每一选中行调用一次。
+   * LLM 模式：streamAskConfidence（与调试 · 问答相同后端路径）
+   * RAG 模式：POST /rag/chat（与 RAG 调试问答相同）
+   */
   const runRow = async (row: RecallRow): Promise<RecallRow> => {
     const q = (row.question || "").trim();
     if (!q || !effectiveKb) return row;
@@ -181,6 +204,11 @@ export function RecallModule() {
     return updated;
   };
 
+  /**
+   * 批量运行 — 用户点击左侧「批量运行」按钮时调用。
+   * 优先跑 selected 中有问题的行；若无选中则跑所有「未标注」行。
+   * 串行 for 循环，一行跑完再跑下一行（非并发）。
+   */
   const batchRun = async () => {
     if (!effectiveKb) return showToast("请选择知识库", "error");
     let targets = rows.filter((r) => selected.has(r.id) && (r.question || "").trim());
@@ -302,6 +330,7 @@ export function RecallModule() {
               )}
               {recallMode === "rag" && <IndexStatusPill kbId={effectiveKb} onRebuild={() => void loadTests(effectiveKb)} />}
               <div className="qActions recallSideActions">
+                {/* 批量运行：batchRun() 串行调用 runRow() 处理每一选中行 */}
                 <button id="recallRunBtn" type="button" className="btn btnXs primary" disabled={running} onClick={() => void batchRun()}>{running ? "批量运行中…" : "批量运行"}</button>
               </div>
             </div>
@@ -338,6 +367,7 @@ export function RecallModule() {
                 </select>
               </label>
               <label className="recallSelectAllLabel">
+                {/* 全选：把所有 row.id 写入 selected Set，供 batchRun 筛选 targets */}
                 <input type="checkbox" id="recallSelectAll" checked={selectAll} ref={(el) => { if (el) el.indeterminate = selectIndeterminate; }} onChange={(e) => {
                   if (e.target.checked) setSelected(new Set(rows.map((r) => r.id)));
                   else setSelected(new Set());

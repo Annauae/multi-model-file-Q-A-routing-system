@@ -12,6 +12,7 @@ export class RagLlmClient {
         this.ragPromptsStore = ragPromptsStore;
     }
 
+    // 获取 LLM 提示词模板
     llmPromptTemplate(runtimeConfig) {
         const kbTemplate = activeTemplate(runtimeConfig).content?.trim();
         if (kbTemplate)
@@ -19,10 +20,12 @@ export class RagLlmClient {
         return this.ragPromptsStore?.effectiveLlmPrompt() || DEFAULT_RAG_LLM_PROMPT;
     }
 
+    // 获取 评估提示词模板
     judgePromptTemplate() {
         return this.ragPromptsStore?.effectiveJudgePrompt() || DEFAULT_RAG_JUDGE_PROMPT;
     }
 
+    // 填充提示词模板
     fillPrompt(template, vars) {
         let out = template;
         for (const [key, val] of Object.entries(vars))
@@ -30,10 +33,12 @@ export class RagLlmClient {
         return out;
     }
 
+    // 检查槽位是否启用
     slotEnabled(slot) {
         return Boolean(this.ragModelsStore.getSlot(slot).api_key?.trim());
     }
 
+    // 获取请求头
     headers(slot) {
         const cfg = this.ragModelsStore.getSlot(slot);
         return {
@@ -42,6 +47,7 @@ export class RagLlmClient {
         };
     }
 
+    // 重排序
     async rerank(query, documents, topN) {
         if (!documents.length)
             return { ranked: [], usage: null };
@@ -81,6 +87,7 @@ export class RagLlmClient {
         return fallbackRanked(true);
     }
 
+    // 生成回答
     async generateAnswer(query, sources, runtimeConfig) {
         const cfg = this.ragModelsStore.getSlot("llm");
         if (!sources.length)
@@ -123,6 +130,7 @@ export class RagLlmClient {
         return { content: sources[0].answer, usage: null };
     }
 
+    // 降级评估
     fallbackJudge(expectedAnswer, actualAnswer) {
         const exp = new Set(stripMarkdown(expectedAnswer));
         const act = new Set(stripMarkdown(actualAnswer));
@@ -142,6 +150,7 @@ export class RagLlmClient {
         };
     }
 
+    // 评估
     async judge(query, expectedAnswer, actualAnswer, sources) {
         const fallback = this.fallbackJudge(expectedAnswer, actualAnswer);
         const cfg = this.ragModelsStore.getSlot("judge");

@@ -17,6 +17,7 @@ export function ManageView({ sub, onSubChange }: { sub: "items" | "files"; onSub
       <div className="managePageLayout">
         <nav className="manageSubNav" id="manageSubNav">
           <button type="button" className={`manageNavItem ${sub === "items" ? "active" : ""}`} data-manage-sub="items" onClick={() => onSubChange("items")}>问题管理</button>
+          {/* 问题管理：FAQ 列表、RAG 模式下 IndexStatusPill「重建索引」 */}
           <button type="button" className={`manageNavItem ${sub === "files" ? "active" : ""}`} data-manage-sub="files" onClick={() => onSubChange("files")}>文件管理</button>
         </nav>
         <div className="manageMain">
@@ -327,6 +328,7 @@ function ManageQuestionsView() {
         <div className="stripHead manageItemsHead">
           <span>{isRag ? "RAG 标准问题" : "标准问题"}</span>
           <span className="headActions manageItemsHeadActions">
+            {/* RAG 模式：重建索引 POST /rag/knowledge-bases/:id/index/rebuild（import/commit 也可能已自动重建） */}
             {isRag && selectedKbId && <IndexStatusPill kbId={selectedKbId} onRebuild={() => { void loadItems(selectedKbId); void ragKb.refresh(); }} />}
             <input id="itemSearch" type="search" className="itemSearchInput" placeholder="搜索问题…" value={search} onChange={(e) => setSearch(e.target.value)} />
             <Dropdown label="操作">

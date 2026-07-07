@@ -1,0 +1,21 @@
+services:
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.28.4
+    container_name: router-weaviate
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    environment:
+      QUERY_DEFAULTS_LIMIT: "25"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      AUTHENTICATION_APIKEY_ENABLED: "true"
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: "router-local-dev"
+      AUTHENTICATION_APIKEY_USERS: "router"
+      ENABLE_API_BASED_MODULES: "true"
+      CLUSTER_HOSTNAME: "node1"
+
+volumes:
+  weaviate_data:

@@ -42,33 +42,31 @@ export function iterQuestionPromptLines(item) {
     }
     return lines;
 }
-export function buildQuestionListSection(enabledItems) { /** 构建标准问题列表 */
+export function buildQuestionListSection(enabledItems) {
     const lines = ["【标准问题列表】"];
     for (const item of enabledItems) {
-        lines.push(...iterQuestionPromptLines(item)); // 将启用项展开为多行 `id|question`，供 LLM 在列表中匹配
+        lines.push(...iterQuestionPromptLines(item));
     }
     if (lines.length === 1)
-        lines.push("(empty)"); // 如果标准问题列表为空，则添加空行
-    return lines.join("\n"); // 拼接标准问题列表
+        lines.push("(empty)");
+    return lines.join("\n");
 }
 export function countQuestionPromptLines(enabledItems) {
-    let total = 0; // 统计标准问题列表的行数
+    let total = 0;
     for (const item of enabledItems) {
         if (!item.enabled)
-            continue; // 如果启用项未启用，则跳过
-        total += iterQuestionPromptLines(item).length; // 统计启用项的行数
+            continue;
+        total += iterQuestionPromptLines(item).length;
     }
-    return total; // 返回标准问题列表的行数
+    return total;
 }
-
 /** 拼接完整 system prompt：规则 + 标准问题列表 */
 export function buildConfidenceSystemPrompt(matchPrompt, enabledItems, topK = 5) {
-    let rules = (matchPrompt || "").trim() || defaultConfidenceMatchPrompt(topK); // 获取匹配规则，如果为空，则使用默认置信度匹配规则
+    let rules = (matchPrompt || "").trim() || defaultConfidenceMatchPrompt(topK);
     if (rules.includes("{top_k}"))
-        rules = rules.replace("{top_k}", String(topK)); // 替换 top_k 变量
-    return `${rules}\n\n${buildQuestionListSection(enabledItems)}`; // 拼接规则和标准问题列表
+        rules = rules.replace("{top_k}", String(topK));
+    return `${rules}\n\n${buildQuestionListSection(enabledItems)}`;
 }
-
 /** OpenAI 风格 messages：system=FAQ列表+规则，user=用户问题（如「怎么安装吊带」） */
 export function buildMatchMessages(systemPrompt, userQuestion) {
     return [
@@ -76,7 +74,6 @@ export function buildMatchMessages(systemPrompt, userQuestion) {
         { role: "user", content: (userQuestion || "").trim() },
     ];
 }
-
 function normalizeOutput(raw) {
     const text = (raw || "").trim();
     if (!text)

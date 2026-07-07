@@ -211,12 +211,12 @@ export function createApp(ctx, clientDist) {
             const question = String(req.body.question ?? "").trim();
             if (!question)
                 throw httpError(400, "question 不能为空");
-            const kbId = validateKbId(ctx, req.body.kb_id); // 校验 kb_id 非空且在 KbStore 中存在
-            const profile = resolveProfile(req.body.match_profile_id); // 解析 API 地址、Key、model、max_tokens、temperature
+            const kbId = validateKbId(ctx, req.body.kb_id);
+            const profile = resolveProfile(req.body.match_profile_id);
             const [, , , , resp] = await runConfidenceMatch({
                 question,
                 kbId,
-                topK: Math.max(1, Math.min(20, Number(req.body.top_k ?? 5))), // 限制 top_k 在 1-20 之间
+                topK: Math.max(1, Math.min(20, Number(req.body.top_k ?? 5))),
                 cache: ctx.cache,
                 llm: llmForProfile(ctx.settings, profile),
                 settings: ctx.settings,
@@ -243,20 +243,22 @@ export function createApp(ctx, clientDist) {
      * 与 POST /ask/confidence 逻辑相同，额外通过 SSE 推送中间日志与分阶段结果。
      */
     app.post("/ask/confidence/stream", async (req, res) => {
-        const question = String(req.body.question ?? "").trim(); // 获取问题
+        const question = String(req.body.question ?? "").trim();
         if (!question)
             return res.status(400).json({ detail: "question 不能为空" });
         let kbId;
         try {
-            kbId = validateKbId(ctx, req.body.kb_id); // 校验 kb_id 非空且在 KbStore 中存在
+            // 校验 kb_id 在 llm_knowledge_bases 中存在
+            kbId = validateKbId(ctx, req.body.kb_id);
         }
         catch (e) {
             return res.status(e.status).json({ detail: e.detail });
         }
-        const topK = Math.max(1, Math.min(20, Number(req.body.top_k ?? 5))); // 限制 top_k 在 1-20 之间
-        const profile = resolveProfile(req.body.match_profile_id); // 解析 API 地址、Key、model、max_tokens、temperature
+        const topK = Math.max(1, Math.min(20, Number(req.body.top_k ?? 5)));
+        // 从 match_profiles 解析 API 地址、Key、model、max_tokens、temperature
+        const profile = resolveProfile(req.body.match_profile_id);
 
-        // 切换为 SSE 响应，禁止代理缓冲，防止中间日志丢失
+        // 切换为 SSE 响应，禁止代理缓冲
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("X-Accel-Buffering", "no");
@@ -269,7 +271,7 @@ export function createApp(ctx, clientDist) {
         const logQueue = [];
         const box = { matchResult: null, workerError: null, done: false };
         const worker = (async () => {
-            const sink = new AskLogSink((line, kind) => logQueue.push(["log", line, kind]), ctx.opLog, "debug", kbId); // 创建日志 sink，将日志推送到 logQueue
+            const sink = new AskLogSink((line, kind) => logQueue.push(["log", line, kind]), ctx.opLog, "debug", kbId);
             try {
                 sink.log("[step] POST /ask/confidence/stream 收到请求", "step");
                 // 核心：加载 FAQ 索引 → 拼 prompt → LLM 流式匹配 → 解析 JSON → 查 answer
@@ -804,25 +806,26 @@ export function createApp(ctx, clientDist) {
         const file = req.file;
         if (!file)
             return res.status(400).json({ detail: "file 必填" });
-        const name = decodeUploadFilename(file.originalname);
+        const name = decodeUploadFilename(file.originalname); // 修复中文乱码
         if (!isAllowedSourceExtension(name)) {
             return res.status(400).json({ detail: "不支持的文件类型" });
         }
         const destDir = documentsSourcesDirPath(ctx.settings.filesRoot);
         fs.mkdirSync(destDir, { recursive: true });
-        const dest = path.join(destDir, path.basename(name));
+        const dest = path.join(destDir, path.basename(name)); // 目标文件路径
         const overwrite = req.query.overwrite === "1"
             || req.query.overwrite === "true"
             || req.body?.overwrite === "1"
             || req.body?.overwrite === true;
         if (fs.existsSync(dest) && !overwrite) {
+            // 文件已存在
             return res.status(409).json({
                 detail: `文件「${path.basename(dest)}」已存在`,
                 filename: path.basename(dest),
                 exists: true,
             });
         }
-        fs.writeFileSync(dest, file.buffer);
+        fs.writeFileSync(dest, file.buffer); // 写入文件
         const kind = docFileKind(path.basename(dest), "sources");
         const file_type = formatFromFilename(path.basename(dest));
         const caps = capabilitiesForKind(kind);
@@ -854,10 +857,10 @@ export function createApp(ctx, clientDist) {
      */
     app.post("/documents/extract/stream", async (req, res) => {
         const filename = String(req.body.filename ?? "").trim()
-            || path.basename(String(req.body.path ?? "").trim());
-        const ranges = normalizeImportRanges(req.body.ranges);
-        const useVlmRefine = req.body.use_vlm_refine !== false;
-        const sheetName = String(req.body.sheet_name ?? "").trim() || undefined;
+            || path.basename(String(req.body.path ?? "").trim()); // 获取文件名或路径
+        const ranges = normalizeImportRanges(req.body.ranges); // 归一化导入范围
+        const useVlmRefine = req.body.use_vlm_refine !== false; // 是否使用 VLM 精修
+        const sheetName = String(req.body.sheet_name ?? "").trim() || undefined; // 获取工作表名
         if (!filename)
             return res.status(400).json({ detail: "filename 必填" });
         if (!ranges.length)
