@@ -100,14 +100,3 @@ CREATE TABLE IF NOT EXISTS rag_index_meta (
     meta JSONB NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-CREATE TABLE IF NOT EXISTS rag_eval_runs (
-    kb_id TEXT NOT NULL,
-    run_id TEXT NOT NULL,
-    data JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-    PRIMARY KEY (kb_id, run_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_rag_eval_runs_kb_created ON rag_eval_runs (kb_id, created_at DESC);

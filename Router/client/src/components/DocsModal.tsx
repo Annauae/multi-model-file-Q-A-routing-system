@@ -5,7 +5,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { useAnimatedVisible } from "../hooks/useAnimatedVisible";
 
-const MANUAL_VERSION = 13;
+const MANUAL_VERSION = 15;
 
 type DocKind = "user" | "developer";
 

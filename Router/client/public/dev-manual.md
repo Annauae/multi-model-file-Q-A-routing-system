@@ -258,7 +258,6 @@ Router/                          # monorepo 根（npm workspaces）
 | 日志 | `operation_logs` | 日志页 + 调试 SSE 过程记录 |
 | 召回测试 | `recall_tests` | 调试·召回度测试页的测试集与标注 |
 | RAG 运行 | `rag_runtime_configs`、`rag_index_meta` | 每 RAG 库的检索/合成参数、向量索引构建元数据 |
-| 预留 | `rag_eval_runs` | 表已建，**当前代码未使用** |
 
 ---
 
@@ -528,26 +527,6 @@ Router/                          # monorepo 根（npm workspaces）
 | `updated_at` | TIMESTAMPTZ | 更新时间 |
 
 **FAQ 变更后**：修改 `qa_items`(rag) 会 mark stale；必须重建索引后 RAG 问答/检索才用新 FAQ。
-
----
-
-### 3.12 rag_eval_runs
-
-**用途**：预留的 RAG **批量评估运行**记录表。
-
-| 维度 | 说明 |
-|------|------|
-| **UI · 页面** | **当前无页面使用** |
-| **代码** | 仅 migration 建表；无 repository 引用 |
-| **接手建议** | 可忽略，除非后续做 RAG 评测批跑功能 |
-
-| 列名 | 类型 | 说明 |
-|------|------|------|
-| `kb_id` | TEXT | RAG 库 ID |
-| `run_id` | TEXT | 运行 ID |
-| `data` | JSONB | 评估结果 |
-| `created_at` / `updated_at` | TIMESTAMPTZ | 时间戳 |
-| **PK** | | `(kb_id, run_id)` |
 
 ---
 
@@ -1536,74 +1515,110 @@ X-Accel-Buffering: no
 
 ## 10. 环境变量
 
-配置文件：`Router/.env`（参见 `.env.example`）。
+**唯一代码来源**：`server/src/config.js` 的 `loadSettings()`，启动时从 `Router/.env` 加载（`dotenv`）。  
+模板文件：[`Router/.env.example`](../../.env.example)（与 `config.js` 同步，勿手写过期默认值）。
+
+### 10.0 先搞清两类变量
+
+| 类型 | 改 `.env` 是否立即生效 | 说明 |
+|------|------------------------|------|
+| **部署 / 运行时** | 是（需重启服务） | 数据库、端口、Weaviate、流式超时、RAG 融合参数、MOCK 开关等，**始终**从 `process.env` 读 |
+| **模型/API 种子** | 仅 PG 尚无配置时 | `API_KEY`、`MATCH_MODEL`、`RAG_EMBEDDING_MODEL` 等 → 首次 `ModelsStore.init()` / `RagModelsStore.init()` 写入 `app_settings`；**之后以设置页为准**，改 `.env` 不会覆盖已保存配置 |
+| **JSON 种子** | 首次启动一次 | `config/*.json` 由 `ensureJsonSeeded.js` 导入 PG；设 `SKIP_JSON_SEED=1` 可跳过 |
+
+```
+.env → loadSettings()
+  ├─ 始终生效 → PORT、DATABASE_URL、WEAVIATE_*、DEBUG_REQUEST_TIMEOUT_S、RAG_VECTOR_TOP_K …
+  └─ 仅 PG 空表时 → API_KEY / MATCH_MODEL → app_settings.models / match_profiles / rag_models
+       ↑ 若 config/match_profiles.json 已 seed，以 JSON/PG 为准
+```
 
 ### 10.1 必填
 
-| 变量 | 说明 |
-|------|------|
-| `DATABASE_URL` | PostgreSQL 连接串，如 `postgresql://user:pass@127.0.0.1:5432/router` |
+| 变量 | 代码默认 | 说明 |
+|------|----------|------|
+| `DATABASE_URL` | — | PostgreSQL 连接串。`index.js` 启动时校验非空，如 `postgresql://postgres:pass@127.0.0.1:5432/router` |
 
-### 10.2 服务
+未配置时服务无法启动。测试见 §10.5 的 `TEST_DATABASE_URL`。
 
-| 变量 | 默认 | 说明 |
-|------|------|------|
-| `PORT` | `8002` | HTTP 端口 |
-| `HOST` | `0.0.0.0` | 监听地址 |
-| `DATA_ROOT` | `APP_ROOT` | 数据根 |
-| `FILES_ROOT` | `{DATA_ROOT}/files` | 业务文件根 |
-| `DEBUG_REQUEST_TIMEOUT_S` | `60`（example 写 180） | 流式问答服务端超时 |
-| `SKIP_JSON_SEED` | — | 设 `1` 跳过首次 JSON→PG |
+### 10.2 HTTP 与数据目录
 
-### 10.3 LLM API
+| 变量 | 代码默认 | 读取位置 | 说明 |
+|------|----------|----------|------|
+| `PORT` | `8002` | `index.js` | HTTP 端口 |
+| `HOST` | `0.0.0.0` | `index.js` | 监听地址 |
+| `DATA_ROOT` | `APP_ROOT`（`Router/` 包根） | `config.js` | 配置与日志根；默认 `{APP_ROOT}/config/` |
+| `FILES_ROOT` | `{DATA_ROOT}/files` | `config.js` | 上传文档、kb 附件根目录 |
 
-| 变量 | 默认 | 说明 |
-|------|------|------|
-| `API_BASE_URL` | OpenAI URL | 全局默认 API |
-| `API_KEY` / `ARK_API_KEY` | — | API 密钥 |
-| `MATCH_MODEL` | `gpt-4.1-mini` | 默认匹配模型 |
-| `IMPORT_MODEL` | 同 MATCH | FAQ 生成模型 |
-| `MAX_TOKENS` | `4096` | 通用 max tokens |
-| `MATCH_MAX_TOKENS` | `8` | 匹配输出（旧） |
-| `CONFIDENCE_MAX_TOKENS` | `512` | 置信度匹配输出 |
-| `CONFIDENCE_TOP_K` | `5` | 默认 Top K |
-| `MATCH_TEMPERATURE` | `0` | 匹配温度 |
-| `DISABLE_THINKING` | `1` | 全局关闭思考链 |
-| `ENABLE_THINKING` | — | 显式 1/0 覆盖 |
-| `MOCK_LLM` | `0` | 本地 mock LLM |
-| `USE_MAX_COMPLETION_TOKENS` | `0` | 云厂商兼容 |
-| `USE_CONTENT_PARTS` | `0` | 多模态 content parts |
+知识库列表 JSON 固定为 `{DATA_ROOT}/config/knowledge_bases.json` 与 `rag_knowledge_bases.json`，由 `ensureJsonSeeded.js` 读取，**无单独 env 覆盖**。
 
-### 10.4 RAG / Weaviate
+### 10.3 部署 / 运行时（改 .env + 重启即生效）
 
-| 变量 | 默认 | 说明 |
-|------|------|------|
-| `WEAVIATE_URL` | — | Weaviate HTTP 地址 |
-| `WEAVIATE_API_KEY` | — | API Key |
-| `WEAVIATE_CLASS` | `FaqSearchDoc` | Class 名 |
-| `MOCK_WEAVIATE` | `0` | 内存 mock |
-| `RAG_EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding 模型 |
-| `RAG_RERANK_MODEL` | `BAAI/bge-reranker-v2-m3` | Rerank 模型 |
-| `RAG_LLM_MODEL` | `Qwen/Qwen3-VL-8B-Instruct` | RAG 合成 LLM |
-| `SILICONFLOW_BASE_URL` | siliconflow.cn | Embedding/Rerank API |
-| `RAG_VECTOR_TOP_K` | `30` | 向量检索候选数 |
-| `RAG_KEYWORD_TOP_K` | `30` | 关键词候选数 |
-| `RAG_RRF_K` | `60` | RRF 常数 k |
-| `DISABLE_API_EMBEDDING` | `0` | 1=使用 hash embedding |
-| `HASH_EMBEDDING_DIM` | `1024` | 本地 hash 维度 |
-| `EMBEDDING_BATCH_SIZE` | `16` | 批大小 |
-| `EMBEDDING_SLEEP_SEC` | `0.25` | 批间 sleep |
-| `EMBEDDING_MAX_CHARS` | `6000` | 单条截断 |
+| 变量 | 代码默认 | 影响的功能 |
+|------|----------|------------|
+| `DEBUG_REQUEST_TIMEOUT_S` | **`60`** | **调试 → 问答** 流式接口（`POST /ask/confidence/stream` 等）服务端 `AbortController` 超时。**超时仅终止该次请求**（SSE 返回 `error`），**不会重启进程** |
+| `SKIP_JSON_SEED` | 未设 | `1` / `true` / `yes` → 跳过 `ensureJsonSeeded` 首次 JSON→PG |
+| `MOCK_LLM` | `0` | `1` → `LLMClient` 不调真实 API，在 FAQ 列表做子串 mock；文档 VLM 整理也会跳过 |
+| `MOCK_WEAVIATE` | `0` | `1` → 强制内存向量库；**或** `WEAVIATE_URL` 为空时也自动 mock |
+| `WEAVIATE_URL` | 空 | RAG 向量存储 HTTP 地址；空则 mock |
+| `WEAVIATE_API_KEY` | 空 | Weaviate Bearer Token |
+| `WEAVIATE_CLASS` | `FaqSearchDoc` | Weaviate Class 名 |
+| `RAG_VECTOR_TOP_K` | `30` | RAG 向量检索候选数（`RagRetriever`） |
+| `RAG_KEYWORD_TOP_K` | `30` | RAG 关键词检索候选数 |
+| `RAG_RRF_K` | `60` | RRF 融合常数 k |
+| `RAG_EVAL_HOLDOUT_PER_ITEM` | `1` | RAG **重建索引**时，每条 FAQ 预留多少变体不参与向量索引（`indexer.js` → `buildAllSearchDocs`），供后续评测 holdout |
+| `DISABLE_API_EMBEDDING` | `0` | `1` → 索引 rebuild 时用本地 **hash embedding**，不调 Embedding API |
+| `HASH_EMBEDDING_DIM` | `1024` | hash embedding 维度 |
+| `EMBEDDING_BATCH_SIZE` | `16` | 建索引时每批 embedding 条数 |
+| `EMBEDDING_SLEEP_SEC` | `0.25` | 批间 sleep（限流） |
+| `EMBEDDING_MAX_CHARS` | `6000` | 单条文本截断上限 |
+| `USE_MAX_COMPLETION_TOKENS` | `0` | `1` → OpenAI 兼容请求用 `max_completion_tokens` |
+| `USE_CONTENT_PARTS` | `0` | `1` → user 消息改为 content parts（多模态兼容） |
+| `DISABLE_THINKING` | **`1`** | 全局默认关闭思考链；`ENABLE_THINKING=1/0` 可显式覆盖 |
+| `ENABLE_THINKING` | 未设 | 显式 `1`/`0`/`true`/`false` 覆盖思考链 |
+| `REASONING_EFFORT` | 未设 | `low` / `medium` / `high`，传给支持 reasoning 的 API |
+
+别名：`VECTOR_TOP_K` = `RAG_VECTOR_TOP_K`，`KEYWORD_TOP_K` = `RAG_KEYWORD_TOP_K`，`RRF_K` = `RAG_RRF_K`，`EVAL_HOLDOUT_PER_ITEM` = `RAG_EVAL_HOLDOUT_PER_ITEM`。
+
+### 10.4 模型 / API 种子（首次初始化用，日常改设置页）
+
+下列变量在 **PostgreSQL `app_settings` 尚无对应行** 时，作为 `ModelsStore` / `MatchProfilesStore` / `RagModelsStore` 的默认值；若 `config/*.json` 已被 `ensureJsonSeeded` 导入，**以 JSON/PG 为准**。
+
+| 变量 | 代码默认 | 写入 PG 的 key / 槽位 | 对应 UI |
+|------|----------|----------------------|---------|
+| `API_BASE_URL` | `https://api.openai.com/v1` | `models.*`、`match_profiles` | **设置** LLM Tab |
+| `API_KEY` / `ARK_API_KEY` | 空 | 同上（二选一） | **设置** LLM Tab |
+| `MATCH_MODEL` | `gpt-4.1-mini` | `models.match`、`match_profiles` 默认 profile | **设置 → 问答模型 Profile** |
+| `IMPORT_MODEL` | 同 `MATCH_MODEL` | `models.import`、`models.pdf_vlm` | **设置 → FAQ 生成 / 文档提取** |
+| `MAX_TOKENS` | `4096` | `models.import.max_tokens` 等 | **设置** |
+| `CONFIDENCE_MAX_TOKENS` | `512`（下限 64） | `models.match.max_tokens`、profile | **调试·问答** LLM 输出上限 |
+| `CONFIDENCE_TOP_K` | `5`（1–20） | 调试页 Top K 初始默认 | **调试 → 问答** |
+| `MATCH_TEMPERATURE` | `0` | `models.match.temperature` | **设置** |
+| `SILICONFLOW_BASE_URL` | `https://api.siliconflow.cn/v1` | `rag_models.embedding/rerank/llm.api_base_url` | **设置** RAG Tab |
+| `RAG_EMBEDDING_MODEL` | `BAAI/bge-m3` | `rag_models.embedding` | **设置 → Embedding** |
+| `RAG_RERANK_MODEL` | `BAAI/bge-reranker-v2-m3` | `rag_models.rerank` | **设置 → Rerank** |
+| `RAG_LLM_MODEL` | `Qwen/Qwen3-VL-8B-Instruct` | `rag_models.llm` | **设置 → RAG 合成** |
+
+模型名别名（`firstEnv` 链）：`MATCH_MODEL` ← `INIT_MODEL` / `ANSWER_MODEL`；`IMPORT_MODEL` ← `INIT_MODEL` / `MATCH_MODEL`；`RAG_EMBEDDING_MODEL` ← `EMBEDDING_MODEL`；`RAG_RERANK_MODEL` ← `RERANK_MODEL`；`RAG_LLM_MODEL` ← `LLM_MODEL`。
 
 ### 10.5 数据库连接池
 
-| 变量 | 默认 |
-|------|------|
-| `DATABASE_POOL_SIZE` | `20` |
-| `TEST_DATABASE_URL` | 测试用 |
+| 变量 | 代码默认 | 说明 |
+|------|----------|------|
+| `DATABASE_POOL_SIZE` | `20` | `pg` 连接池 `max`（`pool.js`） |
+| `TEST_DATABASE_URL` | 未设 | `npm test` 时优先使用；未设则回退 `DATABASE_URL` |
+
+### 10.6 仅脚本使用（服务主进程不读）
+
+| 变量 | 默认 | 脚本 |
+|------|------|------|
+| `PGUSER` | `postgres` | `npm run db:setup -w server` |
+| `PGPASSWORD` / `POSTGRES_PASSWORD` | 空 | 同上 |
+| `PGHOST` | `127.0.0.1` | 同上 |
+| `PGPORT` | `5432` | 同上 |
+| `PGDATABASE` | `router` | 同上 |
 
 ---
-
 ## 11. 开发与部署命令
 
 ### 11.1 首次环境准备
@@ -1611,7 +1626,7 @@ X-Accel-Buffering: no
 ```bash
 cd Router
 cp .env.example .env
-# 编辑 .env 填入 DATABASE_URL、API_KEY 等
+# 编辑 .env 填入 DATABASE_URL；API Key 与模型名建议在控制台「设置」页配置
 
 # 创建 PostgreSQL 数据库（可选脚本）
 npm run db:setup -w server

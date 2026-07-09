@@ -5,7 +5,6 @@ export interface Settings {
     matchModel: string;
     importModel: string;
     maxTokens: number;
-    matchMaxTokens: number;
     confidenceMaxTokens: number;
     confidenceTopK: number;
     matchTemperature: number;
@@ -15,7 +14,6 @@ export interface Settings {
     enableThinking: boolean | null;
     reasoningEffort: string | null;
     dataRoot: string;
-    kbConfigPath: string;
     filesRoot: string;
     debugRequestTimeoutS: number;
 }
