@@ -13,7 +13,8 @@
  */
 
 import { useCallback, useState } from "react";
-import { apiJson, fmtConfidence, fmtMs } from "../api/client";
+import { apiJson, fmtMs } from "../api/client";
+import { RagMetricsFooter } from "../components/AnswerMetricsFooter";
 import { TokenPanel, RAG_PHASE_LABELS } from "../components/MetricsPanels";
 import { MarkdownPreview } from "../components/MarkdownPreview";
 import { useAppUi } from "../context/AppUiContext";
@@ -144,8 +145,103 @@ function ScorePills({ r }: { r: RagSearchResult }) {
   );
 }
 
-function scrollToRagAnswer(index: number) {
-  document.getElementById(`ragAnswer-${index}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+export function scrollToCard(cardId: string) {
+  document.getElementById(cardId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/** @deprecated use scrollToCard */
+export function scrollToRagAnswer(index: number) {
+  scrollToCard(`ragAnswer-${index}`);
+}
+
+export function RagTurnSection({
+  turn,
+  kbId,
+  activeCardId,
+}: {
+  turn: import("../hooks/useAskSessions").AskChatTurn;
+  kbId: string;
+  activeCardId?: string;
+}) {
+  const sources = turn.searchResults.length ? turn.searchResults : (turn.chatResult?.sources || []);
+  const chatResult = turn.chatResult;
+  const isSearchOnly = chatResult?.mode === "search";
+  const showGenerated = chatResult?.mode === "generated" && chatResult.answer;
+  const showPrimaryAnswer = Boolean(chatResult?.answer && !isSearchOnly && chatResult.mode === "no_high_confidence");
+  const hasContent = showGenerated || showPrimaryAnswer || sources.length > 0;
+  return (
+    <section id={`ask-turn-${turn.id}`} className="askTurnBlock ui-fade-in-up">
+      <div className="userBubble">{turn.question}</div>
+      {turn.loading && !hasContent && <div className="askLoadingBubble ui-fade-in">检索中…</div>}
+      {!turn.loading && !hasContent && turn.lastError && <div className="askEmptyState">{turn.lastError}</div>}
+      {showGenerated && (
+        <article className="answerCard askAnswerCard fade-in" id={`ragAnswer-${turn.id}-gen`}>
+          <div className="askAnswerHead">
+            <span className="askAvatar" aria-hidden>AI</span>
+            <span className="askAnswerMeta"><span className="id">合成回答</span></span>
+          </div>
+          <div className="answerCardBody mdPreview">
+            <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
+          </div>
+        </article>
+      )}
+      {showPrimaryAnswer && (
+        <article className="answerCard askAnswerCard fade-in" id={`ragAnswer-${turn.id}-primary`}>
+          <div className="askAnswerHead">
+            <span className="askAvatar" aria-hidden>AI</span>
+            <span className="askAnswerMeta">
+              <span className="id">{chatResult!.mode === "no_high_confidence" ? "提示" : "RAG 回答"}</span>
+            </span>
+          </div>
+          <div className="answerCardBody mdPreview">
+            <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
+          </div>
+        </article>
+      )}
+      {sources.length > 0 && (
+        <div className="ragSourcesSectionHead muted">{isSearchOnly || showPrimaryAnswer ? "检索条目" : "来源条目"}</div>
+      )}
+      {sources.map((s, i) => {
+        const cardId = `ragAnswer-${turn.id}-${i}`;
+        return (
+          <article
+            key={s.id + i}
+            id={cardId}
+            className={`answerCard askAnswerCard ragAnswerCard${activeCardId === cardId ? " active" : ""}`}
+          >
+            <div className="askAnswerHead">
+              <span className="askAvatar muted" aria-hidden>#{i + 1}</span>
+              <span className="askAnswerMeta"><span className="id">{s.id}</span></span>
+            </div>
+            <ScorePills r={s} />
+            <div className="askAnswerQuestion">{s.question}</div>
+            <div className="answerCardBody mdPreview">
+              <MarkdownPreview md={s.answer || ""} kbId={kbId} />
+            </div>
+          </article>
+        );
+      })}
+      {!turn.loading && hasContent && <RagMetricsFooter chatResult={chatResult} />}
+    </section>
+  );
+}
+
+export function RagChatThread({
+  turns,
+  kbId,
+  activeCardId,
+}: {
+  turns: import("../hooks/useAskSessions").AskChatTurn[];
+  kbId: string;
+  activeCardId?: string;
+}) {
+  return (
+    <div className="askChatThread">
+      {turns.filter((t) => t.mode === "rag").map((turn) => (
+        <RagTurnSection key={turn.id} turn={turn} kbId={kbId} activeCardId={activeCardId} />
+      ))}
+    </div>
+  );
 }
 
 /**
@@ -159,18 +255,18 @@ export function RagQaMain({
   chatResult,
   searchResults,
   activeNav,
-  setActiveNav,
   lastError = "",
+  askedQuestion = "",
 }: {
   kbId: string;
   loading: boolean;
   chatResult: RagChatResponse | null;
   searchResults: RagSearchResult[];
   activeNav: number;
-  setActiveNav: (i: number) => void;
+  setActiveNav?: (i: number) => void;
   lastError?: string;
+  askedQuestion?: string;
 }) {
-  const timing = chatResult?.timing as RagTimings | undefined;
   const sources = searchResults.length ? searchResults : (chatResult?.sources || []);
   const isSearchOnly = chatResult?.mode === "search";
   const showGenerated = chatResult?.mode === "generated" && chatResult.answer;
@@ -182,97 +278,55 @@ export function RagQaMain({
   const hasContent = showGenerated || showPrimaryAnswer || sources.length > 0;
 
   return (
-    <div className="ragQaColumns modePanelEnter">
-      <section className="ragCol ragColAnswer panel">
-        <div className="stripHead">
-          <span>RAG 回答</span>
-          <span className="headActions">
-            {chatResult && !isSearchOnly && <span className="pill">{chatResult.mode}</span>}
-            {chatResult && chatResult.confidence > 0 && <span className="pill muted">{fmtConfidence(chatResult.confidence)}</span>}
-            {sources.length > 0 && <span className="pill muted">{sources.length} 条</span>}
-          </span>
-        </div>
-        <div className="ragColBody scrollInner ragAnswerList">
-          {loading && !hasContent && <div className="empty">检索中…</div>}
-          {!loading && !hasContent && !lastError && (
-            <div className="empty">在左侧输入问题并点击「问答」或「检索」。</div>
-          )}
-          {!loading && !hasContent && lastError && (
-            <div className="empty">{lastError}</div>
-          )}
-          {showGenerated && (
-            <article className="answerCard ragAnswerCard fade-in">
-              <div className="confidenceCardHead">
-                <span className="id">合成回答</span>
-              </div>
-              <div className="answerCardBody mdPreview">
-                <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
-              </div>
-              {timing && (
-                <div className="ragTimingChips muted">
-                  总 {fmtMs(timing.total_ms)} · 检索 {fmtMs(timing.search_ms)} · 生成 {fmtMs(timing.generate_ms)}
-                </div>
-              )}
-            </article>
-          )}
-          {showPrimaryAnswer && (
-            <article className="answerCard ragAnswerCard fade-in">
-              <div className="confidenceCardHead">
-                <span className="id">{chatResult!.mode === "no_high_confidence" ? "提示" : "RAG 回答"}</span>
-              </div>
-              <div className="answerCardBody mdPreview">
-                <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
-              </div>
-              {timing && (
-                <div className="ragTimingChips muted">
-                  总 {fmtMs(timing.total_ms)} · 检索 {fmtMs(timing.search_ms)} · 生成 {fmtMs(timing.generate_ms)}
-                </div>
-              )}
-            </article>
-          )}
-          {sources.length > 0 && (
-            <div className="ragSourcesSectionHead muted">{isSearchOnly || showPrimaryAnswer ? "检索条目" : "来源条目"}</div>
-          )}
-          {sources.map((s, i) => (
-            <article
-              key={s.id + i}
-              id={`ragAnswer-${i}`}
-              className={`answerCard ragAnswerCard confidenceCard${i === activeNav ? " active" : ""}`}
-              onClick={() => setActiveNav(i)}
-            >
-              <div className="confidenceCardHead">
-                <span className="id">#{i + 1} {s.id}</span>
-              </div>
-              <ScorePills r={s} />
-              <div className="confidenceQuestion">{s.question}</div>
-              <div className="answerCardBody mdPreview">
-                <MarkdownPreview md={s.answer || ""} kbId={kbId} />
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <aside className="ragCol ragColNav panel">
-        <div className="stripHead"><span>条目导航</span></div>
-        <div className="ragColBody scrollInner nav-list">
-          {!sources.length && <div className="empty">—</div>}
-          {sources.map((s, i) => (
-            <button
-              key={s.id + i}
-              type="button"
-              className={`navItemBtn${i === activeNav ? " active" : ""}`}
-              onClick={() => {
-                setActiveNav(i);
-                scrollToRagAnswer(i);
-              }}
-            >
-              <span className="id">{s.id}</span>
-              <span className="muted">{s.question?.slice(0, 24)}</span>
-            </button>
-          ))}
-        </div>
-      </aside>
+    <div className="askChatThread">
+      {askedQuestion && <div className="userBubble ui-fade-in-up">{askedQuestion}</div>}
+      {loading && !hasContent && <div className="askLoadingBubble ui-fade-in">检索中…</div>}
+      {!loading && !hasContent && lastError && <div className="askEmptyState">{lastError}</div>}
+      {showGenerated && (
+        <article className="answerCard askAnswerCard fade-in">
+          <div className="askAnswerHead">
+            <span className="askAvatar" aria-hidden>AI</span>
+            <span className="askAnswerMeta"><span className="id">合成回答</span></span>
+          </div>
+          <div className="answerCardBody mdPreview">
+            <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
+          </div>
+        </article>
+      )}
+      {showPrimaryAnswer && (
+        <article className="answerCard askAnswerCard fade-in">
+          <div className="askAnswerHead">
+            <span className="askAvatar" aria-hidden>AI</span>
+            <span className="askAnswerMeta">
+              <span className="id">{chatResult!.mode === "no_high_confidence" ? "提示" : "RAG 回答"}</span>
+            </span>
+          </div>
+          <div className="answerCardBody mdPreview">
+            <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
+          </div>
+        </article>
+      )}
+      {sources.length > 0 && (
+        <div className="ragSourcesSectionHead muted">{isSearchOnly || showPrimaryAnswer ? "检索条目" : "来源条目"}</div>
+      )}
+      {sources.map((s, i) => (
+        <article
+          key={s.id + i}
+          id={`ragAnswer-${i}`}
+          className={`answerCard askAnswerCard ragAnswerCard${i === activeNav ? " active" : ""}`}
+        >
+          <div className="askAnswerHead">
+            <span className="askAvatar muted" aria-hidden>#{i + 1}</span>
+            <span className="askAnswerMeta"><span className="id">{s.id}</span></span>
+          </div>
+          <ScorePills r={s} />
+          <div className="askAnswerQuestion">{s.question}</div>
+          <div className="answerCardBody mdPreview">
+            <MarkdownPreview md={s.answer || ""} kbId={kbId} />
+          </div>
+        </article>
+      ))}
+      {!loading && hasContent && <RagMetricsFooter chatResult={chatResult} />}
     </div>
   );
 }

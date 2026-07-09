@@ -14,6 +14,7 @@ export interface DocCapabilities {
   default_vlm_refine?: boolean;
 }
 
+// 根据 kind 返回对应的标签
 export function kindLabel(kind: string): string {
   const labels: Record<string, string> = {
     source_pdf: "PDF",
@@ -30,33 +31,40 @@ export function kindLabel(kind: string): string {
   return labels[kind] || "FILE";
 }
 
+// 判断是否为预览只读 kind
 export function isPreviewOnlyKind(kind: string): boolean {
   return kind === "source_pdf" || kind === "source_docx" || kind === "source_xlsx" || kind === "source_xls" || kind === "source_csv";
 }
 
+// 判断是否为可编辑 kind
 export function isEditableKind(kind: string): boolean {
   return kind === "source_md" || kind === "module_md" || kind === "source_txt" || kind === "source_html" || kind === "source_json";
 }
 
+// 判断是否为可转换成markdown kind
 export function canConvertKind(kind: string): boolean {
   return !["module_md"].includes(kind) && kind !== "source_json";
 }
 
+// 判断是否为可生成问题 kind
 export function canQuestionGenKind(kind: string): boolean {
   return ["source_md", "module_md", "source_txt", "source_docx", "source_html", "source_json"].includes(kind);
 }
 
 const VLM_REFINE_RECOMMENDED_KINDS = new Set(["source_pdf", "source_docx", "source_html"]);
 
+// 判断是否为推荐使用VLM refine kind
 export function vlmRefineRecommendedKind(kind: string): boolean {
   return VLM_REFINE_RECOMMENDED_KINDS.has(kind);
 }
 
+// 判断是否为默认使用VLM refine kind
 export function defaultVlmRefineKind(kind: string, caps?: Pick<DocCapabilities, "default_vlm_refine">): boolean {
   if (typeof caps?.default_vlm_refine === "boolean") return caps.default_vlm_refine;
   return vlmRefineRecommendedKind(kind);
 }
 
+// 根据 kind 返回对应的转换方式
 export function convertKindFor(kind: string): string {
   if (kind === "source_pdf") return "pdf_pages";
   if (kind === "source_docx") return "line_range";

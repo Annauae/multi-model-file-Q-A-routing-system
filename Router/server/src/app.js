@@ -34,6 +34,7 @@ import { buildMarkdownFilesTree, readDocumentContent, saveMarkdownContent, delet
 import { extractMarkdownRange, extractPdfToMarkdown, extractSourceToMarkdown, mergeExtractStats, finalizeCombinedExtract, detectSourceFormat, } from "./services/fileProcessor.js";
 import { isAllowedSourceExtension, fileKind as docFileKind, capabilitiesForKind, formatFromFilename, listCapabilitiesPayload, } from "./services/documentTypes.js";
 import { assignQuestionIds, generateFaqQuestionsOnly } from "./services/questionsImport.js";
+import { syncAnswerAssetsToKb, rewriteAssetPathsInText, copyDirAssetsToDocuments } from "./services/assetSync.js";
 import { importRagFaqToLlm } from "./services/ragImport.js";
 import { allDefaultPrompts } from "./services/promptDefaults.js";
 import { buildQuestionListSection, defaultConfidenceMatchPrompt, } from "./services/matcher.js";
@@ -552,7 +553,7 @@ export function createApp(ctx, clientDist) {
             res.status(e.status ?? 400).json({ detail: e.detail ?? String(e) });
         }
     });
-    /** GET /documents/preview-asset?ref= — 文档模块全局 assets 目录 */
+    // GET /documents/preview-asset — 文档 assets；未找到时回退 kb_x 与 rag_kb_x 的 assets 目录
     app.get("/documents/preview-asset", (req, res) => {
         try {
             let r = String(req.query.ref ?? "").trim().replace(/\\/g, "/");
@@ -562,11 +563,20 @@ export function createApp(ctx, clientDist) {
                 r = r.slice(7);
             if (r.includes(".."))
                 throw httpError(400, "非法 ref");
-            const base = path.resolve(documentsAssetsDirPath(ctx.settings.filesRoot));
-            const assetPath = path.resolve(path.join(base, r));
-            if (!assetPath.startsWith(base))
-                throw httpError(400, "非法 ref");
-            if (!fs.existsSync(assetPath))
+            const fileName = path.basename(r);
+            const candidates = [
+                path.resolve(path.join(documentsAssetsDirPath(ctx.settings.filesRoot), fileName)),
+            ];
+            const filesRoot = path.resolve(ctx.settings.filesRoot);
+            if (fs.existsSync(filesRoot)) {
+                for (const entry of fs.readdirSync(filesRoot)) {
+                    if (entry.startsWith("kb_") || entry.startsWith("rag_kb_")) {
+                        candidates.push(path.resolve(path.join(filesRoot, entry, "assets", fileName)));
+                    }
+                }
+            }
+            const assetPath = candidates.find((p) => fs.existsSync(p));
+            if (!assetPath)
                 throw httpError(404, "资源不存在");
             res.sendFile(assetPath);
         }
@@ -1045,9 +1055,16 @@ export function createApp(ctx, clientDist) {
         }
         finally {
             clearInterval(keepAlive);
-            // 清理多段提取时的临时目录
-            if (stagingRoot && fs.existsSync(stagingRoot))
+            // 多段提取：合并前将各段 assets 同步到 documents/assets
+            if (stagingRoot && fs.existsSync(stagingRoot)) {
+                for (const ent of fs.readdirSync(stagingRoot, { withFileTypes: true })) {
+                    if (!ent.isDirectory()) continue;
+                    const sub = path.join(stagingRoot, ent.name);
+                    copyDirAssetsToDocuments(ctx.settings.filesRoot, path.join(sub, "assets"));
+                    copyDirAssetsToDocuments(ctx.settings.filesRoot, path.join(sub, "_assets"));
+                }
                 fs.rmSync(stagingRoot, { recursive: true, force: true });
+            }
         }
         res.end();
     });
@@ -1081,6 +1098,10 @@ export function createApp(ctx, clientDist) {
         try {
             const kid = validateKbId(ctx, req.params.kbId);
             const rawItems = Array.isArray(req.body.items) ? req.body.items : [];
+            const normalizedItems = rawItems.map((item) => ({
+                ...item,
+                answer: rewriteAssetPathsInText(String(item.answer ?? "")),
+            }));
             const append = Boolean(req.body.append);
             let targets = req.body.targets;
             if (!Array.isArray(targets) || !targets.length)
@@ -1089,16 +1110,24 @@ export function createApp(ctx, clientDist) {
             if (!targets.length)
                 throw httpError(400, "targets 须包含 llm 或 rag");
 
+            const ragKid = targets.includes("rag") ? String(req.body.rag_kb_id ?? kid).trim() : "";
+            for (const item of normalizedItems) {
+                if (targets.includes("llm"))
+                    syncAnswerAssetsToKb(ctx.settings.filesRoot, kid, item.answer);
+                if (targets.includes("rag") && ragKid)
+                    syncAnswerAssetsToKb(ctx.settings.filesRoot, ragKid, item.answer, { rag: true });
+            }
+
             const results = { llm: 0, rag: 0, kb_id: kid, items: [] };
 
-            /** 为 rawItems 分配 qN  id，并按 append 模式写入 store */
+            /** 为 normalizedItems 分配 qN id，并按 append 模式写入 store */
             const assignAndMerge = async (store, existing) => {
                 let startId = 1;
                 if (existing.length) {
                     const nums = existing.map((i) => parseInt(String(i.id).replace(/^q/, ""), 10)).filter((n) => !Number.isNaN(n));
                     startId = nums.length ? Math.max(...nums) + 1 : 1;
                 }
-                const withIds = assignQuestionIds(rawItems, startId);
+                const withIds = assignQuestionIds(normalizedItems, startId);
                 if (append) {
                     for (const item of withIds)
                         await store.upsertItem(item);
@@ -1120,7 +1149,6 @@ export function createApp(ctx, clientDist) {
             }
 
             if (targets.includes("rag")) {
-                const ragKid = String(req.body.rag_kb_id ?? kid).trim();
                 if (!ctx.ragCtx.ragKbStore.get(ragKid))
                     throw httpError(404, `RAG 知识库 ${ragKid} 不存在`);
                 const ragStore = ctx.ragCtx.getRagQuestionsStore(ragKid);

@@ -15,14 +15,17 @@ import { flushSync } from "react-dom";
 import DOMPurify from "dompurify";
 import { apiJson, sseStepText, streamDocumentExtract } from "../api/client";
 import { DocumentEditorPane, type DocumentContent } from "../components/DocumentEditorPane";
+import { FileGridPanel } from "../components/FileGridPanel";
 import { MarkdownPreview } from "../components/MarkdownPreview";
 import { TimingsPanel, TokenPanel, EXTRACT_PHASE_LABELS } from "../components/MetricsPanels";
-import { Dropdown } from "../components/Dropdown";
+import { FadePanel } from "../components/FadePanel";
 import { useAppUi } from "../context/AppUiContext";
+import { useAnimatedVisible } from "../hooks/useAnimatedVisible";
 import type { AskTimings, FileTreeNode, ImportSelection } from "../types";
 import {
   UPLOAD_ACCEPT,
   canConvertKind,
+  canQuestionGenKind,
   CONVERT_TOOLTIP,
   convertKindFor,
   defaultVlmRefineKind,
@@ -33,15 +36,18 @@ import {
   QUESTION_GEN_TOOLTIP,
 } from "../utils/documentTypes";
 import {
+  FileCategorySidebar,
   LineViewer,
   displayFileName,
   documentTextForLines,
-  renderFileTreeNodes,
+  renderDocumentFileTree,
   sliceMarkdownLines,
   sourceFileExists,
 } from "../utils/importShared";
 import { ImportTargetSwitch } from "../components/ImportTargetSwitch";
 import { useKnowledgeBases, useRagKnowledgeBases } from "../hooks/useKnowledgeBases";
+
+type MainView = "grid" | "file";
 
 export function ManageFilesView() {
   const { showToast } = useAppUi();
@@ -57,6 +63,8 @@ export function ManageFilesView() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [docLoading, setDocLoading] = useState(false);
+  const [mainView, setMainView] = useState<MainView>("grid");
+  const [scrollTargetPath, setScrollTargetPath] = useState<string | null>(null);
   const loadSeqRef = useRef(0);
 
   // 加载文件树
@@ -97,6 +105,7 @@ export function ManageFilesView() {
     setEditMode(node.kind === "source_pdf" || isPreviewOnlyKind(node.kind || "") ? "preview" : "source");
     try {
       await loadDocument(node, seq);
+      if (seq === loadSeqRef.current) setMainView("file");
     } catch (e) {
       if (seq === loadSeqRef.current) showToast((e as Error).message, "error");
     } finally {
@@ -139,6 +148,8 @@ export function ManageFilesView() {
       setMarkdown("");
       setLoadedContent("");
       setDocContent(null);
+      setMainView("grid");
+      setScrollTargetPath(data.path);
       showToast("已创建");
     } catch (e) {
       showToast((e as Error).message, "error");
@@ -146,18 +157,20 @@ export function ManageFilesView() {
   };
 
   // 重命名文件
-  const renameFile = async () => {
-    if (!selected) return;
-    const newName = prompt("新文件名", selected.name);
+  const renameFileForNode = async (node: { path: string; kind: string; name: string }) => {
+    const newName = prompt("新文件名", node.name);
     if (!newName?.trim()) return;
     try {
       const data = await apiJson<{ path: string; name: string }>("/markdown-files/rename", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: selected.path, name: newName.trim() }),
+        body: JSON.stringify({ path: node.path, name: newName.trim() }),
       });
       await loadTree();
-      setSelected({ path: data.path, kind: selected.kind, name: data.name || newName.trim() });
+      if (selected?.path === node.path) {
+        setSelected({ path: data.path, kind: node.kind, name: data.name || newName.trim() });
+      }
+      if (scrollTargetPath === node.path) setScrollTargetPath(data.path);
       showToast("已重命名");
     } catch (e) {
       showToast((e as Error).message, "error");
@@ -165,19 +178,35 @@ export function ManageFilesView() {
   };
 
   // 删除文件
-  const deleteFile = async () => {
-    if (!selected || !confirm(`确定删除 ${selected.name}？`)) return;
+  const deleteFileForNode = async (node: { path: string; name: string }) => {
+    if (!confirm(`确定删除 ${node.name}？`)) return;
     try {
-      await apiJson(`/markdown-files?path=${encodeURIComponent(selected.path)}`, { method: "DELETE" });
-      setSelected(null);
-      setMarkdown("");
-      setLoadedContent("");
-      setDocContent(null);
+      await apiJson(`/markdown-files?path=${encodeURIComponent(node.path)}`, { method: "DELETE" });
+      if (selected?.path === node.path) {
+        setSelected(null);
+        setMarkdown("");
+        setLoadedContent("");
+        setDocContent(null);
+        setMainView("grid");
+      }
       await loadTree();
       showToast("已删除");
     } catch (e) {
       showToast((e as Error).message, "error");
     }
+  };
+
+  const scrollToFile = (node: FileTreeNode) => {
+    if (!node.path) return;
+    const goScroll = () => {
+      setSelected({ path: node.path!, kind: node.kind || "", name: node.name });
+      setScrollTargetPath(node.path!);
+      setMainView("grid");
+    };
+    if (mainView === "file" && selected && isEditableKind(selected.kind) && markdown !== loadedContent) {
+      if (!confirm("当前文件有未保存修改，离开将丢失。是否继续？")) return;
+    }
+    goScroll();
   };
 
   /** 上传源文件到 files/documents/sources/，成功后刷新左侧文件树 */
@@ -242,83 +271,130 @@ export function ManageFilesView() {
       setSelected({ path: outPath, kind: "module_md", name: outPath.split("/").pop() || "" });
       setDocContent({ path: outPath, kind: "module_md", markdown: result.markdown, editable: true });
       setEditMode("source");
+      setMainView("file");
     }
+  };
+
+  const handleBackFromFile = () => {
+    if (selected && isEditableKind(selected.kind) && markdown !== loadedContent) {
+      if (!confirm("当前文件有未保存修改，离开将丢失。是否继续？")) return;
+    }
+    setMainView("grid");
   };
 
   return (
     <div className="filesPage panel">
-      <div className="stripHead">
-        <span id="filesSelectedLabel" className={`${selected ? "" : "muted "}filesSelectedLabel`}>
-          {selected ? `${kindLabel(kind)}：${selected.name}` : "未选择文件"}
-        </span>
+      <div className={`stripHead${mainView === "file" ? " filesFileToolbar" : ""}`}>
+        {mainView === "file" && selected ? (
+          <div className="filesFileToolbarLeft">
+            <button type="button" className="btn btnXs ghost" onClick={handleBackFromFile}>返回</button>
+            <span id="filesSelectedLabel" className="filesSelectedLabel filesFileToolbarName">
+              {`${kindLabel(kind)}：${selected.name}`}
+            </span>
+          </div>
+        ) : (
+          <span id="filesSelectedLabel" className="muted filesSelectedLabel">文件管理</span>
+        )}
         <span className="headActions">
-          <button type="button" id="filesToolbarUpload" className={`btn btnXs primary${uploading ? " btnRunning" : ""}`} disabled={uploading} onClick={() => fileInputRef.current?.click()}>{uploading ? "上传中…" : "上传文件"}</button>
-          <button type="button" id="filesToolbarExtract" className="btn btnXs" title={CONVERT_TOOLTIP} onClick={() => setExtractOpen(true)}>文件转 Markdown</button>
-          <button type="button" id="filesToolbarGenerate" className="btn btnXs" title={QUESTION_GEN_TOOLTIP} onClick={() => setGenerateOpen(true)}>问题生成</button>
-          <button type="button" id="filesToolbarRefresh" className="btn btnXs ghost" onClick={() => void loadTree()}>刷新</button>
-          <button type="button" id="filesMainSaveBtn" className="btn btnXs primary" disabled={!editable || !selected || saving} onClick={() => void saveMd()}>{saving ? "保存中…" : "保存"}</button>
-          <Dropdown label="操作" primary={false}>
-            <button type="button" className="dropdownItem" data-files-action="newMd" onClick={() => void createMd()}>新建 MD</button>
-            <button type="button" className="dropdownItem" data-files-action="rename" disabled={!selected} onClick={() => void renameFile()}>重命名</button>
-            <div className="dropdownDivider" />
-            <button type="button" className="dropdownItem danger" data-files-action="delete" disabled={!selected} onClick={() => void deleteFile()}>删除</button>
-          </Dropdown>
+          {mainView === "file" && (
+            <>
+              {selected && canConvertKind(selected.kind) && (
+                <button type="button" id="filesToolbarExtract" className="btn btnXs" title={CONVERT_TOOLTIP} onClick={() => setExtractOpen(true)}>文件转 Markdown</button>
+              )}
+              {selected && canQuestionGenKind(selected.kind) && (
+                <button type="button" id="filesToolbarGenerate" className="btn btnXs" title={QUESTION_GEN_TOOLTIP} onClick={() => setGenerateOpen(true)}>问题生成</button>
+              )}
+              {editable && (
+                <button type="button" id="filesMainSaveBtn" className="btn btnXs primary" disabled={!selected || saving} onClick={() => void saveMd()}>{saving ? "保存中…" : "保存"}</button>
+              )}
+              {!previewOnly && (
+                <div className="segmentedControl filesToolbarSegment" id="filesEditSegment">
+                  <button type="button" className={`segmentedBtn ${editMode === "source" ? "active" : ""}`} id="filesEditTabSource" onClick={() => setEditMode("source")}>编辑</button>
+                  <button type="button" className={`segmentedBtn ${editMode === "preview" ? "active" : ""}`} id="filesEditTabPreview" onClick={() => setEditMode("preview")}>预览</button>
+                </div>
+              )}
+              {previewOnly && (
+                <div className="segmentedControl filesToolbarSegment" id="filesEditSegment">
+                  <button type="button" className="segmentedBtn active" id="filesEditTabPreview">预览</button>
+                </div>
+              )}
+            </>
+          )}
+          {mainView === "grid" && (
+            <>
+              <button type="button" className="btn btnXs" data-files-action="newMd" onClick={() => void createMd()}>新建 MD</button>
+              <button type="button" id="filesToolbarRefresh" className="btn btnXs ghost" onClick={() => void loadTree()}>刷新</button>
+              <button type="button" id="filesToolbarUpload" className={`btn btnXs primary${uploading ? " btnRunning" : ""}`} disabled={uploading} onClick={() => fileInputRef.current?.click()}>{uploading ? "上传中…" : "上传文件"}</button>
+            </>
+          )}
         </span>
       </div>
-      <div className="filesLayout">
-        <aside className="filesTreeCol">
-          <div className="stripHead"><span>文件</span></div>
-          <div id="filesTree" className="fileTree scrollInner">{renderFileTreeNodes(tree, selected?.path || "", selectFile)}</div>
-        </aside>
-        <section className="filesEditorCol">
-          <div className="uploadPhaseHead stripHead">
-            <span className="uploadPhaseTitle" id="filesEditorTitle">{previewOnly ? "文件预览" : "文件编辑"}</span>
-            <span id="filesEditLineCountLabel" className="muted">{lineCount ? `${lineCount} 行` : ""}</span>
-            <div className="segmentedControl" id="filesEditSegment">
-              {!previewOnly && (
-                <button type="button" className={`segmentedBtn ${editMode === "source" ? "active" : ""}`} id="filesEditTabSource" onClick={() => setEditMode("source")}>编辑</button>
+      <div className={`filesLayout${mainView === "file" ? " filesLayoutFileView" : ""}`}>
+        {mainView === "grid" && (
+          <aside className="filesTreeCol">
+            <div className="stripHead"><span>文件</span></div>
+            <FileCategorySidebar tree={tree} selectedPath={selected?.path || ""} onScrollToFile={scrollToFile} />
+          </aside>
+        )}
+        <section className={`filesMainCol${mainView === "file" ? " filesMainColFile" : ""}`}>
+          {mainView === "grid" ? (
+            <FileGridPanel
+              tree={tree}
+              selectedPath={selected?.path}
+              scrollTargetPath={scrollTargetPath}
+              onOpenFile={(node) => void selectFile(node)}
+              onRename={(node) => void renameFileForNode({ path: node.path!, kind: node.kind || "", name: node.name })}
+              onDelete={(node) => void deleteFileForNode({ path: node.path!, name: node.name })}
+            />
+          ) : (
+            <div className="filesEditorCol">
+              <div className="uploadPhaseHead stripHead">
+                <span className="uploadPhaseTitle" id="filesEditorTitle">{previewOnly ? "文件预览" : "文件编辑"}</span>
+                <span id="filesEditLineCountLabel" className="muted">{lineCount ? `${lineCount} 行` : ""}</span>
+              </div>
+              {previewOnly && (
+                <div className="filesPdfHint muted">
+                  此格式不可直接编辑，请使用「文件转 Markdown」转换后在 modules 中编辑。
+                </div>
               )}
-              <button type="button" className={`segmentedBtn ${editMode === "preview" ? "active" : ""}`} id="filesEditTabPreview" onClick={() => setEditMode("preview")}>预览</button>
+              <div className="uploadEditBody filesEditBody">
+                <div key={selected?.path || "_empty"} className="uploadEditPane active ui-fade-in">
+                  <DocumentEditorPane
+                    selected={selected}
+                    content={docContent}
+                    editMode={editMode}
+                    text={markdown}
+                    loading={docLoading}
+                    onChange={setMarkdown}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-          {previewOnly && (
-            <div className="filesPdfHint muted">此格式不可直接编辑，请使用「文件转 Markdown」转换后在 modules 中编辑。</div>
           )}
-          <div className="uploadEditBody filesEditBody">
-            <div className={`uploadEditPane active`}>
-              <DocumentEditorPane
-                selected={selected}
-                content={docContent}
-                editMode={editMode}
-                text={markdown}
-                loading={docLoading}
-                onChange={setMarkdown}
-              />
-            </div>
-          </div>
         </section>
       </div>
       <input ref={fileInputRef} id="filesFileInput" type="file" accept={UPLOAD_ACCEPT} hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadFile(f); e.target.value = ""; }} />
 
-      {/* 文件转 Markdown */}
-      {extractOpen && (
+      {extractOpen && selected && (
         <ExtractModal
           open
+          hideFileTree
           onClose={() => setExtractOpen(false)}
-          initialPath={selected && canConvertKind(selected.kind) ? selected.path : ""}
-          initialKind={selected && canConvertKind(selected.kind) ? selected.kind : ""}
-          initialName={selected && canConvertKind(selected.kind) ? selected.name : ""}
+          initialPath={canConvertKind(selected.kind) ? selected.path : ""}
+          initialKind={canConvertKind(selected.kind) ? selected.kind : ""}
+          initialName={canConvertKind(selected.kind) ? selected.name : ""}
           onExtracted={handleExtracted}
           onTreeReload={() => void loadTree()}
         />
       )}
 
-      {generateOpen && (
+      {generateOpen && selected && (
         <GenerateModal
           open
+          hideFileTree
           onClose={() => setGenerateOpen(false)}
-          initialPath={selected?.path || ""}
-          initialName={selected?.name || ""}
+          initialPath={selected.path}
+          initialName={selected.name}
           initialMarkdown={markdown}
           onCommitted={() => void loadTree()}
         />
@@ -350,6 +426,7 @@ function extractHighlightProps(
 function ExtractModal({
   open,
   onClose,
+  hideFileTree = false,
   initialPath,
   initialKind,
   initialName,
@@ -358,6 +435,7 @@ function ExtractModal({
 }: {
   open: boolean;
   onClose: () => void;
+  hideFileTree?: boolean;
   initialPath?: string;
   initialKind?: string;
   initialName?: string;
@@ -384,6 +462,7 @@ function ExtractModal({
   const [extractMetrics, setExtractMetrics] = useState<AskTimings | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [extractDone, setExtractDone] = useState(false);
+  const anim = useAnimatedVisible(open);
 
   const convertKind = fileKind ? convertKindFor(fileKind) : "";
   const showRangePicker = !!path && convertKind !== "whole_sheet";
@@ -543,11 +622,11 @@ function ExtractModal({
     }
   };
 
-  if (!open) return null;
+  if (!anim.mounted) return null;
 
   return (
-    <div className="modalOverlay" id="extractModalOverlay">
-      <div className="modal modalWide modalTall workflowModalFixed">
+    <div className={`modalOverlay ${anim.animClass}`} id="extractModalOverlay">
+      <div className={`modal modalWide modalTall workflowModalFixed ${anim.animClass}`}>
         <div className="modalHead">
           <span>文件转 Markdown</span>
           <span className="headActions">
@@ -566,17 +645,21 @@ function ExtractModal({
         <div className="modalBody generateModalBody">
           <p className="extractFidelityNote muted">转换保留正文与图片，模型整理可提高可读性，不保证版式与原文件一致。</p>
           <div className="generateToolbar stripHead modalToolbarRow">
-            <button type="button" id="extractRefreshTreeBtn" className="btn btnXs ghost" onClick={() => void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []))}>刷新文件</button>
+            {!hideFileTree && (
+              <button type="button" id="extractRefreshTreeBtn" className="btn btnXs ghost" onClick={() => void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []))}>刷新文件</button>
+            )}
             <span id="extractModalFileLabel" className="muted generateFileLabel">{displayFileName(path, fileName) || "未选择文件"}</span>
           </div>
           <div className="modalToolbarDivider" />
-          <div className="uploadSelectLayout generateLayout extractModalLayout workflowModalBody">
-            <aside className="generateTreeCol">
-              <div className="stripHead"><span>文件</span></div>
-              <div id="extractFileTree" className="fileTree scrollInner">
-                {renderFileTreeNodes(tree, path, (n) => { if (n.path && n.kind) void selectModalFile(n.path, n.kind, n.name, n.capabilities); }, "convert")}
-              </div>
-            </aside>
+          <div className={`uploadSelectLayout generateLayout extractModalLayout workflowModalBody${hideFileTree ? " noFileTree" : ""}`}>
+            {!hideFileTree && (
+              <aside className="generateTreeCol">
+                <div className="stripHead"><span>文件</span></div>
+                <div id="extractFileTree" className="fileTree scrollInner">
+                  {renderDocumentFileTree(tree, path, (n) => { if (n.path && n.kind) void selectModalFile(n.path, n.kind, n.name, n.capabilities); }, "convert")}
+                </div>
+              </aside>
+            )}
             <aside className="uploadSelectLeft extractRangeCol">
               {path && (
                 <label className="extractVlmToggle">
@@ -677,7 +760,7 @@ function ExtractModal({
                   </div>
                 </div>
               )}
-              {!path && <p className="muted extractRangeEmpty">请从左侧选择要转换的文件</p>}
+              {!path && !hideFileTree && <p className="muted extractRangeEmpty">请从左侧选择要转换的文件</p>}
             </aside>
             <section className="uploadSelectRight generateMdCol">
               <div className="stripHead generateMdHead">
@@ -689,7 +772,7 @@ function ExtractModal({
               </div>
               <div id="extractMdViewer" className="generateMdViewer scrollInner">
                 {!path ? (
-                  <div className="muted filesEmptyHint">从左侧选择文件…</div>
+                  <div className="muted filesEmptyHint">{hideFileTree ? "正在加载文件…" : "从左侧选择文件…"}</div>
                 ) : fileKind === "source_pdf" && viewMode === "preview" ? (
                   <iframe title={fileName} className="filesPdfPreview" src={`/documents/preview-file?path=${encodeURIComponent(path)}`} />
                 ) : viewMode === "source" ? (
@@ -735,8 +818,8 @@ function ExtractModal({
   );
 }
 
-function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdown, onCommitted }: {
-  open: boolean; onClose: () => void; initialPath?: string; initialName?: string; initialMarkdown?: string; onCommitted: () => void;
+function GenerateModal({ open, onClose, hideFileTree = false, initialPath, initialName, initialMarkdown, onCommitted }: {
+  open: boolean; onClose: () => void; hideFileTree?: boolean; initialPath?: string; initialName?: string; initialMarkdown?: string; onCommitted: () => void;
 }) {
   const { showToast } = useAppUi();
   const { kbMap } = useKnowledgeBases();
@@ -761,6 +844,7 @@ function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdow
   const [mdViewMode, setMdViewMode] = useState<"source" | "preview">("source");
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
   const ragKbIds = Object.keys(ragKbMap).sort((a, b) => Number(a) - Number(b));
+  const anim = useAnimatedVisible(open);
 
   // 初始化
   useEffect(() => {
@@ -858,11 +942,11 @@ function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdow
     }
   };
 
-  if (!open) return null;
+  if (!anim.mounted) return null;
 
   return (
-    <div className="modalOverlay" id="generateModalOverlay">
-      <div className="modal modalWide modalTall workflowModalFixed">
+    <div className={`modalOverlay ${anim.animClass}`} id="generateModalOverlay">
+      <div className={`modal modalWide modalTall workflowModalFixed ${anim.animClass}`}>
         <div className="modalHead">
           <span>问题生成</span>
           <button type="button" id="generateModalCloseBtn" className="btn btnXs ghost" disabled={importing || !!generatingId} onClick={onClose}>关闭</button>
@@ -880,24 +964,28 @@ function GenerateModal({ open, onClose, initialPath, initialName, initialMarkdow
             <p className="muted generateDocxHint">Word 文本提取用于选行；含图片段落以 Markdown 链接形式保留。</p>
           )}
           <div className="generateToolbar stripHead modalToolbarRow">
-            {importLlm && (
+            <FadePanel show={importLlm} className="modePanelEnter">
               <label className="kbSelectLabel">问答模型 KB<select className="kbSelect" value={llmKbId} onChange={(e) => setLlmKbId(e.target.value)}>{kbIds.map((id) => <option key={id} value={id}>{kbMap[id]?.name || id}</option>)}</select></label>
-            )}
-            {importRag && (
+            </FadePanel>
+            <FadePanel show={importRag} className="modePanelEnter">
               <label className="kbSelectLabel">RAG KB<select className="kbSelect" value={ragKbId} onChange={(e) => setRagKbId(e.target.value)}>{ragKbIds.map((id) => <option key={id} value={id}>{ragKbMap[id]?.name || id}</option>)}</select></label>
+            </FadePanel>
+            {!hideFileTree && (
+              <button type="button" id="generateRefreshTreeBtn" className="btn btnXs ghost" onClick={() => void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []))}>刷新文件</button>
             )}
-            <button type="button" id="generateRefreshTreeBtn" className="btn btnXs ghost" onClick={() => void apiJson<{ tree: FileTreeNode[] }>("/markdown-files/tree").then((d) => setTree(d.tree || []))}>刷新文件</button>
             <span id="generateFileLabel" className="muted generateFileLabel">{displayFileName(path, fileName) || "未选择文件"}</span>
             <span className="headActions" style={{ marginLeft: "auto" }}>
               <button type="button" id="generateCommitBtn" className={`btn btnXs primary${importing ? " btnRunning" : ""}`} disabled={importing || !!generatingId} onClick={() => void commit()}>{importing ? "导入中…" : "导入"}</button>
             </span>
           </div>
           <div className="modalToolbarDivider" />
-          <div className="uploadSelectLayout generateLayout generateModalLayout workflowModalBody">
-            <aside className="generateTreeCol">
-              <div className="stripHead"><span>文件</span></div>
-              <div id="generateFileTree" className="fileTree scrollInner">{renderFileTreeNodes(tree, path, (n) => { if (n.path) void loadDocumentText(n.path, undefined, n.name); }, "questionGen")}</div>
-            </aside>
+          <div className={`uploadSelectLayout generateLayout generateModalLayout workflowModalBody${hideFileTree ? " noFileTree" : ""}`}>
+            {!hideFileTree && (
+              <aside className="generateTreeCol">
+                <div className="stripHead"><span>文件</span></div>
+                <div id="generateFileTree" className="fileTree scrollInner">{renderDocumentFileTree(tree, path, (n) => { if (n.path) void loadDocumentText(n.path, undefined, n.name); }, "questionGen")}</div>
+              </aside>
+            )}
             <aside className="uploadSelectLeft generateRangeCol">
               <div className="uploadPhaseHead stripHead">
                 <span className="uploadPhaseTitle">选择行范围</span>

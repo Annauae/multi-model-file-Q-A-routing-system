@@ -73,6 +73,15 @@ npm test
 
 使用 `MOCK_LLM=1`、`MOCK_WEAVIATE=1` 运行 vitest；测试前会 `TRUNCATE` 相关表并种子数据。
 
+## 文档
+
+| 文档 | 路径 | 说明 |
+|------|------|------|
+| 使用指南 | [`client/public/manual.md`](client/public/manual.md) | 面向业务用户；应用内「使用手册 → 使用指南」 |
+| 开发者文档 | [`client/public/dev-manual.md`](client/public/dev-manual.md) | 架构、API、前后端实现；应用内「开发者文档」 |
+
+开发模式下通过 Vite 访问 `/static/manual.md`；生产构建后由 Express 静态托管。
+
 ## 与 Python 版差异
 
 | 项目 | Python 版 | Router 版 |

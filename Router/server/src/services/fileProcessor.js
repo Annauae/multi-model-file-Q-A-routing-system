@@ -7,6 +7,7 @@ import { convertDocxToMarkdown, convertExcelToMarkdown, convertHtmlToMarkdown, c
 import { formatFromFilename } from "./documentTypes.js";
 import { refineMarkdownWithVlm } from "./documentVlmRefine.js";
 import { documentsAssetsDirPath, documentsModulesDirPath, DOCLING_SCRIPT, MODEL_ROUTER_ROOT, } from "./paths.js";
+import { copyDirAssetsToDocuments, rewriteAssetPathsInText } from "./assetSync.js";
 const PLACEHOLDER_HEADING_RE = /^#{1,3}\s*前言\s*$/gm;
 const DOCLING_META_BLOCK = /---\s*\n(?:(?!---).)*?(?:route:|route_label:|source_pdf:)(?:(?!---).)*?\n---\s*\n?/gis;
 const MAX_VLM_REFINE_CHARS = 24_000;
@@ -186,7 +187,8 @@ export async function extractPdfToMarkdown(opts) {
             tokenBreakdown.push({ phase: `VLM · 第 ${i} 页`, usage: pageUsage });
         }
         extractMs += performance.now() - tPage;
-        const mdText = cleanPageMarkdown(fs.readFileSync(mdPath, "utf-8"));
+        const mdText = rewriteAssetPathsInText(cleanPageMarkdown(fs.readFileSync(mdPath, "utf-8")));
+        copyDirAssetsToDocuments(filesRoot, path.join(tmp, "assets"));
         const pageOut = path.join(pagesDir, `page_${i}.md`);
         fs.writeFileSync(pageOut, mdText, "utf-8");
         pageMds.push([i, mdText]);
@@ -270,7 +272,7 @@ export function finalizeCombinedExtract(filesRoot, filename, ranges, isPdf, part
     }
     const modulesDir = documentsModulesDirPath(filesRoot);
     fs.mkdirSync(modulesDir, { recursive: true });
-    const mergedMd = cleanPageMarkdown(parts.map((p) => `<!-- ${p.label} -->\n${p.md}`).join("\n\n"));
+    const mergedMd = rewriteAssetPathsInText(cleanPageMarkdown(parts.map((p) => `<!-- ${p.label} -->\n${p.md}`).join("\n\n")));
     const rangeLabel = ranges.map(([s, e]) => (isPdf ? `p${s}-${e}` : `l${s}-${e}`)).join("_");
     const stem = path.basename(filename, path.extname(filename)).replace(/[^\w.\u4e00-\u9fff-]+/g, "_").slice(0, 80);
     const outName = isPdf ? `merged_${stem}_${rangeLabel}.md` : `module_${rangeLabel}.md`;

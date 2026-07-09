@@ -10,7 +10,8 @@
  * 3. 任意子组件通过 useAppUi() 调用 showToast / showModal / hideModal
  */
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useAnimatedVisible } from "../hooks/useAnimatedVisible";
 
 /** Toast 的视觉类型，对应 CSS 类名 toast.success / toast.error */
 type ToastType = "success" | "error";
@@ -20,6 +21,7 @@ interface ToastItem {
   id: number;
   message: string;
   type: ToastType;
+  closing?: boolean;
 }
 
 /** 弹窗 打开时的完整状态；body 支持任意 React 节点（表单、文本等） */
@@ -37,6 +39,7 @@ interface AppUiContextValue {
   toasts: ToastItem[];
   showToast: (message: string, type?: ToastType, durationMs?: number) => void;
   modal: ModalState | null;
+  modalVisible: boolean;
   showModal: (title: string, body: ReactNode, onOk?: () => void | Promise<void>, wide?: boolean) => void;
   hideModal: () => void;
 }
@@ -50,7 +53,23 @@ const AppUiContext = createContext<AppUiContextValue | null>(null);
  */
 export function AppUiProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]); // 存储 Toast 列表
-  const [modal, setModal] = useState<ModalState | null>(null); // 存储 Modal 状态
+  const [modal, setModal] = useState<ModalState | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (modal) setModalOpen(true);
+  }, [modal]);
+
+  const hideModal = useCallback(() => {
+    setModalOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!modalOpen && modal) {
+      const t = window.setTimeout(() => setModal(null), 220);
+      return () => window.clearTimeout(t);
+    }
+  }, [modalOpen, modal]);
 
   /**
    * 追加一条 Toast，并在 durationMs 后自动移除。
@@ -59,6 +78,10 @@ export function AppUiProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((message: string, type: ToastType = "success", durationMs = 2600) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
+    const fadeAt = Math.max(400, durationMs - 220);
+    setTimeout(() => {
+      setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, closing: true } : t)));
+    }, fadeAt);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), durationMs);
   }, []);
 
@@ -67,13 +90,9 @@ export function AppUiProvider({ children }: { children: ReactNode }) {
     setModal({ title, body, onOk, wide });
   }, []);
 
-  /** 关闭 Modal，将 modal 置为 null */
-  const hideModal = useCallback(() => setModal(null), []);
-
-  /** 合并状态与方法，依赖变化时才更新，减少子组件无效重渲染 */
   const value = useMemo(
-    () => ({ toasts, showToast, modal, showModal, hideModal }),
-    [toasts, showToast, modal, showModal, hideModal],
+    () => ({ toasts, showToast, modal, modalVisible: modalOpen, showModal, hideModal }),
+    [toasts, showToast, modal, modalOpen, showModal, hideModal],
   );
 
   return <AppUiContext.Provider value={value}>{children}</AppUiContext.Provider>;
@@ -98,7 +117,7 @@ export function ToastContainer() {
   return (
     <div className="toastContainer" id="toastContainer">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast ${t.type}`}>
+        <div key={t.id} className={`toast ${t.type}${t.closing ? " ui-fade-out" : " ui-fade-in"}`}>
           {t.message}
         </div>
       ))}
@@ -111,8 +130,9 @@ export function ToastContainer() {
  * modal 为 null 时不渲染；有 onOk 时「确定」会 await 回调，成功则关闭，失败则 error Toast。
  */
 export function ModalOverlay() {
-  const { modal, hideModal, showToast } = useAppUi();
-  if (!modal) return null;
+  const { modal, modalVisible, hideModal, showToast } = useAppUi();
+  const anim = useAnimatedVisible(modalVisible);
+  if (!modal || !anim.mounted) return null;
 
   const handleOk = async () => {
     if (!modal.onOk) {
@@ -129,8 +149,8 @@ export function ModalOverlay() {
   };
 
   return (
-    <div className="modalOverlay" id="modalOverlay">
-      <div className={`modal ${modal.wide ? "modalWide" : ""}`}>
+    <div className={`modalOverlay ${anim.animClass}`} id="modalOverlay">
+      <div className={`modal ${modal.wide ? "modalWide" : ""} ${anim.animClass}`}>
         <div className="modalHead">
           <h3 id="modalTitle">{modal.title}</h3>
         </div>

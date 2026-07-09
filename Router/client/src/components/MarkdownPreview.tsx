@@ -90,9 +90,21 @@ function renderAnswerWithMedia(text: string, kbId: string): string {
 
 /** 渲染 Markdown 预览 */
 export function renderMarkdownPreview(md: string, kbId: string): string {
-  const withMedia = renderAnswerWithMedia(md, kbId);
+  const withHtmlImgs = rewriteHtmlImgRefsInMarkdown(md, kbId);
+  const withMedia = renderAnswerWithMedia(withHtmlImgs, kbId);
   const html = marked.parse(withMedia, { breaks: true }) as string;
   return DOMPurify.sanitize(html);
+}
+
+/** 将 Markdown/HTML 中的 assets 图片路径转为可预览 URL */
+function rewriteHtmlImgRefsInMarkdown(md: string, kbId: string): string {
+  return (md || "").replace(/<img\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)>/gi, (_tag, pre, ref, post) => {
+    const r = String(ref || "").trim();
+    if (!r || r.startsWith("http://") || r.startsWith("https://") || r.startsWith("data:")) return _tag;
+    if (r.startsWith("/documents/preview-asset") || r.startsWith("/preview-asset")) return _tag;
+    const src = assetPreviewUrl(kbId, r);
+    return `<img${pre}src="${escapeHtml(src)}"${post}>`;
+  });
 }
 
 export function MarkdownPreview({ md, kbId, className = "mdPreview" }: { md: string; kbId: string; className?: string }) {

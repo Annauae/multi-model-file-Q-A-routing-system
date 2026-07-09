@@ -1,20 +1,21 @@
 /** 下拉菜单 */
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useAnimatedVisible } from "../hooks/useAnimatedVisible";
 
 export function Dropdown({ label, children, primary = true }: { label: string; children: ReactNode; primary?: boolean }) {
-  /** 是否打开 */
   const [open, setOpen] = useState(false);
-  /** 引用 */
   const ref = useRef<HTMLDivElement>(null);
+  const panel = useAnimatedVisible(open);
 
-  /** 监听文档点击 */
   useEffect(() => {
-    const onDoc = () => setOpen(false);
-    document.addEventListener("click", onDoc); // 添加点击事件
-    return () => document.removeEventListener("click", onDoc); // 移除点击事件
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  return ( // 返回下拉菜单
+  return (
     <div className="dropdown" ref={ref}>
       <button
         type="button"
@@ -23,7 +24,14 @@ export function Dropdown({ label, children, primary = true }: { label: string; c
       >
         {label}<span className="dropdownChevron">▾</span>
       </button>
-      <div className={`dropdownMenu ${open ? "" : "hidden"}`} onClick={(e) => { e.stopPropagation(); setOpen(false); }}>{children}</div>
+      {panel.mounted && (
+        <div
+          className={`dropdownMenu ${panel.animClass}`}
+          onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@
  *     → 更新每行 answers/timings，聚合 batchMetrics，切到「消耗时间」Tab
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AskTimings, CandidateAnswer, RecallTestRow } from "../types";
 import {
   apiJson,
@@ -23,9 +23,11 @@ import {
 } from "../api/client";
 import { TimingsPanel, TokenPanel, TimeoutMetrics } from "../components/MetricsPanels";
 import { Dropdown } from "../components/Dropdown";
+import { KebabMenu } from "../components/KebabMenu";
 import { useAppUi } from "../context/AppUiContext";
 import { useKnowledgeBases, useMatchProfiles, useRagKnowledgeBases } from "../hooks/useKnowledgeBases";
 import { RecallAnswerModalContent } from "./DebugViews";
+import { FadePanel } from "../components/FadePanel";
 import { ModeBar } from "../components/ModeBar";
 import { IndexStatusPill } from "../components/IndexStatusPill";
 import { MarkdownPreview } from "../components/MarkdownPreview";
@@ -50,9 +52,15 @@ function newRecallRow(partial: Partial<RecallRow> = {}): RecallRow {
     candidates: partial.candidates || [],
     timings: partial.timings || undefined,
     run_at: partial.run_at,
+    last_top_id: partial.last_top_id,
+    last_confidence: partial.last_confidence,
     notes: partial.notes,
     match_profile_id: partial.match_profile_id,
     model_label: partial.model_label,
+    rag_sources: partial.rag_sources || [],
+    rag_answer: partial.rag_answer || "",
+    rag_mode: partial.rag_mode || "",
+    expected_id: partial.expected_id,
   };
 }
 
@@ -103,6 +111,7 @@ export function RecallModule() {
   const [topK, setTopK] = useState(5);
   const [profileId, setProfileId] = useState("");
   const [rows, setRows] = useState<RecallRow[]>([]);
+  const rowsRef = useRef<RecallRow[]>(rows);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pageSize, setPageSize] = useState(() => {
     const stored = localStorage.getItem("recallPageSize");
@@ -122,6 +131,34 @@ export function RecallModule() {
   const profiles = profilesData?.profiles || [];
   const effectiveProfile = profileId || profilesData?.default_id || profiles[0]?.id || "";
   const profileLabel = profiles.find((p) => p.id === effectiveProfile)?.name || effectiveProfile;
+
+  useEffect(() => { rowsRef.current = rows; }, [rows]);
+
+  const recallTestsPath = useCallback((kid = effectiveKb) => (
+    recallMode === "rag"
+      ? `/rag/knowledge-bases/${encodeURIComponent(kid)}/recall-tests`
+      : `/knowledge-bases/${encodeURIComponent(kid)}/recall-tests`
+  ), [effectiveKb, recallMode]);
+
+  const persistTests = useCallback(async (items: RecallRow[], showSuccessToast = false) => {
+    if (!effectiveKb) return;
+    try {
+      await apiJson(recallTestsPath(), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      if (showSuccessToast) showToast("召回测试已保存");
+    } catch (e) {
+      showToast((e as Error).message, "error", 3200);
+    }
+  }, [effectiveKb, recallTestsPath, showToast]);
+
+  const commitRows = useCallback((next: RecallRow[], options?: { persist?: boolean }) => {
+    rowsRef.current = next;
+    setRows(next);
+    if (options?.persist !== false) void persistTests(next);
+  }, [persistTests]);
 
   /** 从 PostgreSQL recall_tests 表加载当前知识库的测试行 */
   const loadTests = useCallback(async (kid: string) => {
@@ -149,6 +186,10 @@ export function RecallModule() {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   };
 
+  const updateRowRecalled = (id: string, recalled: RecallTestRow["recalled"]) => {
+    commitRows(rowsRef.current.map((r) => (r.id === id ? { ...r, recalled } : r)));
+  };
+
   /**
    * 单行运行 — batchRun 对每一选中行调用一次。
    * LLM 模式：streamAskConfidence（与调试 · 问答相同后端路径）
@@ -174,10 +215,12 @@ export function RecallModule() {
         rag_mode: data.mode || "",
         timings: data.timing,
         last_top_id: topId,
+        last_confidence: sources[0]?.rerank_score ?? sources[0]?.rrf_score,
         recalled: recalled || row.recalled,
         model_label: "RAG",
       };
       setRows((prev) => prev.map((r) => (r.id === row.id ? updated : r)));
+      rowsRef.current = rowsRef.current.map((r) => (r.id === row.id ? updated : r));
       return updated;
     }
     type AskDonePayload = {
@@ -199,8 +242,11 @@ export function RecallModule() {
       timings: result.timings || undefined,
       match_profile_id: effectiveProfile,
       model_label: profileLabel,
+      last_top_id: result.answers?.[0]?.id,
+      last_confidence: result.answers?.[0]?.confidence,
     };
     setRows((prev) => prev.map((r) => (r.id === row.id ? updated : r)));
+    rowsRef.current = rowsRef.current.map((r) => (r.id === row.id ? updated : r));
     return updated;
   };
 
@@ -221,10 +267,12 @@ export function RecallModule() {
       for (const row of targets) {
         ran.push(await runRow(row));
       }
+      await persistTests(rowsRef.current);
       showToast(`已运行 ${targets.length} 条`);
       setBatchMetrics(aggregateRecallMetrics(ran));
       setRightTab("timing");
     } catch (e) {
+      void persistTests(rowsRef.current);
       if (isAskTimeoutError(e)) {
         setTimedOut(true);
         setRightTab("timing");
@@ -240,19 +288,77 @@ export function RecallModule() {
   const selectAll = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const selectIndeterminate = rows.some((r) => selected.has(r.id)) && !selectAll;
 
+  const handleRowAction = (rowId: string, action: string) => {
+    if (action === "run") {
+      void (async () => {
+        if (!effectiveKb) return showToast("请选择知识库", "error");
+        const row = rows.find((r) => r.id === rowId);
+        if (!row) return;
+        const q = (row.question || "").trim();
+        if (!q) return showToast("问题为空", "error");
+        if (running) return;
+        setRunning(true);
+        setTimedOut(false);
+        try {
+          const updated = await runRow(row);
+          await persistTests(rowsRef.current);
+          setBatchMetrics(aggregateRecallMetrics([updated]));
+          setRightTab("timing");
+          showToast("已运行");
+        } catch (e) {
+          void persistTests(rowsRef.current);
+          if (isAskTimeoutError(e)) {
+            setTimedOut(true);
+            setRightTab("timing");
+            showToast(`请求超时（${DEBUG_ASK_TIMEOUT_S}s）`, "error", 3200);
+          } else {
+            showToast((e as Error).message, "error", 3200);
+          }
+        } finally {
+          setRunning(false);
+        }
+      })();
+    } else if (action === "delete") {
+      commitRows(rowsRef.current.filter((r) => r.id !== rowId));
+      setSelected((prev) => { const s = new Set(prev); s.delete(rowId); return s; });
+      showToast("已删除该行");
+    } else if (action === "clearResults") {
+      commitRows(rowsRef.current.map((r) => (
+        r.id === rowId
+          ? {
+            ...r,
+            answers: [],
+            candidates: [],
+            timings: undefined,
+            rag_sources: [],
+            rag_answer: "",
+            rag_mode: "",
+            recalled: "",
+            run_at: undefined,
+            last_top_id: undefined,
+          }
+          : r
+      )));
+      showToast("已清空运行结果");
+    } else if (action === "copyQuestion") {
+      const row = rows.find((r) => r.id === rowId);
+      const text = (row?.question || "").trim();
+      if (!text) return showToast("问题为空", "error");
+      void navigator.clipboard.writeText(text).then(
+        () => showToast("已复制问题"),
+        () => showToast("复制失败", "error"),
+      );
+    }
+  };
+
   const handleRecallAction = (action: string) => {
     if (action === "addRow") setRows([...rows, newRecallRow()]);
     else if (action === "delete") {
       if (!selected.size) return showToast("请先勾选行", "error");
-      setRows(rows.filter((r) => !selected.has(r.id)));
+      commitRows(rowsRef.current.filter((r) => !selected.has(r.id)));
       setSelected(new Set());
     } else if (action === "save") {
-      const path = recallMode === "rag"
-        ? `/rag/knowledge-bases/${encodeURIComponent(effectiveKb)}/recall-tests`
-        : `/knowledge-bases/${encodeURIComponent(effectiveKb)}/recall-tests`;
-      void apiJson(path, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: rows }),
-      }).then(() => showToast("召回测试已保存")).catch((e) => showToast(e.message, "error"));
+      void persistTests(rowsRef.current, true);
     } else if (action === "import") {
       showModal(
         "批量导入问题",
@@ -285,6 +391,41 @@ export function RecallModule() {
         }))]);
         showToast(`已从 FAQ 采样 ${sampled.length} 条`);
       }).catch((e) => showToast(e.message, "error"));
+    } else if (action === "copyFromLlm") {
+      if (recallMode !== "rag") return;
+      const defaultLlm = effectiveKb && kbIds.includes(effectiveKb) ? effectiveKb : kbIds[0] || "";
+      showModal(
+        "从问答模型复制测试问题",
+        <div>
+          <p className="muted">将所选问答模型知识库的全部召回测试问题复制到当前 RAG 知识库，替换现有列表（仅复制问题文本与期望 FAQ id，不含运行结果）。</p>
+          <label className="fieldLabel">来源（问答模型）知识库
+            <select id="copyFromLlmKbSelect" className="settingsInput" defaultValue={defaultLlm}>
+              {kbIds.map((id) => <option key={id} value={id}>{kbDisplayName(id)} (kb_{id})</option>)}
+            </select>
+          </label>
+        </div>,
+        async () => {
+          const llmKid = (document.getElementById("copyFromLlmKbSelect") as HTMLSelectElement)?.value;
+          if (!llmKid) throw new Error("请选择来源知识库");
+          if (!effectiveKb) throw new Error("请选择 RAG 知识库");
+          const doc = await apiJson<{ items: RecallRow[] }>(`/knowledge-bases/${encodeURIComponent(llmKid)}/recall-tests`);
+          const source = (doc.items || []).filter((r) => (r.question || "").trim());
+          if (!source.length) throw new Error("问答模型召回测试为空");
+          const copied = source.map((r) => newRecallRow({
+            question: r.question,
+            expected_id: r.answers?.[0]?.id || r.candidates?.[0]?.id || r.last_top_id,
+          }));
+          setRows(copied);
+          setSelected(new Set());
+          await apiJson(`/rag/knowledge-bases/${encodeURIComponent(effectiveKb)}/recall-tests`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: copied }),
+          });
+          showToast(`已从问答模型复制 ${copied.length} 条并保存`);
+        },
+        true,
+      );
     } else if (action === "export") {
       const labeled = rows.filter((r) => r.recalled === "yes" || r.recalled === "no");
       const yes = rows.filter((r) => r.recalled === "yes").length;
@@ -322,18 +463,21 @@ export function RecallModule() {
         </div>
         <div className="rightTabBody">
           <div id="rightTabAsk" className={`rightTabPane ${rightTab === "ask" ? "active" : ""}`}>
-            <div className="moduleSide recall stripBody qBody">
+            <FadePanel show key={recallMode} className="moduleSide recall stripBody qBody modePanelEnter">
               <label className="kbSelectLabel">知识库<select id="recallKbSelect" className="kbSelect" value={effectiveKb} onChange={(e) => { if (recallMode === "rag") setRagKbId(e.target.value); else setKbId(e.target.value); }}>{(recallMode === "rag" ? ragKbIds : kbIds).map((id) => <option key={id} value={id}>{(recallMode === "rag" ? ragKbMap : kbMap)[id]?.name || id}</option>)}</select></label>
               <label className="kbSelectLabel">Top K<input id="recallTopK" type="number" className="topKInput" min={1} max={20} value={topK} onChange={(e) => setTopK(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 5)))} /></label>
-              {recallMode === "llm" && (
-                <label className="kbSelectLabel">问答模型<select id="recallMatchProfileSelect" className="kbSelect" value={effectiveProfile} onChange={(e) => setProfileId(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
-              )}
-              {recallMode === "rag" && <IndexStatusPill kbId={effectiveKb} onRebuild={() => void loadTests(effectiveKb)} />}
+              <FadePanel show={recallMode === "llm"} className="kbSelectLabel modePanelEnter">
+                <span>问答模型</span>
+                <select id="recallMatchProfileSelect" className="kbSelect" value={effectiveProfile} onChange={(e) => setProfileId(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select>
+              </FadePanel>
+              <FadePanel show={recallMode === "rag"} className="modePanelEnter">
+                <IndexStatusPill kbId={effectiveKb} onRebuild={() => void loadTests(effectiveKb)} />
+              </FadePanel>
               <div className="qActions recallSideActions">
                 {/* 批量运行：batchRun() 串行调用 runRow() 处理每一选中行 */}
                 <button id="recallRunBtn" type="button" className="btn btnXs primary" disabled={running} onClick={() => void batchRun()}>{running ? "批量运行中…" : "批量运行"}</button>
               </div>
-            </div>
+            </FadePanel>
           </div>
           <div id="rightTabTiming" className={`rightTabPane ${rightTab === "timing" ? "active" : ""}`}>
             <div className="moduleMetrics recall">
@@ -388,6 +532,7 @@ export function RecallModule() {
                   {recallMode === "rag" && (
                     <>
                       <div className="dropdownDivider" />
+                      <button type="button" className="dropdownItem" onClick={() => handleRecallAction("copyFromLlm")}>从问答模型复制</button>
                       <button type="button" className="dropdownItem" onClick={() => handleRecallAction("import")}>批量导入问题</button>
                       <button type="button" className="dropdownItem" onClick={() => handleRecallAction("sampleFromFaq")}>从 FAQ 采样</button>
                     </>
@@ -422,9 +567,6 @@ export function RecallModule() {
                               <div className="ragSourceList">
                                 {row.rag_answer && (
                                   <div className="answerCard ragAnswerCard">
-                                    <div className="confidenceCardHead">
-                                      <span className="pill">{row.rag_mode || "回答"}</span>
-                                    </div>
                                     <div className="answerCardBody mdPreview">
                                       <MarkdownPreview md={row.rag_answer} kbId={effectiveKb} />
                                     </div>
@@ -452,11 +594,21 @@ export function RecallModule() {
                           showModal("置信度回答", <RecallAnswerModalContent answers={row.answers} kbId={effectiveKb} question={row.question} />, async () => {}, true);
                         }}>查看</button>
                       </div>
-                      <div className="recallField recallFieldRecall">
+                      <FadePanel show key={`recall-label-${recallMode}`} className="recallField recallFieldRecall modePanelEnter">
                         <span className="recallFieldLabel">是否召回</span>
-                        <select className="recallLabel" data-id={row.id} value={row.recalled || ""} onChange={(e) => updateRow(row.id, { recalled: (e.target.value || "") as RecallTestRow["recalled"] })}>
+                        <select className="recallLabel" data-id={row.id} value={row.recalled || ""} onChange={(e) => updateRowRecalled(row.id, (e.target.value || "") as RecallTestRow["recalled"])}>
                           <option value="">未标注</option><option value="yes">是</option><option value="no">否</option>
                         </select>
+                      </FadePanel>
+                      <div className="recallFieldActions" onClick={(e) => e.stopPropagation()}>
+                        <KebabMenu align="right">
+                          <button type="button" className="dropdownItem" disabled={running} onClick={() => handleRowAction(row.id, "run")}>运行</button>
+                          <div className="dropdownDivider" />
+                          <button type="button" className="dropdownItem" onClick={() => handleRowAction(row.id, "copyQuestion")}>复制问题</button>
+                          <button type="button" className="dropdownItem" onClick={() => handleRowAction(row.id, "clearResults")}>清空结果</button>
+                          <div className="dropdownDivider" />
+                          <button type="button" className="dropdownItem danger" onClick={() => handleRowAction(row.id, "delete")}>删除</button>
+                        </KebabMenu>
                       </div>
                     </div>
                   </div>

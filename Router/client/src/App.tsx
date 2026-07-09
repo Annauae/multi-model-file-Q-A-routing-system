@@ -14,16 +14,18 @@
  * └──────────┴─────────────────┴──────────────────┘
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppUiProvider, ModalOverlay, ToastContainer } from "./context/AppUiContext";
 import { useHealth, useKnowledgeBases, useMatchProfiles, useRagKnowledgeBases } from "./hooks/useKnowledgeBases";
 import { DocsModal } from "./components/DocsModal";
-import { ModeBar } from "./components/ModeBar";
-import { IndexStatusPill } from "./components/IndexStatusPill";
-import { CandidatesPanel, DebugAnswersPanel, useDebugAsk, useDebugQuestions } from "./views/DebugViews";
-import { RagQaMain, RagTimingsPanel, RagTokenPanel, useRagAsk } from "./views/RagDebugViews";
-import { TimingsPanel, TokenPanel } from "./components/MetricsPanels";
+import { AskComposer } from "./components/AskComposer";
+import { AskChatThread } from "./components/AskChatThread";
+import { GroupedAnswerNavPanel, type AnswerNavGroup } from "./components/AnswerNavPanel";
+import { AskSessionsPanel, AskSessionsExpandBtn } from "./components/AskSessionsPanel";
+import { useAskSessions, type AskChatTurn } from "./hooks/useAskSessions";
+import { useDebugQuestions } from "./views/DebugViews";
+import { scrollToCard } from "./views/RagDebugViews";
 import { ManageView } from "./views/ManageView";
 import { LogsView } from "./views/LogsView";
 import { SettingsView } from "./views/SettingsView";
@@ -69,10 +71,13 @@ function AppShell() {
   const [module, setModule] = useState<ModuleName>("debug"); // 一级模块：调试、管理、日志、设置
   const [debugSub, setDebugSub] = useState<DebugSub>("single"); // 二级模块：问答、召回度测试
   const [manageSub, setManageSub] = useState<ManageSub>("items"); // 二级模块：问题管理、文件管理
-  const [rightTab, setRightTab] = useState("ask"); // 调试页右侧面板当前 Tab （提问、候选匹配、消耗时间、消耗 Token）
   const [docsOpen, setDocsOpen] = useState(false); // 使用手册弹窗是否打开
   const [debugNavCollapsed, setDebugNavCollapsed] = useState(false); // 侧边栏「调试」分组折叠
   const [debugMode, setDebugMode] = useState<AskMode>("llm"); // 问答模式：LLM 匹配 | RAG 检索
+  const [activeCardId, setActiveCardId] = useState("");
+  const [sessionsCollapsed, setSessionsCollapsed] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatSession = useAskSessions();
 
   // 知识库 id 按数字排序，保证下拉顺序稳定
   const kbIds = Object.keys(kbMap).sort((a, b) => Number(a) - Number(b));
@@ -92,25 +97,77 @@ function AppShell() {
   /** 当前生效的问答模型 profile（用户未选时用 default_id 或首项） */
   const effectiveProfile = debugProfile || profilesData?.default_id || profiles[0]?.id || "";
 
-  // 问答 Hook：仅在对应模式下传入 effectiveKb，另一模式保留各自 kb 避免切换时丢失选择
-  const debugAsk = useDebugAsk(debugMode === "llm" ? effectiveKb : (debugKb || kbIds[0] || ""), effectiveProfile, debugTopK); // 调用LLM问答Hook，传入有效知识库ID和问答模型ID，Top K，返回问答结果
-  const ragAsk = useRagAsk(debugMode === "rag" ? effectiveKb : (debugRagKb || ragKbIds[0] || ""), debugTopK); // 调用RAG问答Hook，传入有效知识库ID，Top K，返回问答结果
   const debugQuestions = useDebugQuestions(debugKb || kbIds[0] || ""); // 「随机问题」从 LLM 库抽样
+
+  const scrollChatToBottom = () => {
+    requestAnimationFrame(() => {
+      const el = chatScrollRef.current;
+      if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+  };
+
+  const submitAsk = async () => {
+    const q = question.trim();
+    if (!q) return;
+    const turn = await chatSession.submit({
+      question: q,
+      mode: debugMode,
+      kbId: effectiveKb,
+      profileId: effectiveProfile,
+      topK: debugTopK,
+    });
+    if (!turn) return;
+    setQuestion("");
+    scrollChatToBottom();
+  };
+
+  const submitSearch = async () => {
+    const q = question.trim();
+    if (!q) return;
+    const turn = await chatSession.searchRag({ question: q, kbId: effectiveKb, topK: debugTopK });
+    if (!turn) return;
+    setQuestion("");
+    scrollChatToBottom();
+  };
+
+  const resetAskSession = () => {
+    setQuestion("");
+    setActiveCardId("");
+    chatSession.startNewSession();
+  };
+
+  const selectSession = (sessionId: string) => {
+    setActiveCardId("");
+    setQuestion("");
+    chatSession.switchSession(sessionId);
+  };
+
+  useEffect(() => {
+    if (chatSession.turns.length > 0) scrollChatToBottom();
+  }, [chatSession.activeSessionId]);
+
+  const switchDebugMode = (m: AskMode) => {
+    setDebugMode(m);
+  };
 
   /** Ctrl+Enter 快捷提问（仅调试 · 问答 · 单条页） */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "Enter" && module === "debug" && debugSub === "single") {
-        if (debugMode === "llm") void debugAsk.ask(question);
-        else void ragAsk.chat(question);
+        void submitAsk();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [module, debugSub, question, debugAsk, ragAsk, debugMode]);
+  }, [module, debugSub, question, debugMode, chatSession]);
 
-  /** 决定是否双栏布局（是否在调试页） */
-  const showLeft = module === "debug";
+  /** 决定是否使用问答页布局 / 召回度双栏布局 */
+  const showAskLayout = module === "debug" && debugSub === "single";
+  const showRecallLayout = module === "debug" && debugSub === "recall";
+  const hasActiveChat = chatSession.turns.length > 0;
+  const showSessionsSidebar = chatSession.sessions.length > 0 || hasActiveChat;
+  const showSessionsPanel = showSessionsSidebar && !sessionsCollapsed;
+  const showSessionsExpand = showSessionsSidebar && sessionsCollapsed;
 
   /**
    * 切换一级/二级模块
@@ -121,13 +178,85 @@ function AppShell() {
     setModule(m);
     if (m === "debug" && sub) setDebugSub(sub as DebugSub);
     if (m === "manage") setManageSub((sub as ManageSub) || "items");
-    if (m === "debug") setRightTab("ask");
   };
 
-  // LLM 模式多「候选匹配」Tab；RAG 无候选列表（结果在主区展示）
-  const llmTabs = ["ask", "candidates", "timing", "tokens"] as const;
-  const ragTabs = ["ask", "timing", "tokens"] as const;
-  const tabs = debugMode === "llm" ? llmTabs : ragTabs;
+  function buildNavGroups(turns: AskChatTurn[]): AnswerNavGroup[] {
+    return turns.flatMap((t) => {
+      const qLabel = t.question.length > 22 ? `${t.question.slice(0, 22)}…` : t.question;
+      if (t.mode === "llm" && t.answers.length > 0) {
+        return [{
+          turnId: t.id,
+          question: qLabel,
+          items: t.answers.map((a, i) => ({
+            id: a.id,
+            label: a.question?.slice(0, 24) || "",
+            cardId: `debugAnswerCard-${t.id}-${i}`,
+          })),
+        }];
+      }
+      if (t.mode === "rag") {
+        const sources = t.searchResults.length ? t.searchResults : (t.chatResult?.sources || []);
+        if (!sources.length) return [];
+        return [{
+          turnId: t.id,
+          question: qLabel,
+          items: sources.map((s, i) => ({
+            id: s.id,
+            label: s.question?.slice(0, 24) || "",
+            cardId: `ragAnswer-${t.id}-${i}`,
+          })),
+        }];
+      }
+      return [];
+    });
+  }
+
+  const navGroups = buildNavGroups(chatSession.turns);
+  const hasNav = navGroups.some((g) => g.items.length > 0);
+
+  const askLayoutClass = [
+    "askPageLayout",
+    "ui-fade-in",
+    hasActiveChat ? "askPageLayout--active" : "askPageLayout--hero",
+    showSessionsPanel ? "hasHistory" : "",
+    showSessionsExpand ? "hasHistoryExpand historyCollapsed" : "",
+    hasNav ? "hasNav" : "",
+  ].filter(Boolean).join(" ");
+
+  const renderAskComposer = (opts: {
+    loading: boolean;
+    variant: "hero" | "compact";
+    kbIds: string[];
+    kbMap: Record<string, { name?: string }>;
+    kbValue: string;
+    onKbChange: (id: string) => void;
+    onRandom?: () => void;
+    extraActions?: ReactNode;
+    indexKbId?: string;
+  }) => (
+    <AskComposer
+      question={question}
+      onQuestionChange={setQuestion}
+      onSubmit={() => void submitAsk()}
+      onClear={resetAskSession}
+      onRandom={opts.onRandom}
+      loading={opts.loading}
+      mode={debugMode}
+      onModeChange={switchDebugMode}
+      kbIds={opts.kbIds}
+      kbMap={opts.kbMap}
+      kbValue={opts.kbValue}
+      onKbChange={opts.onKbChange}
+      profiles={profiles}
+      profileValue={effectiveProfile}
+      onProfileChange={setDebugProfile}
+      topK={debugTopK}
+      onTopKChange={setDebugTopK}
+      indexKbId={opts.indexKbId}
+      extraActions={opts.extraActions}
+      variant={opts.variant}
+    />
+  );
 
   return (
     <div className="appShell">
@@ -171,107 +300,84 @@ function AppShell() {
         </div>
       </header>
 
-      <div className={`appBody ${showLeft ? "withLeft" : ""}`} id="appBody">
+      <div className={`appBody${showAskLayout ? " withAskLayout" : ""}${showRecallLayout ? " withLeft" : ""}`} id="appBody">
         {/* ════════════════════════════════════════════════════════════
-            调试 · 问答（single）：双栏 — 左侧提问/指标，右侧结果展示
+            调试 · 问答（single）：初始居中输入 → 回答后底部输入 + 右侧导航
             ════════════════════════════════════════════════════════════ */}
         {module === "debug" && debugSub === "single" && (
-          <>
-            {/* 左侧配置面板（DOM id 为 rightPanel 是历史命名，实际在布局左侧） */}
-            <aside className="leftPanel visible" id="rightPanel">
-              {/* LLM / RAG 模式切换；切换时清空两侧问答状态 */}
-              <ModeBar mode={debugMode} onChange={(m) => { setDebugMode(m); setRightTab("ask"); debugAsk.reset(); ragAsk.reset(); }} />
-              <div className="stripHead rightTabHead">
-                <div className="rightTabs">
-                  {tabs.map((tab) => (
-                    <button key={tab} type="button" className={`tabBtn ${rightTab === tab ? "active" : ""}`} onClick={() => setRightTab(tab)}>
-                      {tab === "ask" ? "提问" : tab === "candidates" ? "候选匹配" : tab === "timing" ? "消耗时间" : "消耗 Token"}
-                    </button>
-                  ))}
+          <div className="mainContent askPageRoot">
+            <div className={askLayoutClass}>
+              {showSessionsPanel && (
+                <AskSessionsPanel
+                  sessions={chatSession.sessions}
+                  activeSessionId={chatSession.activeSessionId}
+                  onSelect={selectSession}
+                  onNewChat={resetAskSession}
+                  onCollapse={() => setSessionsCollapsed(true)}
+                />
+              )}
+              {showSessionsExpand && (
+                <AskSessionsExpandBtn onExpand={() => setSessionsCollapsed(false)} />
+              )}
+              {!hasActiveChat ? (
+                <div className="askWelcome ui-fade-in">
+                  <h1 className="askHeroTitle">知识问答系统</h1>
+                  {renderAskComposer({
+                    loading: chatSession.loading,
+                    variant: "hero",
+                    kbIds: debugMode === "llm" ? kbIds : ragKbIds,
+                    kbMap: debugMode === "llm" ? kbMap : ragKbMap,
+                    kbValue: debugMode === "llm" ? (debugKb || kbIds[0] || "") : (debugRagKb || ragKbIds[0] || ""),
+                    onKbChange: debugMode === "llm" ? setDebugKb : setDebugRagKb,
+                    onRandom: debugMode === "llm" ? () => { void debugQuestions.load().then(() => setQuestion(debugQuestions.randomQuestion())); } : undefined,
+                    indexKbId: debugMode === "rag" ? effectiveKb : undefined,
+                    extraActions: debugMode === "rag" ? (
+                      <button type="button" className="btn btnXs ghost" disabled={chatSession.loading} onClick={() => void submitSearch()}>
+                        {chatSession.loading ? "检索中…" : "检索"}
+                      </button>
+                    ) : undefined,
+                  })}
                 </div>
-              </div>
-              <div className="rightTabBody">
-                {/* Tab: 提问 — 问题输入、操作按钮、知识库/模型/TopK 配置 */}
-                <div className={`rightTabPane ${rightTab === "ask" ? "active" : ""}`}>
-                  <div className="moduleSide debug single stripBody qBody modePanelEnter">
-                    <label className="fieldLabel">问题<textarea rows={4} placeholder="输入问题… Ctrl+Enter 提问" value={question} onChange={(e) => setQuestion(e.target.value)} /></label>
-                    <div className="qActions qBtnRow">
-                      {debugMode === "llm" ? (
-                        <>
-                      {/* 用户点击「提问」→ useDebugAsk.ask(question) → POST /ask/confidence/stream */}
-                          <button className="btn primary btnXs" type="button" disabled={debugAsk.loading} onClick={() => void debugAsk.ask(question)}>{debugAsk.loading ? "提问中…" : "提问"}</button>
-                          <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); debugAsk.reset(); }}>清空</button>
-                          <button className="btn ghost btnXs" type="button" onClick={() => { void debugQuestions.load().then(() => setQuestion(debugQuestions.randomQuestion())); }}>随机问题</button>
-                        </>
-                      ) : (
-                        <>
-                          {/* RAG「问答」→ useRagAsk.chat → POST /rag/chat（检索+直出/合成） */}
-                          <button className="btn primary btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.chat(question)}>{ragAsk.loading ? "问答中…" : "问答"}</button>
-                          {/* RAG「检索」→ useRagAsk.search → POST /rag/search（仅检索，不合成） */}
-                          <button className="btn btnXs" type="button" disabled={ragAsk.loading} onClick={() => void ragAsk.search(question)}>{ragAsk.loading ? "检索中…" : "检索"}</button>
-                          <button className="btn ghost btnXs" type="button" onClick={() => { setQuestion(""); ragAsk.reset(); }}>清空</button>
-                        </>
-                      )}
+              ) : (
+                <>
+                  <div className="askChatMain">
+                    <div className="askChatScroll scrollInner" ref={chatScrollRef}>
+                      <AskChatThread turns={chatSession.turns} activeCardId={activeCardId} />
                     </div>
-                    <div className="qActions qConfigRow">
-                      <label className="kbSelectLabel">知识库<select className="kbSelect" value={debugMode === "rag" ? (debugRagKb || ragKbIds[0] || "") : (debugKb || kbIds[0] || "")} onChange={(e) => { if (debugMode === "rag") setDebugRagKb(e.target.value); else setDebugKb(e.target.value); }}>{(debugMode === "rag" ? ragKbIds : kbIds).map((id) => <option key={id} value={id}>{(debugMode === "rag" ? ragKbMap : kbMap)[id]?.name || id}</option>)}</select></label>
-                      {debugMode === "llm" && (
-                        <label className="kbSelectLabel">问答模型<select className="kbSelect" value={effectiveProfile} onChange={(e) => setDebugProfile(e.target.value)}>{profiles.map((p) => <option key={p.id} value={p.id}>{p.name || p.id}</option>)}</select></label>
-                      )}
-                      <label className="kbSelectLabel">Top K<input type="number" className="topKInput" min={1} max={20} value={debugTopK} onChange={(e) => setDebugTopK(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 5)))} /></label>
-                      {/* RAG 模式下显示 Weaviate 索引是否就绪 */}
-                      {debugMode === "rag" && <IndexStatusPill kbId={effectiveKb} />}
+                    <div className="askComposerWrap ui-fade-in-up">
+                      {renderAskComposer({
+                        loading: chatSession.loading,
+                        variant: "compact",
+                        kbIds: debugMode === "llm" ? kbIds : ragKbIds,
+                        kbMap: debugMode === "llm" ? kbMap : ragKbMap,
+                        kbValue: debugMode === "llm" ? (debugKb || kbIds[0] || "") : (debugRagKb || ragKbIds[0] || ""),
+                        onKbChange: debugMode === "llm" ? setDebugKb : setDebugRagKb,
+                        onRandom: debugMode === "llm" ? () => { void debugQuestions.load().then(() => setQuestion(debugQuestions.randomQuestion())); } : undefined,
+                        indexKbId: debugMode === "rag" ? effectiveKb : undefined,
+                        extraActions: debugMode === "rag" ? (
+                          <button type="button" className="btn btnXs ghost" disabled={chatSession.loading} onClick={() => void submitSearch()}>
+                            {chatSession.loading ? "检索中…" : "检索"}
+                          </button>
+                        ) : undefined,
+                      })}
                     </div>
                   </div>
-                </div>
-
-                {/* Tab: 候选匹配 / Token — 仅 LLM 模式 */}
-                {debugMode === "llm" && (
-                  <>
-                    <div className={`rightTabPane ${rightTab === "candidates" ? "active" : ""}`}>
-                      <div className="routeScroll"><div className="routeBody"><CandidatesPanel candidates={debugAsk.candidates} onSelect={(i) => document.getElementById(`debugAnswerCard-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" })} /></div></div>
-                    </div>
-                    <div className={`rightTabPane ${rightTab === "tokens" ? "active" : ""}`}>
-                      <div className="moduleMetrics ask"><div className="tokenPanel"><TokenPanel timings={debugAsk.timings} emptyText="提问后显示" /></div></div>
-                    </div>
-                  </>
-                )}
-
-                {/* Tab: 消耗时间 — LLM 与 RAG 共用 Tab，内容按模式分支 */}
-                <div className={`rightTabPane ${rightTab === "timing" ? "active" : ""}`}>
-                  <div className="moduleMetrics ask">
-                    {debugMode === "llm"
-                      ? <div className="timingPanel"><TimingsPanel timings={debugAsk.timings} emptyText="提问后显示" /></div>
-                      : <RagTimingsPanel timing={ragAsk.chatResult?.timing} />}
-                  </div>
-                </div>
-
-                {/* Tab: Token — 仅 RAG 模式（分 Embedding / Rerank / LLM 阶段） */}
-                {debugMode === "rag" && (
-                  <div className={`rightTabPane ${rightTab === "tokens" ? "active" : ""}`}>
-                    <div className="moduleMetrics ask">
-                      <RagTokenPanel chatResult={ragAsk.chatResult} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </aside>
-
-            {/* 右侧主内容：LLM 候选回答列表 或 RAG 检索/合成结果 */}
-            <div className="mainContent">
-              <section className="viewPane active">
-                {debugMode === "llm" ? (
-                  <div className="panel">
-                    <div className="stripHead"><span>候选回答</span></div>
-                    <div className="answersScroll"><div className="answersBody"><DebugAnswersPanel kbId={effectiveKb} loading={debugAsk.loading} answers={debugAsk.answers} /></div></div>
-                  </div>
-                ) : (
-                  /* RAG 模式右侧：RagQaMain 展示合成回答与检索来源 */
-                  <RagQaMain kbId={effectiveKb} loading={ragAsk.loading} chatResult={ragAsk.chatResult} searchResults={ragAsk.searchResults} activeNav={ragAsk.activeNav} setActiveNav={ragAsk.setActiveNav} lastError={ragAsk.lastError} />
-                )}
-              </section>
+                  {hasNav && (
+                    <GroupedAnswerNavPanel
+                      title="候选条目"
+                      groups={navGroups}
+                      activeCardId={activeCardId}
+                      emptyText="提问后显示"
+                      onSelect={(cardId) => {
+                        setActiveCardId(cardId);
+                        scrollToCard(cardId);
+                      }}
+                    />
+                  )}
+                </>
+              )}
             </div>
-          </>
+          </div>
         )}
 
         {/* 调试 · 召回度测试：独立模块，内部自管 LLM/RAG 子状态 */}
@@ -279,16 +385,17 @@ function AppShell() {
 
         {/* 管理 / 日志 / 设置：单栏全宽主内容 */}
         {(module === "manage" || module === "logs" || module === "settings") && (
-          <div className="mainContent">
+          <div key={module} className="mainContent ui-fade-in">
             {module === "manage" && <ManageView sub={manageSub} onSubChange={setManageSub} />}
             {module === "logs" && <LogsView />}
             {module === "settings" && <SettingsView />}
           </div>
         )}
+
+        <DocsModal open={docsOpen} onClose={() => setDocsOpen(false)} />
       </div>
 
-      {/* 全局浮层：使用手册弹窗、确认对话框、Toast 通知 */}
-      <DocsModal open={docsOpen} onClose={() => setDocsOpen(false)} />
+      {/* 全局浮层：确认对话框、Toast 通知 */}
       <ModalOverlay />
       <ToastContainer />
     </div>

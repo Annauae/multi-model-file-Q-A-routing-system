@@ -9,6 +9,8 @@
     "db:migrate": "node scripts/run-migrate.mjs",
     "db:seed": "node scripts/migrate-json-to-pg.mjs",
     "db:setup": "node scripts/setup-postgres.mjs",
+    "export-faq-answers": "node scripts/export-faq-answers.mjs",
+    "copy-llm-recall-to-rag": "node scripts/copy-llm-recall-to-rag.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

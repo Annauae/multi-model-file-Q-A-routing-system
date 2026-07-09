@@ -5,9 +5,9 @@
  * Provider 挂载于 App.tsx 根部的 QueryClientProvider。
  *
  * 导出四个 hook：
- * - useKnowledgeBases      → LLM 匹配知识库列表
- * - useRagKnowledgeBases   → RAG 向量知识库列表x
- * - useMatchProfiles       → 调试页「问答模型」下拉
+ * - useKnowledgeBases      → LLM 匹配知识库列表，用于App/DebugRecallView
+ * - useRagKnowledgeBases   → RAG 向量知识库列表，用于App/DebugRecallView
+ * - useMatchProfiles       → 调试页「问答模型」下拉，用于App/DebugRecallView
  * - useHealth              → 顶栏后端连接状态（7s 轮询）
  *
  * 知识库类 hook 额外提供 kbMap（id → 配置）、kbDisplayName、refresh（失效缓存后重拉）。

@@ -6,9 +6,12 @@ import { useAppUi } from "../context/AppUiContext";
 import { useKnowledgeBases, useRagKnowledgeBases } from "../hooks/useKnowledgeBases";
 import type { QAItem, QuestionsDocument } from "../types";
 import { Dropdown } from "../components/Dropdown";
+import { KebabMenu } from "../components/KebabMenu";
+import { FadePanel } from "../components/FadePanel";
 import { ManageFilesView } from "./ManageFilesView";
 import { ModeBar } from "../components/ModeBar";
 import { IndexStatusPill } from "../components/IndexStatusPill";
+import { useAnimatedVisible } from "../hooks/useAnimatedVisible";
 import type { AskMode } from "../types";
 
 export function ManageView({ sub, onSubChange }: { sub: "items" | "files"; onSubChange: (s: "items" | "files") => void }) {
@@ -21,11 +24,8 @@ export function ManageView({ sub, onSubChange }: { sub: "items" | "files"; onSub
           <button type="button" className={`manageNavItem ${sub === "files" ? "active" : ""}`} data-manage-sub="files" onClick={() => onSubChange("files")}>文件管理</button>
         </nav>
         <div className="manageMain">
-          <div id="manageSubPaneItems" className={`manageSubPane ${sub === "items" ? "active" : ""}`}>
-            {sub === "items" && <ManageQuestionsView />}
-          </div>
-          <div id="manageSubPaneFiles" className={`manageSubPane ${sub === "files" ? "active" : ""}`}>
-            {sub === "files" && <ManageFilesView />}
+          <div key={sub} className="manageSubPane active ui-fade-in">
+            {sub === "items" ? <ManageQuestionsView /> : <ManageFilesView />}
           </div>
         </div>
       </div>
@@ -47,6 +47,7 @@ function ManageQuestionsView() {
   const [editorTab, setEditorTab] = useState<"item" | "json">("item");
   const [jsonText, setJsonText] = useState("");
   const batchRowsRef = useRef<BatchAddRow[]>([]);
+  const editAnim = useAnimatedVisible(!!editItem);
 
   const isRag = manageMode === "rag";
   const kbMap = isRag ? ragKb.kbMap : llmKb.kbMap;
@@ -287,9 +288,50 @@ function ManageQuestionsView() {
     }
   };
 
+  const handleSingleItemAction = async (item: QAItem, action: string) => {
+    if (!selectedKbId) return;
+    const base = `${questionsBase(selectedKbId)}/items/${encodeURIComponent(item.id)}`;
+    if (action === "rename") {
+      showModal(
+        "重命名问题",
+        <label className="fieldLabel">标准问题<textarea id="modalItemRename" rows={2} defaultValue={item.question} /></label>,
+        async () => {
+          const el = document.getElementById("modalItemRename") as HTMLTextAreaElement;
+          const question = el?.value.trim();
+          if (!question) throw new Error("标准问题不能为空");
+          await apiJson(base, {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...item, question }),
+          });
+          await refreshKbList();
+          await loadItems(selectedKbId);
+          showToast("重命名成功");
+        },
+      );
+    } else if (action === "delete") {
+      if (!confirm(`确定删除「${item.question || item.id}」？`)) return;
+      await apiJson(base, { method: "DELETE" });
+      if (selectedItemId === item.id) closeEdit();
+      setCheckedIds((prev) => { const s = new Set(prev); s.delete(item.id); return s; });
+      await refreshKbList();
+      await loadItems(selectedKbId);
+      showToast("已删除");
+    } else if (action === "enable" || action === "disable") {
+      const enabled = action === "enable";
+      await apiJson(base, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...item, enabled }),
+      });
+      await refreshKbList();
+      await loadItems(selectedKbId);
+      showToast(enabled ? "已启用" : "已禁用");
+    }
+  };
+
   return (
     <div className="manageLayout manageLayoutItems">
       <section className="manageCol manageKbCol">
+        <ModeBar label="FAQ 模式" mode={manageMode} onChange={(m) => { setManageMode(m); setEditItem(null); setCheckedIds(new Set()); setSelectedKbId(""); }} />
         <div className="stripHead">
           <span>{isRag ? "RAG 知识库" : "知识库"}</span>
           <span className="headActions">
@@ -324,8 +366,7 @@ function ManageQuestionsView() {
       </section>
 
       <section className="manageCol manageItemsMain">
-        <ModeBar label="FAQ 模式" mode={manageMode} onChange={(m) => { setManageMode(m); setEditItem(null); setCheckedIds(new Set()); setSelectedKbId(""); }} />
-        <div className="stripHead manageItemsHead">
+        <FadePanel show key={manageMode} className="fadePanelStripHead stripHead manageItemsHead modePanelEnter">
           <span>{isRag ? "RAG 标准问题" : "标准问题"}</span>
           <span className="headActions manageItemsHeadActions">
             {/* RAG 模式：重建索引 POST /rag/knowledge-bases/:id/index/rebuild（import/commit 也可能已自动重建） */}
@@ -345,7 +386,7 @@ function ManageQuestionsView() {
               <button type="button" className="dropdownItem danger" onClick={() => void handleItemAction("deleteSelected")}>删除选中</button>
             </Dropdown>
           </span>
-        </div>
+        </FadePanel>
         <div id="itemList" className="scrollInner itemCardGrid">
           {!selectedKbId ? <div className="empty">请选择知识库</div> : visible.length ? visible.map((it) => (
             <div key={it.id} className={`itemCard${it.enabled === false ? " disabled" : ""}${it.id === selectedItemId ? " active" : ""}`} onClick={() => openEdit(it)}>
@@ -358,13 +399,26 @@ function ManageQuestionsView() {
               </label>
               <span className="itemCardId">{it.id}</span>
               <div className="itemCardQuestion">{it.question}{it.enabled === false && <span className="itemCardDisabledTag">已禁用</span>}</div>
+              <div className="itemCardActions" onClick={(e) => e.stopPropagation()}>
+                <KebabMenu>
+                  <button type="button" className="dropdownItem" onClick={() => void handleSingleItemAction(it, "rename")}>重命名</button>
+                  {it.enabled === false ? (
+                    <button type="button" className="dropdownItem" onClick={() => void handleSingleItemAction(it, "enable")}>启用</button>
+                  ) : (
+                    <button type="button" className="dropdownItem" onClick={() => void handleSingleItemAction(it, "disable")}>禁用</button>
+                  )}
+                  <div className="dropdownDivider" />
+                  <button type="button" className="dropdownItem danger" onClick={() => void handleSingleItemAction(it, "delete")}>删除</button>
+                </KebabMenu>
+              </div>
             </div>
           )) : <div className="empty">无条目</div>}
         </div>
       </section>
 
-      <div id="itemEditOverlay" className={`modalOverlay${editItem ? "" : " hidden"}`}>
-        <div className="modal modalWide modalTall">
+      {editAnim.mounted && editItem && (
+        <div id="itemEditOverlay" className={`modalOverlay ${editAnim.animClass}`}>
+          <div className={`modal modalWide modalTall ${editAnim.animClass}`}>
           <div className="modalHead">
             <span>编辑标准问题</span>
             <button type="button" className="btn btnXs ghost" onClick={closeEdit}>返回</button>
@@ -400,8 +454,9 @@ function ManageQuestionsView() {
           <div className="modalFoot">
             <button type="button" className="btn primary btnXs" onClick={() => void saveEditor().catch((e) => showToast(e.message, "error"))}>保存</button>
           </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

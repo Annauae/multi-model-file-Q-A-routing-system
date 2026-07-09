@@ -19,6 +19,7 @@ import {
   isAskTimeoutError,
   streamAskConfidence,
 } from "../api/client";
+import { LlmMetricsFooter } from "../components/AnswerMetricsFooter";
 import { MarkdownPreview } from "../components/MarkdownPreview";
 import { useAppUi } from "../context/AppUiContext";
 
@@ -27,29 +28,62 @@ import { useAppUi } from "../context/AppUiContext";
  * 数据来源：useDebugAsk 在 SSE `done` 事件中写入的 answers 数组。
  * 每条含 id、confidence、question、answer（Markdown，由 MarkdownPreview 渲染）。
  */
-export function DebugAnswersPanel({
+export function LlmTurnSection({
+  turn,
   kbId,
-  loading,
-  answers,
+  activeCardId,
 }: {
+  turn: import("../hooks/useAskSessions").AskChatTurn;
   kbId: string;
-  loading: boolean;
-  answers: CandidateAnswer[];
+  activeCardId?: string;
 }) {
-  if (loading && !answers.length) return <div className="empty">匹配中…</div>;
-  if (!answers.length) return <div className="empty">在左侧栏输入问题并提问。</div>;
   return (
-    <>
-      {answers.map((a, i) => (
-        <article key={a.id + i} className="answerCard fade-in" id={`debugAnswerCard-${i}`}>
-          <div className="answerCardHead">
-            <span><span className="id">#{i + 1} {a.id}</span> · {fmtConfidence(a.confidence)}</span>
-            <span className="muted">{a.question || ""}</span>
-          </div>
-          <div className="answerCardBody mdPreview"><MarkdownPreview md={a.answer || "（无回答内容）"} kbId={kbId} /></div>
-        </article>
+    <section id={`ask-turn-${turn.id}`} className="askTurnBlock ui-fade-in-up">
+      <div className="userBubble">{turn.question}</div>
+      {turn.loading && !turn.answers.length && <div className="askLoadingBubble ui-fade-in">匹配中…</div>}
+      {turn.lastError && !turn.answers.length && !turn.loading && (
+        <div className="askEmptyState">{turn.lastError}</div>
+      )}
+      {turn.answers.map((a, i) => {
+        const cardId = `debugAnswerCard-${turn.id}-${i}`;
+        return (
+          <article
+            key={a.id + i}
+            className={`answerCard askAnswerCard fade-in${activeCardId === cardId ? " active" : ""}`}
+            id={cardId}
+          >
+            <div className="askAnswerHead">
+              <span className="askAvatar" aria-hidden>AI</span>
+              <span className="askAnswerMeta">
+                <span className="id">#{i + 1} {a.id}</span>
+                <span className="muted"> · {fmtConfidence(a.confidence)}</span>
+              </span>
+            </div>
+            {a.question && <div className="askAnswerQuestion muted">{a.question}</div>}
+            <div className="answerCardBody mdPreview"><MarkdownPreview md={a.answer || "（无回答内容）"} kbId={kbId} /></div>
+          </article>
+        );
+      })}
+      {!turn.loading && turn.answers.length > 0 && <LlmMetricsFooter timings={turn.timings} />}
+    </section>
+  );
+}
+
+export function LlmChatThread({
+  turns,
+  kbId,
+  activeCardId,
+}: {
+  turns: import("../hooks/useAskSessions").AskChatTurn[];
+  kbId: string;
+  activeCardId?: string;
+}) {
+  return (
+    <div className="askChatThread">
+      {turns.filter((t) => t.mode === "llm").map((turn) => (
+        <LlmTurnSection key={turn.id} turn={turn} kbId={kbId} activeCardId={activeCardId} />
       ))}
-    </>
+    </div>
   );
 }
 
