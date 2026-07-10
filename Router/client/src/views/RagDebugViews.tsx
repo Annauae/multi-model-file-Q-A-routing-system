@@ -7,9 +7,9 @@
  *       → apiJson POST /rag/chat
  *         → ragRoutes.js → RagRetriever.chat()
  *           → search（embedding + 向量 + 关键词 + RRF + rerank）
- *           → direct 或 generated 返回答案
+ *           → 直出 Top-1 FAQ 答案
  *       → setChatResult / setSearchResults
- *         → RagQaMain 渲染合成回答与来源条目
+ *         → RagQaMain 渲染来源条目
  */
 
 import { useCallback, useState } from "react";
@@ -26,8 +26,8 @@ import type { RagChatResponse, RagSearchResult, RagTimings, TokenUsage } from ".
  * @param kbId  当前选中的 RAG 知识库 id（来自 App 的 effectiveKb / debugRagKb）
  * @param topK  检索返回条数上限（传给后端的 top_n 或 top_k）
  *
- * 「问答」走 POST /rag/chat（检索 + 置信判定 + 直出/合成）
- * 「检索」走 POST /rag/search（仅检索排序，不生成合成回答）
+ * 「问答」走 POST /rag/chat（检索 + 置信判定 + 直出 FAQ 答案）
+ * 「检索」走 POST /rag/search（仅检索排序）
  */
 export function useRagAsk(kbId: string, topK: number) {
   const { showToast } = useAppUi();
@@ -47,7 +47,7 @@ export function useRagAsk(kbId: string, topK: number) {
   /**
    * RAG 完整问答 — 用户点击「问答」按钮时调用。
    * 例：query="怎么调光圈", kb_id="1", top_n=5
-   * 后端返回 mode=direct|generated|no_high_confidence 及 sources、answer、timing
+   * 后端返回 mode=direct|no_high_confidence|search 及 sources、answer、timing
    */
   const chat = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -166,25 +166,13 @@ export function RagTurnSection({
   const sources = turn.searchResults.length ? turn.searchResults : (turn.chatResult?.sources || []);
   const chatResult = turn.chatResult;
   const isSearchOnly = chatResult?.mode === "search";
-  const showGenerated = chatResult?.mode === "generated" && chatResult.answer;
   const showPrimaryAnswer = Boolean(chatResult?.answer && !isSearchOnly && chatResult.mode === "no_high_confidence");
-  const hasContent = showGenerated || showPrimaryAnswer || sources.length > 0;
+  const hasContent = showPrimaryAnswer || sources.length > 0;
   return (
     <section id={`ask-turn-${turn.id}`} className="askTurnBlock ui-fade-in-up">
       <div className="userBubble">{turn.question}</div>
       {turn.loading && !hasContent && <div className="askLoadingBubble ui-fade-in">检索中…</div>}
       {!turn.loading && !hasContent && turn.lastError && <div className="askEmptyState">{turn.lastError}</div>}
-      {showGenerated && (
-        <article className="answerCard askAnswerCard fade-in" id={`ragAnswer-${turn.id}-gen`}>
-          <div className="askAnswerHead">
-            <span className="askAvatar" aria-hidden>AI</span>
-            <span className="askAnswerMeta"><span className="id">合成回答</span></span>
-          </div>
-          <div className="answerCardBody mdPreview">
-            <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
-          </div>
-        </article>
-      )}
       {showPrimaryAnswer && (
         <article className="answerCard askAnswerCard fade-in" id={`ragAnswer-${turn.id}-primary`}>
           <div className="askAnswerHead">
@@ -245,8 +233,7 @@ export function RagChatThread({
 }
 
 /**
- * RAG 调试页右侧主区：合成回答 + 来源条目列表 + 条目导航。
- * mode=generated 时顶部显示 LLM 合成回答；mode=direct 时主要展示 Top1 来源；
+ * RAG 调试页右侧主区：来源条目列表 + 条目导航。
  * mode=no_high_confidence 时显示低置信提示 + 候选来源。
  */
 export function RagQaMain({
@@ -269,30 +256,18 @@ export function RagQaMain({
 }) {
   const sources = searchResults.length ? searchResults : (chatResult?.sources || []);
   const isSearchOnly = chatResult?.mode === "search";
-  const showGenerated = chatResult?.mode === "generated" && chatResult.answer;
   const showPrimaryAnswer = Boolean(
     chatResult?.answer
     && !isSearchOnly
     && chatResult.mode === "no_high_confidence",
   );
-  const hasContent = showGenerated || showPrimaryAnswer || sources.length > 0;
+  const hasContent = showPrimaryAnswer || sources.length > 0;
 
   return (
     <div className="askChatThread">
       {askedQuestion && <div className="userBubble ui-fade-in-up">{askedQuestion}</div>}
       {loading && !hasContent && <div className="askLoadingBubble ui-fade-in">检索中…</div>}
       {!loading && !hasContent && lastError && <div className="askEmptyState">{lastError}</div>}
-      {showGenerated && (
-        <article className="answerCard askAnswerCard fade-in">
-          <div className="askAnswerHead">
-            <span className="askAvatar" aria-hidden>AI</span>
-            <span className="askAnswerMeta"><span className="id">合成回答</span></span>
-          </div>
-          <div className="answerCardBody mdPreview">
-            <MarkdownPreview md={chatResult!.answer || ""} kbId={kbId} />
-          </div>
-        </article>
-      )}
       {showPrimaryAnswer && (
         <article className="answerCard askAnswerCard fade-in">
           <div className="askAnswerHead">
@@ -337,7 +312,6 @@ const RAG_TIMING_ROWS: [string, string][] = [
   ["keyword", "关键词检索"],
   ["fusion", "结果融合"],
   ["rerank", "重排序"],
-  ["generate", "答案生成"],
   ["total", "总计"],
 ];
 
@@ -349,7 +323,6 @@ export function RagTimingsPanel({ timing }: { timing?: RagTimings | null }) {
     keyword: timing.keyword_search_ms,
     fusion: timing.fusion_ms,
     rerank: timing.rerank_ms,
-    generate: timing.generate_ms,
     total: timing.total_ms,
   };
   return (
@@ -368,22 +341,13 @@ export function RagTokenPanel({ chatResult }: { chatResult: RagChatResponse | nu
   if (!chatResult?.tokens) {
     return <div className="empty">提问后显示</div>;
   }
-  const hint = chatResult.mode === "direct"
-    ? "直出模式：未调用 RAG 问答模型。"
-    : chatResult.mode === "generated"
-      ? "合成模式：含 RAG 问答模型消耗。"
-      : undefined;
-  const timings = {
-    tokens: chatResult.tokens,
-    token_breakdown: chatResult.token_breakdown,
-  };
   return (
     <div className="tokenPanel">
       <TokenPanel
         timings={timings}
         emptyText="提问后显示"
         phaseLabels={RAG_PHASE_LABELS}
-        hint={hint}
+        hint="消耗 Embedding 与 Rerank；答案直出 FAQ 原文。"
       />
     </div>
   );

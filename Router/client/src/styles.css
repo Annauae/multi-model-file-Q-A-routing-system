@@ -591,8 +591,8 @@ body {
 }
 .markdownEditorSource .mdSourceEditor,
 .markdownEditorSource .mdSourceTextarea,
-.markdownEditorNarrow .mdSourceEditor,
-.markdownEditorNarrow .mdSourceTextarea {
+.markdownEditorToggle .mdSourceEditor,
+.markdownEditorToggle .mdSourceTextarea {
   flex: 1;
   min-height: 240px;
 }
@@ -603,10 +603,21 @@ body {
   overflow: auto;
   padding: 12px;
 }
-.markdownEditorNarrow {
+.markdownEditorToggle {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.markdownEditorToggle .mdSourceEditor,
+.markdownEditorToggle .mdSourceTextarea {
+  flex: 1;
+  min-height: 240px;
+}
+.markdownEditorToggle .markdownEditorPreview {
+  flex: 1;
+  min-height: 240px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 .mdSourceEditor {
   display: flex;

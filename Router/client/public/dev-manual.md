@@ -27,7 +27,7 @@ Router 是一套 **LLM 置信度 FAQ 匹配 + RAG 向量检索** 双模式知识
 | 能力 | 说明 | 主要入口 |
 |------|------|----------|
 | LLM 置信度匹配 | 将用户问题与 FAQ 列表做语义匹配，返回 Top-K 候选及完整 answer | `POST /ask/confidence/stream` |
-| RAG 检索问答 | Embedding + 关键词 + RRF 融合 + Rerank，支持直出/LLM 合成 | `POST /rag/chat`、`POST /rag/search` |
+| RAG 检索问答 | Embedding + 关键词 + RRF 融合 + Rerank，直出 Top-1 FAQ 答案 | `POST /rag/chat`、`POST /rag/search` |
 | FAQ 管理 | LLM 库与 RAG 库 CRUD、批量导入、双库互导 | `/knowledge-bases/*`、`/rag/knowledge-bases/*` |
 | 文档流水线 | 上传源文件 → 提取 Markdown → LLM 生成问法 → 写入双库 | `/documents/*`、`/markdown-files/*` |
 | 召回度测试 | 批量跑问句、记录 Top-1 命中与人工标注 | `recall_tests` 表 + 调试页 |
@@ -52,7 +52,7 @@ Router 是一套 **LLM 置信度 FAQ 匹配 + RAG 向量检索** 双模式知识
 Express (app.js + ragRoutes.js)
     ├── QuestionsCache ──► PostgreSQL qa_items (kb_type=llm)
     ├── confidenceMatch ──► LLMClient (OpenAI 兼容 API)
-    ├── RagRetriever ──► EmbeddingClient + Weaviate + Rerank + RagLlmClient
+    ├── RagRetriever ──► EmbeddingClient + Weaviate + Rerank
     ├── QuestionsStore / KbStore ──► PostgreSQL + files/kb_*
     └── 静态资源 / SPA fallback ──► client/dist
 ```
@@ -116,7 +116,7 @@ Express (app.js + ragRoutes.js)
 | **管理·文件管理** | 上传、编辑 MD、转 PDF | **不经过 FAQ 表** | **`files/documents/sources|modules|assets`** | `/documents/*`、`/markdown-files/*` |
 | **管理·文件管理** | 问题生成 → 导入 FAQ | 写 **`qa_items`**（llm 和/或 rag） | 复制图片到 `kb_*/assets` | `.../import/generate-questions`、`.../import/commit` |
 | **设置**（LLM） | 问答模型 profile、FAQ 生成模型、提示词 | **`app_settings`** 键：`match_profiles`、`models`、`prompts` | `config/*.json` 仅 seed | `/settings/match-profiles`、`/settings/models`、`/settings/prompts` |
-| **设置**（RAG） | Embedding/Rerank/合成模型、提示词 | **`app_settings`** 键：`rag_models`、`rag_prompts`；每库运行时 **`rag_runtime_configs`** | `config/rag_*.json` 仅 seed | `/settings/rag-*`、`/rag/knowledge-bases/:id/runtime-config` |
+| **设置**（RAG） | Embedding、Rerank 模型 | **`app_settings`** 键：`rag_models`；每库运行时 **`rag_runtime_configs`** | `config/rag_*.json` 仅 seed | `/settings/rag-models`、`/rag/knowledge-bases/:id/runtime-config` |
 | **日志** | 筛选、刷新 | 读 **`operation_logs`** | 镜像追加 `logs/operations.jsonl` | `GET /logs`、`GET /logs/stream` |
 
 ### 1.5.4 三条主业务链路（数据怎么流）
@@ -137,7 +137,7 @@ Express (app.js + ragRoutes.js)
 用户选 rag_kb_1 → GET /rag/knowledge-bases（读 rag_knowledge_bases）
 → 页面显示 IndexStatusPill → GET .../index/status（读 rag_index_meta，对比 Weaviate）
 → 提问 → POST /rag/chat
-→ RagRetriever：Embedding → Weaviate 向量检索 → Rerank → 按 rag_runtime_configs.answer_mode 直出或 LLM 合成
+→ RagRetriever：Embedding → Weaviate 向量检索 → Rerank → 直出 Top-1 FAQ 答案
 → FAQ 正文仍来自 qa_items(kb_type=rag)；向量不在 PG 里
 ```
 
@@ -177,7 +177,6 @@ Router/                          # monorepo 根（npm workspaces）
 │   ├── models.json              # import、pdf_vlm 槽位
 │   ├── prompts.json
 │   ├── rag_models.json
-│   └── rag_prompts.json
 ├── files/                       # 业务数据根（FILES_ROOT 默认指向此处）
 │   ├── documents/               # 文档管理（见第 4 节）
 │   ├── kb_{id}/                 # LLM 知识库磁盘目录
@@ -257,7 +256,7 @@ Router/                          # monorepo 根（npm workspaces）
 | 全局配置 | `app_settings` | 设置页全部模型槽位与提示词（JSON 键值） |
 | 日志 | `operation_logs` | 日志页 + 调试 SSE 过程记录 |
 | 召回测试 | `recall_tests` | 调试·召回度测试页的测试集与标注 |
-| RAG 运行 | `rag_runtime_configs`、`rag_index_meta` | 每 RAG 库的检索/合成参数、向量索引构建元数据 |
+| RAG 运行 | `rag_runtime_configs`、`rag_index_meta` | 每 RAG 库的检索参数、向量索引构建元数据 |
 
 ---
 
@@ -418,8 +417,7 @@ Router/                          # monorepo 根（npm workspaces）
 | `match_profiles` | 问答模型 **Profile 列表**（多套 API/模型） | **调试·问答** LLM 模式 profile 下拉；**召回度** LLM 跑批 |
 | `models` | **FAQ 生成**、**文档提取/VLM** 槽位 | **文件管理 → 问题生成**；**文件转 Markdown** |
 | `prompts` | 置信度匹配、FAQ 生成、PDF-VLM 提示词 | LLM 匹配 system prompt；生成问法 |
-| `rag_models` | Embedding、Rerank、RAG 合成模型 | **调试·问答** RAG；索引 rebuild |
-| `rag_prompts` | RAG 侧提示词（含合成回答 template） | `POST /rag/chat` 合成模式 |
+| `rag_models` | Embedding、Rerank 模型 | **调试·问答** RAG；索引 rebuild |
 
 | 列名 | 类型 | 说明 |
 |------|------|------|
@@ -489,22 +487,20 @@ Router/                          # monorepo 根（npm workspaces）
 
 ### 3.10 rag_runtime_configs
 
-**用途**：**每个 RAG 知识库一份**的运行时检索/合成参数（Top K、直出/合成、最低置信度等）。
+**用途**：**每个 RAG 知识库一份**的运行时检索参数（Top K、是否 Rerank、最低置信度等）。
 
 | 维度 | 说明 |
 |------|------|
 | **UI · 页面** | 主要在 **调试 → 问答** RAG 模式间接生效；高级项可通过 API 调整 |
 | **谁读** | `RagRetriever` 每次 `search`/`chat` 读 `rag_runtime_configs.config` |
 | **谁写** | `PUT /rag/knowledge-bases/:id/runtime-config`；新建 RAG 库时写默认值 |
-| **默认值** | `top_k: 8`、`answer_mode: "direct"`、`min_confidence_score: 0.05` 等（见 `ragRuntimeConfigStore.js`） |
+| **默认值** | `top_k: 8`、`use_rerank: true`、`min_confidence_score: 0.05` 等（见 `ragRuntimeConfigStore.js`） |
 
 | 列名 | 类型 | 说明 |
 |------|------|------|
 | `kb_id` | TEXT PK FK | 关联 `rag_knowledge_bases` |
 | `config` | JSONB | 运行时参数 JSON |
 | `updated_at` | TIMESTAMPTZ | 更新时间 |
-
-**`answer_mode` 含义**：`direct` = 直出 Top1 FAQ 答案；`generated` = 调 RAG 合成 LLM 生成答案。
 
 ---
 
@@ -781,8 +777,8 @@ file 视图（预览/编辑）
 
 `unwrapDocumentSections(tree)` 从 API 树拆出：
 
-- `sources`：`documents/sources/` 下文件 → 气泡 **已上传文件**
-- `modules`：`documents/modules/` 下文件 → 气泡 **转换 md 文件**
+- `sources`：`documents/sources/` 下文件 → 气泡 **上传文件**
+- `modules`：`documents/modules/` 下文件 → 气泡 **转换文件**
 
 气泡显示文件数量，可折叠；空分类仍显示气泡（count=0 时不渲染列表 body）。
 
@@ -814,7 +810,7 @@ file 视图（预览/编辑）
   → 网格「已上传文件」出现新卡片
   → 点击卡片 → file 视图
   → ExtractModal（hideFileTree）POST /documents/extract/stream
-  → 网格「转换 md 文件」出现 .md；可继续 file 视图编辑
+  → 网格「转换文件」出现 .md；可继续 file 视图编辑
   → GenerateModal（hideFileTree）POST .../import/generate-questions + .../import/commit
   → 问题管理页可见新 FAQ；RAG 侧可选自动 rebuildIndex
 ```
@@ -883,7 +879,7 @@ Store 面向路由/服务；Repository 仅执行 SQL。
 #### 6.4.3 RagRetriever（`services/rag/retriever.js`）
 
 - **`search(query, topK)`**：embed → Weaviate 向量 → 关键词 n-gram → RRF → rerank。
-- **`chat(query, opts)`**：先 search，再按 `min_confidence_score` 与 `answer_mode`（direct/generated）返回答案。
+- **`chat(query, opts)`**：先 search，再按 `min_confidence_score` 直出 Top-1 FAQ 答案。
 
 #### 6.4.4 fileProcessor.js
 
@@ -1306,7 +1302,7 @@ Store 面向路由/服务；Repository 仅执行 SQL。
 
 | 项 | 内容 |
 |----|------|
-| **响应 200** | `{ "slots": { "embedding", "rerank", "llm" } }` |
+| **响应 200** | `{ "slots": { "embedding", "rerank" } }` |
 | **实现** | `ragRoutes.js` |
 
 #### PUT /settings/rag-models
@@ -1314,18 +1310,6 @@ Store 面向路由/服务；Repository 仅执行 SQL。
 | 项 | 内容 |
 |----|------|
 | **Body** | `{ "slots": {...} }` |
-
-#### GET /settings/rag-prompts
-
-| 项 | 内容 |
-|----|------|
-| **响应 200** | `{ "embedding_prompt", "rerank_prompt", "llm_prompt", "defaults", "llm_system_preview" }` |
-
-#### PUT /settings/rag-prompts
-
-| 项 | 内容 |
-|----|------|
-| **Body** | 可选三个 prompt 字段 |
 
 ---
 
@@ -1423,7 +1407,7 @@ Store 面向路由/服务；Repository 仅执行 SQL。
 
 | 项 | 内容 |
 |----|------|
-| **Body** | `{ "query", "kb_id", "top_n"?, "use_llm_answer"? }` |
+| **Body** | `{ "query", "kb_id", "top_n"? }` |
 | **响应 200** | `RagChatResponse`（含 `answer`, `confidence`, `mode`, `sources`, `timing`） |
 | **错误码** | 409 索引未就绪；500 内部错误 |
 | **实现** | `RagRetriever.chat()` |
@@ -1566,7 +1550,6 @@ X-Accel-Buffering: no
 | `RAG_VECTOR_TOP_K` | `30` | RAG 向量检索候选数（`RagRetriever`） |
 | `RAG_KEYWORD_TOP_K` | `30` | RAG 关键词检索候选数 |
 | `RAG_RRF_K` | `60` | RRF 融合常数 k |
-| `RAG_EVAL_HOLDOUT_PER_ITEM` | `1` | RAG **重建索引**时，每条 FAQ 预留多少变体不参与向量索引（`indexer.js` → `buildAllSearchDocs`），供后续评测 holdout |
 | `DISABLE_API_EMBEDDING` | `0` | `1` → 索引 rebuild 时用本地 **hash embedding**，不调 Embedding API |
 | `HASH_EMBEDDING_DIM` | `1024` | hash embedding 维度 |
 | `EMBEDDING_BATCH_SIZE` | `16` | 建索引时每批 embedding 条数 |
@@ -1578,7 +1561,7 @@ X-Accel-Buffering: no
 | `ENABLE_THINKING` | 未设 | 显式 `1`/`0`/`true`/`false` 覆盖思考链 |
 | `REASONING_EFFORT` | 未设 | `low` / `medium` / `high`，传给支持 reasoning 的 API |
 
-别名：`VECTOR_TOP_K` = `RAG_VECTOR_TOP_K`，`KEYWORD_TOP_K` = `RAG_KEYWORD_TOP_K`，`RRF_K` = `RAG_RRF_K`，`EVAL_HOLDOUT_PER_ITEM` = `RAG_EVAL_HOLDOUT_PER_ITEM`。
+别名：`VECTOR_TOP_K` = `RAG_VECTOR_TOP_K`，`KEYWORD_TOP_K` = `RAG_KEYWORD_TOP_K`，`RRF_K` = `RAG_RRF_K`。
 
 ### 10.4 模型 / API 种子（首次初始化用，日常改设置页）
 
@@ -1597,9 +1580,8 @@ X-Accel-Buffering: no
 | `SILICONFLOW_BASE_URL` | `https://api.siliconflow.cn/v1` | `rag_models.embedding/rerank/llm.api_base_url` | **设置** RAG Tab |
 | `RAG_EMBEDDING_MODEL` | `BAAI/bge-m3` | `rag_models.embedding` | **设置 → Embedding** |
 | `RAG_RERANK_MODEL` | `BAAI/bge-reranker-v2-m3` | `rag_models.rerank` | **设置 → Rerank** |
-| `RAG_LLM_MODEL` | `Qwen/Qwen3-VL-8B-Instruct` | `rag_models.llm` | **设置 → RAG 合成** |
 
-模型名别名（`firstEnv` 链）：`MATCH_MODEL` ← `INIT_MODEL` / `ANSWER_MODEL`；`IMPORT_MODEL` ← `INIT_MODEL` / `MATCH_MODEL`；`RAG_EMBEDDING_MODEL` ← `EMBEDDING_MODEL`；`RAG_RERANK_MODEL` ← `RERANK_MODEL`；`RAG_LLM_MODEL` ← `LLM_MODEL`。
+模型名别名（`firstEnv` 链）：`MATCH_MODEL` ← `INIT_MODEL` / `ANSWER_MODEL`；`IMPORT_MODEL` ← `INIT_MODEL` / `MATCH_MODEL`；`RAG_EMBEDDING_MODEL` ← `EMBEDDING_MODEL`；`RAG_RERANK_MODEL` ← `RERANK_MODEL`。
 
 ### 10.5 数据库连接池
 

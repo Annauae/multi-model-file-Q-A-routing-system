@@ -249,7 +249,7 @@ export interface SseEvent {
 /**
  * 调试/管理页的问答后端模式：
  * - llm：LLM 从 FAQ 列表语义匹配 id（confidence match）
- * - rag：向量+关键词检索，可选 rerank 与 LLM 合成回答
+ * - rag：向量+关键词检索，可选 rerank，直出 Top-1 FAQ 答案
  */
 export type AskMode = "llm" | "rag";
 
@@ -290,8 +290,6 @@ export interface RagTimings {
   keyword_search_ms?: number;
   fusion_ms?: number;
   rerank_ms?: number;
-  /** LLM 合成回答阶段；仅 chat 且 answer_mode=generated 时有意义 */
-  generate_ms?: number;
   /** search 子流程合计（部分响应用作 search_ms 别名） */
   search_ms?: number;
   total_ms?: number;
@@ -303,25 +301,25 @@ export interface RagTimings {
  */
 export interface RagChatResponse {
   query: string;
-  /** 最终展示给用户的回答（直接引用或 LLM 生成） */
+  /** 最终展示给用户的回答（直出 Top-1 FAQ 或低置信提示） */
   answer: string;
   /** 综合置信度，用于 UI 百分比展示 */
   confidence: number;
-  /** 回答策略，如 direct（直出 Top1 答案）或 generated（LLM 合成） */
+  /** 回答策略，如 direct（直出）、no_high_confidence、search */
   mode: string;
   /** 检索来源列表，与 RagSearchResult 结构相同 */
   sources: RagSearchResult[];
   images?: { src: string; url: string; alt?: string }[];
   timing?: RagTimings;
   tokens?: TokenUsage;
-  /** 分阶段：embedding、rerank、generate 等 */
+  /** 分阶段：embedding、rerank 等 */
   token_breakdown?: { phase: string; usage: TokenUsage }[];
 }
 
 /**
  * RAG 模型槽位配置（单 slot）。
  * 来源：GET /settings/rag-models；持久化于 config/rag_models.json
- * slot 名：embedding | rerank | llm
+ * slot 名：embedding | rerank
  */
 export interface RagModelSlot {
   label?: string;
@@ -342,10 +340,8 @@ export interface RagRuntimeConfig {
   temperature: number;
   /** 检索返回条数上限 */
   top_k: number;
-  /** 送入 LLM 合成的来源条数上限（≤ top_k） */
+  /** 问答返回来源条数上限（≤ top_k） */
   top_n: number;
-  /** direct=直接返回最高分答案；generated=用 LLM 基于 sources 合成 */
-  answer_mode: "direct" | "generated";
   use_rerank: boolean;
   /** 低于此置信度时可触发降级策略（由服务端 retriever 解释） */
   min_confidence_score: number;

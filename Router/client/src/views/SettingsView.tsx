@@ -10,11 +10,14 @@ import { SettingsClickRow, SettingsModelDropdown } from "../components/SettingsR
 import type { AskMode, MatchProfile, RagModelSlot } from "../types";
 
 const SLOT_LABELS: Record<string, string> = { import: "FAQ 生成模型", pdf_vlm: "文档提取模型" };
-const RAG_SLOT_ORDER = ["embedding", "rerank", "llm"] as const;
+const RAG_SLOT_ORDER = ["embedding", "rerank"] as const;
 const RAG_SLOT_LABELS: Record<string, string> = {
   embedding: "Embedding 模型",
   rerank: "Rerank 模型",
-  llm: "RAG 合成模型",
+};
+const RAG_SLOT_DESCRIPTIONS: Record<string, string> = {
+  embedding: "建索引与查询时的文本向量化；变更后需重建索引。",
+  rerank: "检索候选结果的重排序。",
 };
 
 type SlotConfig = {
@@ -26,20 +29,6 @@ type SlotConfig = {
   temperature?: number;
 };
 
-type RagPromptsResponse = {
-  embedding_prompt: string;
-  rerank_prompt: string;
-  llm_prompt: string;
-  defaults?: { embedding_prompt: string; rerank_prompt: string; llm_prompt: string };
-  llm_system_preview?: string;
-};
-
-const EMPTY_RAG_PROMPTS: RagPromptsResponse = {
-  embedding_prompt: "",
-  rerank_prompt: "",
-  llm_prompt: "",
-};
-
 const EMPTY_PROFILE: MatchProfile = {
   id: "",
   name: "",
@@ -48,7 +37,7 @@ const EMPTY_PROFILE: MatchProfile = {
   api_key: "",
 };
 
-type PromptKey = "confidence_match_prompt" | "faq_generation_prompt" | "pdf_vlm_prompt" | "llm_prompt";
+type PromptKey = "confidence_match_prompt" | "faq_generation_prompt" | "pdf_vlm_prompt";
 
 export function SettingsView() {
   const { showToast } = useAppUi();
@@ -60,15 +49,12 @@ export function SettingsView() {
   const [promptPreview, setPromptPreview] = useState({ confidence_match_prompt: "", faq_generation_prompt: "", pdf_vlm_prompt: "" });
   const [settingsMode, setSettingsMode] = useState<AskMode>("llm");
   const [ragSlots, setRagSlots] = useState<Record<string, RagModelSlot>>({});
-  const [ragPrompts, setRagPrompts] = useState({ embedding_prompt: "", rerank_prompt: "", llm_prompt: "" });
-  const [ragPromptDefaults, setRagPromptDefaults] = useState({ embedding_prompt: "", rerank_prompt: "", llm_prompt: "" });
-  const [ragPromptPreview, setRagPromptPreview] = useState({ llm_prompt: "" });
   const [profileModal, setProfileModal] = useState<{ open: boolean; id: string | null; isNew: boolean }>({ open: false, id: null, isNew: false });
   const [promptModal, setPromptModal] = useState<PromptKey | null>(null);
   const [slotModal, setSlotModal] = useState<string | null>(null);
 
   const load = async () => {
-    const [models, mp, pr, ragModels, ragPr] = await Promise.all([
+    const [models, mp, pr, ragModels] = await Promise.all([
       apiJson<{ slots: Record<string, SlotConfig> }>("/settings/models"),
       apiJson<{ profiles: MatchProfile[]; default_id: string }>("/settings/match-profiles"),
       apiJson<{
@@ -81,7 +67,6 @@ export function SettingsView() {
         pdf_vlm_system_preview?: string;
       }>("/settings/prompts"),
       apiJson<{ slots: Record<string, RagModelSlot> }>("/settings/rag-models").catch(() => ({ slots: {} })),
-      apiJson<RagPromptsResponse>("/settings/rag-prompts").catch(() => EMPTY_RAG_PROMPTS),
     ]);
     setSlots(models.slots || {});
     setProfiles(mp.profiles || []);
@@ -99,16 +84,6 @@ export function SettingsView() {
       pdf_vlm_prompt: pr.pdf_vlm_system_preview || defs.pdf_vlm_prompt || "",
     });
     setRagSlots(ragModels.slots || {});
-    const ragDefs = ragPr.defaults || { embedding_prompt: "", rerank_prompt: "", llm_prompt: "" };
-    setRagPromptDefaults(ragDefs);
-    setRagPrompts({
-      embedding_prompt: ragPr.embedding_prompt || "",
-      rerank_prompt: ragPr.rerank_prompt || "",
-      llm_prompt: ragPr.llm_prompt || "",
-    });
-    setRagPromptPreview({
-      llm_prompt: ragPr.llm_system_preview || ragDefs.llm_prompt || "",
-    });
   };
 
   useEffect(() => { void load(); }, []);
@@ -158,17 +133,6 @@ export function SettingsView() {
     void load();
   };
 
-  const saveRagPrompts = async (nextRagPrompts: typeof ragPrompts) => {
-    await apiJson("/settings/rag-prompts", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(nextRagPrompts),
-    });
-    setRagPrompts(nextRagPrompts);
-    showToast("RAG 提示词已保存");
-    void load();
-  };
-
   const defaultProfile = profiles.find((p) => p.id === defaultId) || profiles[0];
   const editingProfile = profileModal.id
     ? profiles.find((p) => p.id === profileModal.id) || null
@@ -197,28 +161,6 @@ export function SettingsView() {
       preview: promptPreview.pdf_vlm_prompt,
       defaultValue: promptDefaults.pdf_vlm_prompt,
     },
-    llm_prompt: {
-      title: "RAG 回答提示词",
-      description: "RAG 问答合成回答时使用的模板；留空则使用内置默认。占位符：{query}、{context}",
-      label: "RAG 回答提示词",
-      preview: ragPromptPreview.llm_prompt,
-      defaultValue: ragPromptDefaults.llm_prompt,
-    },
-  };
-
-  const currentPromptValue = (key: PromptKey) => {
-    if (key === "llm_prompt") return ragPrompts.llm_prompt;
-    return prompts[key];
-  };
-
-  const savePromptValue = async (key: PromptKey, value: string) => {
-    if (key === "llm_prompt") {
-      const next = { ...ragPrompts, llm_prompt: value };
-      await saveRagPrompts(next);
-    } else {
-      const next = { ...prompts, [key]: value };
-      await saveLlmPrompts(next);
-    }
   };
 
   return (
@@ -263,27 +205,19 @@ export function SettingsView() {
               </div>
             </>
           ) : (
-            <>
-              <div className="settingsBlock">
-                <div className="settingsBlockLabel">RAG 模型</div>
-                <div className="settingsGroupCard">
-                  {RAG_SLOT_ORDER.map((slot) => (
-                    <SettingsClickRow
-                      key={slot}
-                      label={RAG_SLOT_LABELS[slot]}
-                      value={ragSlots[slot]?.model || "未配置"}
-                      onClick={() => setSlotModal(`rag_${slot}`)}
-                    />
-                  ))}
-                </div>
+            <div className="settingsBlock">
+              <div className="settingsBlockLabel">RAG 模型</div>
+              <div className="settingsGroupCard">
+                {RAG_SLOT_ORDER.map((slot) => (
+                  <SettingsClickRow
+                    key={slot}
+                    label={RAG_SLOT_LABELS[slot]}
+                    value={ragSlots[slot]?.model || "未配置"}
+                    onClick={() => setSlotModal(`rag_${slot}`)}
+                  />
+                ))}
               </div>
-              <div className="settingsBlock">
-                <div className="settingsBlockLabel">提示词设置</div>
-                <div className="settingsGroupCard">
-                  <SettingsClickRow label="RAG 回答提示词" value={ragPrompts.llm_prompt ? "已配置" : "使用默认"} onClick={() => setPromptModal("llm_prompt")} />
-                </div>
-              </div>
-            </>
+            </div>
           )}
         </FadePanel>
       </div>
@@ -319,11 +253,11 @@ export function SettingsView() {
           title={promptMeta[promptModal].title}
           description={promptMeta[promptModal].description}
           label={promptMeta[promptModal].label}
-          value={currentPromptValue(promptModal)}
+          value={prompts[promptModal]}
           preview={promptMeta[promptModal].preview}
           defaultValue={promptMeta[promptModal].defaultValue}
           onClose={() => setPromptModal(null)}
-          onSave={(v) => savePromptValue(promptModal, v).catch((e) => showToast((e as Error).message, "error"))}
+          onSave={(v) => saveLlmPrompts({ ...prompts, [promptModal]: v }).catch((e) => showToast((e as Error).message, "error"))}
         />
       )}
 
@@ -331,7 +265,7 @@ export function SettingsView() {
         <SlotConfigModal
           open
           title={RAG_SLOT_LABELS[slotModal.replace("rag_", "")] || "模型配置"}
-          description="RAG 低置信或未开启直出时，用于根据检索结果合成回答；直出模式可不配置。"
+          description={RAG_SLOT_DESCRIPTIONS[slotModal.replace("rag_", "")] || "RAG 检索模型配置。"}
           slot={ragSlots[slotModal.replace("rag_", "")] || {}}
           showThinking={false}
           onClose={() => setSlotModal(null)}

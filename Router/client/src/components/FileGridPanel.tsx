@@ -63,8 +63,8 @@ export function FileGridPanel({
 
   return (
     <div className="fileGridPanel scrollInner">
-      {renderSection("已上传文件", sources, "files-section-sources")}
-      {renderSection("转换 md 文件", modules, "files-section-modules")}
+      {renderSection("上传文件", sources, "files-section-sources")}
+      {renderSection("转换文件", modules, "files-section-modules")}
     </div>
   );
 }

@@ -51,7 +51,6 @@ export function TimingsPanel({
 export const RAG_PHASE_LABELS: Record<string, string> = {
   embedding: "Embedding",
   rerank: "Rerank",
-  generate: "RAG 问答模型",
 };
 
 export const EXTRACT_PHASE_LABELS: Record<string, string> = {

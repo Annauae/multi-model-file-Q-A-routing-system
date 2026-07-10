@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MarkdownPreview } from "./MarkdownPreview";
 import { MdSourceEditor } from "./MdSourceEditor";
 
-/**  Markdown 编辑器 */
+/** Markdown 编辑器：编辑 / 预览切换（单栏展示） */
 export function MarkdownEditor({
   value,
   onChange,
@@ -16,52 +16,23 @@ export function MarkdownEditor({
   showLineNumbers?: boolean;
   minHeight?: number;
 }) {
-  const [narrow, setNarrow] = useState(false); 
   const [tab, setTab] = useState<"edit" | "preview">("edit");
 
-  /** 监听窗口宽度变化 */
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 720px)");
-    const update = () => setNarrow(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  /** 如果窗口宽度小于 720px，则显示窄版编辑器 */
-  if (narrow) {
-    return (
-      <div className="markdownEditor markdownEditorNarrow" style={{ minHeight }}>
-        <div className="mdEditorToolbar">
-          <div className="segmentedControl">
-            <button type="button" className={`segmentedBtn ${tab === "edit" ? "active" : ""}`} onClick={() => setTab("edit")}>编辑</button>
-            <button type="button" className={`segmentedBtn ${tab === "preview" ? "active" : ""}`} onClick={() => setTab("preview")}>预览</button>
-          </div>
-        </div>
-        {tab === "edit" ? (
-          <MdSourceEditor value={value} onChange={onChange} showLineNumbers={showLineNumbers} />
-        ) : (
-          <div className="markdownEditorPreview mdPreview">
-            <MarkdownPreview md={value} kbId={kbId} />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  /** 如果窗口宽度大于 720px，则显示分屏编辑器 */
   return (
-    <div className="markdownEditor markdownEditorSplit" style={{ minHeight }}>
-      <div className="markdownEditorPane markdownEditorSource">
-        <div className="markdownEditorPaneHead muted">编辑</div>
-        <MdSourceEditor value={value} onChange={onChange} showLineNumbers={showLineNumbers} />
+    <div className="markdownEditor markdownEditorToggle" style={{ minHeight }}>
+      <div className="mdEditorToolbar">
+        <div className="segmentedControl">
+          <button type="button" className={`segmentedBtn ${tab === "edit" ? "active" : ""}`} onClick={() => setTab("edit")}>编辑</button>
+          <button type="button" className={`segmentedBtn ${tab === "preview" ? "active" : ""}`} onClick={() => setTab("preview")}>预览</button>
+        </div>
       </div>
-      <div className="markdownEditorPane markdownEditorPreviewPane">
-        <div className="markdownEditorPaneHead muted">预览</div>
+      {tab === "edit" ? (
+        <MdSourceEditor value={value} onChange={onChange} showLineNumbers={showLineNumbers} />
+      ) : (
         <div className="markdownEditorPreview mdPreview">
           <MarkdownPreview md={value} kbId={kbId} />
         </div>
-      </div>
+      )}
     </div>
   );
 }

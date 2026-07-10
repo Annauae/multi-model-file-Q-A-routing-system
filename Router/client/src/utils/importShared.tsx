@@ -88,7 +88,7 @@ function FileTreeFileRow({
   );
 }
 
-/** 气泡分组：已上传文件 / 转换 md 文件 */
+/** 气泡分组：上传文件 / 转换文件 */
 function FileTreeBubbleSection({
   label,
   files,
@@ -142,8 +142,8 @@ export function FileCategorySidebar({
   return (
     <div className="fileTree scrollInner">
       <div className="fileTreeBubbles">
-        <FileTreeBubbleSection label="已上传文件" files={sources} selectedPath={selectedPath} onSelect={onScrollToFile} defaultOpen />
-        <FileTreeBubbleSection label="转换 md 文件" files={modules} selectedPath={selectedPath} onSelect={onScrollToFile} defaultOpen />
+        <FileTreeBubbleSection label="上传文件" files={sources} selectedPath={selectedPath} onSelect={onScrollToFile} defaultOpen />
+        <FileTreeBubbleSection label="转换文件" files={modules} selectedPath={selectedPath} onSelect={onScrollToFile} defaultOpen />
       </div>
     </div>
   );
@@ -163,10 +163,10 @@ export function renderDocumentFileTree(
   return (
     <div className="fileTreeBubbles">
       {srcFiles.length > 0 && (
-        <FileTreeBubbleSection label="已上传文件" files={srcFiles} selectedPath={selectedPath} onSelect={onSelect} />
+        <FileTreeBubbleSection label="上传文件" files={srcFiles} selectedPath={selectedPath} onSelect={onSelect} />
       )}
       {modFiles.length > 0 && (
-        <FileTreeBubbleSection label="转换 md 文件" files={modFiles} selectedPath={selectedPath} onSelect={onSelect} />
+        <FileTreeBubbleSection label="转换文件" files={modFiles} selectedPath={selectedPath} onSelect={onSelect} />
       )}
     </div>
   );
