@@ -12,5 +12,5 @@ export declare function documentsDirPath(filesRoot: string): string;
 export declare function documentsSourcesDirPath(filesRoot: string): string;
 export declare function documentsModulesDirPath(filesRoot: string): string;
 export declare function documentsAssetsDirPath(filesRoot: string): string;
-export declare const MODEL_ROUTER_ROOT: string;
+export declare const PDF_EXTRACT_ROOT: string;
 export declare const DOCLING_SCRIPT: string;

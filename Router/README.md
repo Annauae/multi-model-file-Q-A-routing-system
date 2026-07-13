@@ -11,7 +11,7 @@
 ## 快速开始
 
 ```powershell
-# 1. 初始化 JSON 数据（一次性，从 knowledge_router 复制，用于首次自动导入）
+# 1. （可选）从 knowledge_router 复制 files/ 文档数据
 .\scripts\init-data.ps1
 
 # 2. 安装依赖
@@ -27,7 +27,6 @@ npm run db:setup -w server
 #    编辑 .env 填写 API_KEY，或使用 MOCK_LLM=1 本地调试
 
 # 5. 开发模式（Express :8002 + Vite :5173）
-#    首次启动会自动将 config/、files/ 中的 JSON 导入 PostgreSQL（仅一次）
 npm run dev
 
 # 6. 生产模式
@@ -45,21 +44,21 @@ npm start
 |------|------|
 | `npm run db:setup -w server` | 创建 `router` 库并写入 `DATABASE_URL` |
 | `npm run db:migrate -w server` | 执行 SQL 迁移（启动时自动执行） |
-| `npm run db:seed -w server` | 手动重跑 JSON → PG 导入（幂等） |
+| `npm run db:seed -w server` | 兼容命令：若存在遗留 JSON 则导入 PG，否则无操作 |
 
-环境变量见 [`.env.example`](.env.example)：`DATABASE_URL`、`DATABASE_POOL_SIZE`、`SKIP_JSON_SEED`。
+环境变量见 [`.env.example`](.env.example)：`DATABASE_URL`、`DATABASE_POOL_SIZE`。
 
-原 `config/*.json`、`files/*/questions.json` 等**保留作备份**，运行时只读写数据库。
+结构化数据（知识库、FAQ、模型配置、召回测试、日志等）**仅存 PostgreSQL**；`files/` 仅保留文档 Markdown、上传源文件与图片 assets。
 
 ## 目录结构
 
 ```
 Router/
 ├── client/          # React 前端
-├── server/          # Express 后端 + db/ 数据层
-├── config/          # JSON 备份（首次导入源）
+├── server/          # Express 后端 + db/ 数据层 + pdf_extract/（PDF Python 脚本）
+├── config/          # 预留目录（配置已存 PostgreSQL）
 ├── files/           # 文档与附件
-├── logs/            # 操作日志 JSONL 备份
+├── logs/            # 预留目录（日志已存 PostgreSQL）
 └── scripts/         # 初始化脚本
 ```
 
@@ -93,4 +92,10 @@ npm test
 
 ## PDF 提取
 
-PDF 转 Markdown 仍依赖 monorepo 内 `model_router/scripts/docling_extract_pages.py` 及 Python 环境。
+PDF 转 Markdown 使用内置 Python 脚本（`server/pdf_extract/`），需本机安装 Python 3.10+ 及依赖：
+
+```powershell
+pip install -r server/pdf_extract/requirements.txt
+```
+
+脚本读取 `Router/.env` 中的 `API_KEY`、`API_BASE_URL` 等；VLM 模型由设置页「pdf_vlm」槽位或 `--model` 参数指定。

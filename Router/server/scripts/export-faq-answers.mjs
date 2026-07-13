@@ -114,17 +114,26 @@ function buildMergedMarkdown(kbId, items) {
   return { md: lines.join("\n"), imageCount: allRefs.size, copied, missing };
 }
 
-function main() {
-  const kbId = process.argv[2] || "1";
-  const questionsPath = path.join(FILES_ROOT, `kb_${kbId}`, "questions.json");
-  if (!fs.existsSync(questionsPath)) {
-    console.error(`未找到: ${questionsPath}`);
+async function loadItemsFromPg(kbId) {
+  const { config: loadDotenv } = await import("dotenv");
+  const { loadSettings } = await import("../src/config.js");
+  const { getDocument } = await import("../src/db/repositories/qaRepo.js");
+  loadDotenv({ path: path.join(APP_ROOT, ".env") });
+  const settings = loadSettings();
+  if (!settings.databaseUrl) {
+    console.error("DATABASE_URL 未配置，无法从 PostgreSQL 读取 FAQ");
     process.exit(1);
   }
-  const doc = JSON.parse(fs.readFileSync(questionsPath, "utf8"));
-  const items = doc.items || [];
+  process.env.DATABASE_URL = settings.databaseUrl;
+  const doc = await getDocument("llm", kbId);
+  return doc?.items ?? [];
+}
+
+async function main() {
+  const kbId = process.argv[2] || "1";
+  const items = await loadItemsFromPg(kbId);
   if (!items.length) {
-    console.error("questions.json 无条目");
+    console.error(`kb_${kbId} 在 PostgreSQL 中无 FAQ 条目`);
     process.exit(1);
   }
   fs.mkdirSync(MODULES_DIR, { recursive: true });
@@ -136,4 +145,7 @@ function main() {
   console.log(`[export-faq] 已写入 ${rel}（${items.length} 条，${imageCount} 处图片引用，复制 ${copied} 张，缺失 ${missing} 张）`);
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

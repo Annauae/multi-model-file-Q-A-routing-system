@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   一键启动 Router 知识问答服务（Weaviate + PostgreSQL + Express）
 
@@ -94,7 +94,7 @@ function Get-ListenPids([int]$Port) {
 function Stop-PortListeners([int]$Port, [string]$Label) {
     $pids = Get-ListenPids $Port
     if (-not $pids.Count) { return }
-    Write-Warning "Port $Port in use ($Label) — stopping PID: $($pids -join ', ')"
+    Write-Warning ("Port {0} in use ({1}) - stopping PID: {2}" -f $Port, $Label, ($pids -join ', '))
     foreach ($procId in $pids) {
         try {
             Stop-Process -Id $procId -Force -ErrorAction Stop
@@ -116,7 +116,7 @@ function Get-ServerPort {
     return 8002
 }
 
-# ── 主流程 ──────────────────────────────────────────────
+# -- Main --
 
 if (-not (Test-Path $RouterDir)) {
     throw "Router directory not found: $RouterDir"
@@ -133,10 +133,10 @@ Write-Step "Preparing environment"
 if (-not (Test-Path ".env")) {
     if (Test-Path ".env.example") {
         Copy-Item ".env.example" ".env"
-        Write-Warning "Created .env from .env.example — review DATABASE_URL and restart if needed"
+        Write-Warning "Created .env from .env.example - review DATABASE_URL and restart if needed"
     }
     else {
-        Write-Warning "No .env file — copy Router/.env.example to Router/.env"
+        Write-Warning "No .env file - copy Router/.env.example to Router/.env"
     }
 }
 
@@ -148,7 +148,7 @@ if (-not (Test-Path "node_modules")) {
 # 2. 检查 PostgreSQL（Router 必填）
 Write-Step "Checking PostgreSQL (127.0.0.1:5432)"
 if (-not (Test-TcpPort 5432)) {
-    Write-Warning "PostgreSQL not reachable at 127.0.0.1:5432 — server may fail to start"
+    Write-Warning "PostgreSQL not reachable at 127.0.0.1:5432 - server may fail to start"
     Write-Warning "Create DB first: npm run db:setup -w server"
 }
 else {

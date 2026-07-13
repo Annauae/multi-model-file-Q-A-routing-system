@@ -1,4 +1,4 @@
-# Copy knowledge_router data into Router for independent deployment.
+# Copy knowledge_router document files into Router (optional legacy migration).
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $src = Join-Path (Split-Path -Parent $root) "knowledge_router"
@@ -7,7 +7,7 @@ if (-not (Test-Path $src)) {
     Write-Error "Source not found: $src"
 }
 
-foreach ($dir in @("config", "files")) {
+foreach ($dir in @("files")) {
     $from = Join-Path $src $dir
     $to = Join-Path $root $dir
     if (-not (Test-Path $from)) {

@@ -11,6 +11,7 @@ function httpError(status, detail) {
     return e;
 }
 
+// 验证 RAG 知识库 ID 是否存在
 function validateRagKbId(ragCtx, kbId) {
     const kid = (kbId || "").trim();
     if (!kid)
@@ -20,6 +21,7 @@ function validateRagKbId(ragCtx, kbId) {
     return kid;
 }
 
+// 获取 RAG 知识库启用项数
 async function ragEnabledCount(ragCtx, kbId) {
     try {
         const doc = await ragCtx.getRagQuestionsStore(kbId).getDocument();
@@ -30,6 +32,7 @@ async function ragEnabledCount(ragCtx, kbId) {
     }
 }
 
+// 注册 RAG 路由
 export function registerRagRoutes(app, ctx, ragCtx) {
     app.get("/rag/health", async (_req, res) => {
         try {
@@ -46,6 +49,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 获取所有 RAG 知识库
     app.get("/rag/knowledge-bases", async (_req, res) => {
         const items = [];
         for (const [kb_id, cfg] of Object.entries(ragCtx.ragKbStore.getAll())) {
@@ -54,6 +58,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         res.json({ items });
     });
 
+    // 创建 RAG 知识库
     app.post("/rag/knowledge-bases", async (req, res) => {
         try {
             const kbId = String(req.body.kb_id ?? "").trim() || (await ragCtx.ragKbStore.nextAvailableKbId());
@@ -70,6 +75,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 删除 RAG 知识库
     app.delete("/rag/knowledge-bases/:kbId", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -89,6 +95,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 重命名 RAG 知识库
     app.post("/rag/knowledge-bases/:kbId/rename", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -100,6 +107,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 从 LLM 导入 RAG 知识库
     app.post("/rag/knowledge-bases/:ragKbId/import/from-llm", async (req, res) => {
         try {
             const ragKbId = validateRagKbId(ragCtx, req.params.ragKbId);
@@ -127,10 +135,12 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 获取 RAG 模型设置
     app.get("/settings/rag-models", (_req, res) => {
         res.json({ slots: ragCtx.ragModelsStore.getAll(false) });
     });
 
+    // 更新 RAG 模型设置
     app.put("/settings/rag-models", async (req, res) => {
         try {
             const slots = await ragCtx.ragModelsStore.updateAll(req.body?.slots ?? req.body ?? {});
@@ -141,6 +151,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 获取 RAG 提示词设置
     app.get("/settings/rag-prompts", (_req, res) => {
         const gp = ragCtx.ragPromptsStore.get();
         res.json({
@@ -153,6 +164,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         });
     });
 
+    // 更新 RAG 提示词设置
     app.put("/settings/rag-prompts", async (req, res) => {
         try {
             const gp = await ragCtx.ragPromptsStore.set({
@@ -168,6 +180,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 获取 RAG 知识库运行时配置
     app.get("/rag/knowledge-bases/:kbId/runtime-config", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -178,6 +191,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 更新 RAG 知识库运行时配置
     app.put("/rag/knowledge-bases/:kbId/runtime-config", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -188,7 +202,8 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
-    app.get("/rag/knowledge-bases/:kbId/questions", async (req, res) => {
+    // 获取 RAG 知识库问题
+        app.get("/rag/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
             res.json(await ragCtx.getRagQuestionsStore(kid).getDocument());
@@ -198,6 +213,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 更新 RAG 知识库问题
     app.put("/rag/knowledge-bases/:kbId/questions", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -211,6 +227,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 创建 RAG 知识库问题项
     app.post("/rag/knowledge-bases/:kbId/questions/items", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -223,6 +240,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 更新 RAG 知识库问题项
     app.put("/rag/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -236,6 +254,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 删除 RAG 知识库问题项
     app.delete("/rag/knowledge-bases/:kbId/questions/items/:itemId", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -248,6 +267,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 重建 RAG 知识库索引
     app.post("/rag/knowledge-bases/:kbId/index/rebuild", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -267,6 +287,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 获取 RAG 知识库索引状态
     app.get("/rag/knowledge-bases/:kbId/index/status", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);
@@ -277,6 +298,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 处理搜索请求
     async function handleSearch(req, res) {
         try {
             const queryText = String(req.body?.query ?? req.query?.q ?? "").trim();
@@ -306,6 +328,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     }
 
+    // 获取 RAG 搜索结果
     app.get("/rag/search", (req, res) => void handleSearch(req, res));
     app.post("/rag/search", (req, res) => void handleSearch(req, res));
 
@@ -325,11 +348,11 @@ export function registerRagRoutes(app, ctx, ragCtx) {
             const status = await indexStatus(ragCtx.settings, kbId, ragCtx.ragModelsStore);
             if (!status.ready)
                 return res.status(409).json({ detail: status.reason || "索引不存在，请先重建索引" });
-            const runtime = await ragCtx.getRuntimeConfig(kbId);
+            const runtime = await ragCtx.getRuntimeConfig(kbId); 
             const retriever = new RagRetriever(kbId, ragCtx, runtime);
-            const out = await retriever.chat(queryText, {
-                topN: req.body?.top_n,
-                useLlmAnswer: req.body?.use_llm_answer,
+            const out = await retriever.chat(queryText, { // 调用 chat 方法
+                topN: req.body?.top_n, // 获取 top_n 参数
+                useLlmAnswer: req.body?.use_llm_answer, // 获取 use_llm_answer 参数
             });
             ragCtx.opLog.append({
                 module: "rag-debug",
@@ -348,6 +371,7 @@ export function registerRagRoutes(app, ctx, ragCtx) {
         }
     });
 
+    // 获取 RAG 知识库召回测试
     app.get("/rag/knowledge-bases/:kbId/recall-tests", async (req, res) => {
         try {
             const kid = validateRagKbId(ragCtx, req.params.kbId);

@@ -41,7 +41,7 @@ Router 是一套 **LLM 置信度 FAQ 匹配 + RAG 向量检索** 双模式知识
 | 后端 | Node.js (ESM)、Express 4、multer、pg |
 | 数据库 | PostgreSQL（FAQ、配置、日志、RAG 元数据） |
 | 向量库 | Weaviate（可选 `MOCK_WEAVIATE` 本地 mock） |
-| 文档提取 | Docling (Python)、mammoth、xlsx、turndown；依赖同级 `model_router` 仓库 |
+| 文档提取 | Docling (Python)、mammoth、xlsx、turndown；PDF 脚本位于 `server/pdf_extract/` |
 
 ### 1.3 请求链路（简图）
 
@@ -883,7 +883,7 @@ Store 面向路由/服务；Repository 仅执行 SQL。
 
 #### 6.4.4 fileProcessor.js
 
-- **`extractPdfToMarkdown`**：调用 Docling Python 脚本（`model_router/scripts/docling_extract_pages.py`）。
+- **`extractPdfToMarkdown`**：调用内置 Docling Python 脚本（`server/pdf_extract/scripts/docling_extract_pages.py`）。
 - **`extractSourceToMarkdown`**：DOCX/Excel/HTML 转换 + 可选 VLM 精修。
 - **`extractMarkdownRange`**：纯文本/Markdown 按行切片。
 - **`finalizeCombinedExtract`**：多段 range 合并为单个 module 文件。

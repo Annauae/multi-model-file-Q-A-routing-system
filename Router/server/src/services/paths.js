@@ -58,5 +58,5 @@ export function documentsModulesDirPath(filesRoot) {
 export function documentsAssetsDirPath(filesRoot) {
     return path.join(documentsDirPath(filesRoot), "assets");
 }
-export const MODEL_ROUTER_ROOT = path.resolve(APP_ROOT, "..", "model_router");
-export const DOCLING_SCRIPT = path.join(MODEL_ROUTER_ROOT, "scripts", "docling_extract_pages.py");
+export const PDF_EXTRACT_ROOT = path.join(APP_ROOT, "server", "pdf_extract");
+export const DOCLING_SCRIPT = path.join(PDF_EXTRACT_ROOT, "scripts", "docling_extract_pages.py");

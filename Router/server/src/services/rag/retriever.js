@@ -60,44 +60,44 @@ export class RagRetriever {
         const tTotal = performance.now();
         this.log.log(`[search] 开始 query="${clipText(query, 120)}" top_k=${top_k} use_rerank=${this.rt("use_rerank", true)}`, "step", "search");
 
-        const tEmb = performance.now();
-        const { vector: qVec, usage: embUsage } = await this.embeddingClient.embedQuery(query);
+        const tEmb = performance.now(); // 记录 embedding 时间
+        const { vector: qVec, usage: embUsage } = await this.embeddingClient.embedQuery(query); // 调用 embeddingClient 的 embedQuery 方法，将查询语句转换为向量
         timing.embedding_ms = msSince(tEmb);
         this.log.timing("embedding", timing.embedding_ms);
-        if (embUsage)
+        if (embUsage) // 如果 embUsage 不为空，则记录 embedding 的 tokens 和 total_tokens
             this.log.log(`[search] embedding tokens prompt=${embUsage.prompt_tokens ?? 0} total=${embUsage.total_tokens ?? 0}`, "step", "embedding");
         const tokenBreakdown = [];
         if (embUsage)
             tokenBreakdown.push({ phase: "embedding", usage: embUsage });
 
-        const tVec = performance.now();
-        const vectorHits = this._filterSearchHits(await this.weaviateStore.hybridSearch(
+        const tVec = performance.now(); // 记录向量检索时间
+        const vectorHits = this._filterSearchHits(await this.weaviateStore.hybridSearch( // 调用 weaviateStore 的 hybridSearch 方法，混合检索，包括向量检索和关键词检索
             this.kbId, query, qVec, this.settings.ragVectorTopK, 0.75,
         ));
         timing.vector_lookup_ms = msSince(tVec);
-        this.log.log(`[search] 向量检索 ${vectorHits.length} 条 (top ${this.settings.ragVectorTopK})`, "step", "vector");
+        this.log.log(`[search] 向量检索 ${vectorHits.length} 条 (top ${this.settings.ragVectorTopK})`, "step", "vector"); // 记录向量检索的条数和 top_k
         if (vectorHits.length)
             this.log.log(`[search] 向量 Top3: ${vectorHits.slice(0, 3).map((h, i) => `#${i + 1} ${h.item_id} score=${Number(h.score || 0).toFixed(3)}`).join(" | ")}`, "step", "vector-top");
 
         const tKw = performance.now();
-        const keywordHits = this._filterSearchHits(await this._keywordSearch(query, this.settings.ragKeywordTopK));
+        const keywordHits = this._filterSearchHits(await this._keywordSearch(query, this.settings.ragKeywordTopK)); // 调用 _keywordSearch 方法，关键词检索
         timing.keyword_search_ms = msSince(tKw);
-        this.log.log(`[search] 关键词检索 ${keywordHits.length} 条`, "step", "keyword");
+        this.log.log(`[search] 关键词检索 ${keywordHits.length} 条`, "step", "keyword"); // 记录关键词检索的条数
         if (keywordHits.length)
             this.log.log(`[search] 关键词 Top3: ${keywordHits.slice(0, 3).map((h, i) => `#${i + 1} ${h.item_id} score=${Number(h.score || 0).toFixed(3)}`).join(" | ")}`, "step", "keyword-top");
 
-        const tFus = performance.now();
+        const tFus = performance.now(); // 记录融合时间
         const candidates = this._fuseAndGroup(vectorHits, keywordHits);
         timing.fusion_ms = msSince(tFus);
-        this.log.log(`[search] RRF 融合 ${candidates.length} 候选 (rrf_k=${this.settings.ragRrfK})`, "step", "fusion");
+        this.log.log(`[search] RRF 融合 ${candidates.length} 候选 (rrf_k=${this.settings.ragRrfK})`, "step", "fusion"); // 记录融合的条数和 rrf_k
         if (candidates.length)
             this.log.log(`[search] 融合 Top3: ${candidates.slice(0, 3).map((c, i) => `#${i + 1} ${c.item_id} rrf=${c.rrf_score.toFixed(4)} vec=${c.vector_score.toFixed(3)} kw=${c.keyword_score.toFixed(3)}`).join(" | ")}`, "step", "fusion-top");
 
         let results;
-        if (!this.rt("use_rerank", true)) {
+        if (!this.rt("use_rerank", true)) { // 如果 use_rerank 为 false，则不进行重排序
             candidates.sort((a, b) => b.rrf_score - a.rrf_score);
             timing.rerank_ms = 0;
-            results = await Promise.all(candidates.slice(0, top_k).map((c) => this._candidateToResult(c)));
+            results = await Promise.all(candidates.slice(0, top_k).map((c) => this._candidateToResult(c))); // 调用 _candidateToResult 方法，将候选结果转换为结果对象
             this.log.log("[search] rerank 已关闭，按 RRF 排序", "step", "rerank-skip");
         }
         else {
@@ -198,6 +198,7 @@ export class RagRetriever {
         };
     }
 
+    // 关键词检索
     async _keywordSearch(query, limit) {
         const meta = await readIndexMeta(this.settings.filesRoot, this.kbId);
         const index = meta?.keyword_index ?? [];
@@ -236,6 +237,7 @@ export class RagRetriever {
         return kwHits.map((h) => ({ ...h, rank_source: "keyword" }));
     }
 
+    // 融合向量和关键词检索结果
     _fuseAndGroup(vectorHits, keywordHits) {
         const byItem = new Map();
         const rrfK = this.settings.ragRrfK;
@@ -273,10 +275,12 @@ export class RagRetriever {
         return [...byItem.values()].sort((a, b) => b.rrf_score - a.rrf_score);
     }
 
+    // 过滤搜索结果
     _filterSearchHits(hits) {
         return hits.filter((h) => SEARCHABLE_DOC_TYPES.has(String(h.doc_type || "")));
     }
 
+    // 重排序候选结果
     async _rerank(query, candidates, topK) {
         const items = await this.loadItems();
         const docs = [];
@@ -314,6 +318,7 @@ export class RagRetriever {
         return { output, usage };
     }
 
+    // 将候选结果转换为结果对象
     async _candidateToResult(cand) {
         const items = await this.loadItems();
         const item = items.get(cand.item_id);

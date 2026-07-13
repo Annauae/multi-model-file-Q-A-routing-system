@@ -1,0 +1,7 @@
+# Python deps for Router PDF extraction (server/pdf_extract/)
+# Install: pip install -r server/pdf_extract/requirements.txt
+docling>=2.0.0
+docling-core>=2.0.0
+pymupdf>=1.24.0
+python-dotenv>=1.0.0
+openai>=1.0.0

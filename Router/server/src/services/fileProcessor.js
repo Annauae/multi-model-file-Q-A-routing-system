@@ -6,7 +6,7 @@ import { LLMError } from "./llmClient.js";
 import { convertDocxToMarkdown, convertExcelToMarkdown, convertHtmlToMarkdown, collectImageRefsFromMarkdown, } from "./documentConverters.js";
 import { formatFromFilename } from "./documentTypes.js";
 import { refineMarkdownWithVlm } from "./documentVlmRefine.js";
-import { documentsAssetsDirPath, documentsModulesDirPath, DOCLING_SCRIPT, MODEL_ROUTER_ROOT, } from "./paths.js";
+import { documentsAssetsDirPath, documentsModulesDirPath, DOCLING_SCRIPT, PDF_EXTRACT_ROOT, } from "./paths.js";
 import { copyDirAssetsToDocuments, rewriteAssetPathsInText } from "./assetSync.js";
 const PLACEHOLDER_HEADING_RE = /^#{1,3}\s*前言\s*$/gm;
 const DOCLING_META_BLOCK = /---\s*\n(?:(?!---).)*?(?:route:|route_label:|source_pdf:)(?:(?!---).)*?\n---\s*\n?/gis;
@@ -65,7 +65,7 @@ function readExtractMetrics(outDir) {
 async function runPdfExtract(opts) {
     fs.mkdirSync(opts.outDir, { recursive: true });
     if (!fs.existsSync(DOCLING_SCRIPT)) {
-        throw new LLMError(`PDF 提取脚本不存在: ${DOCLING_SCRIPT}，请确认 model_router 在同一 monorepo 内。`);
+        throw new LLMError(`PDF 提取脚本不存在: ${DOCLING_SCRIPT}。请确认 Router/server/pdf_extract 已完整部署。`);
     }
     const cmd = [
         process.platform === "win32" ? "python" : "python3",
@@ -90,7 +90,7 @@ async function runPdfExtract(opts) {
     const outputLines = [];
     await new Promise((resolve, reject) => {
         const proc = spawn(cmd[0], cmd.slice(1), {
-            cwd: MODEL_ROUTER_ROOT,
+            cwd: PDF_EXTRACT_ROOT,
             stdio: ["ignore", "pipe", "pipe"],
         });
         proc.stdout?.on("data", (buf) => {
